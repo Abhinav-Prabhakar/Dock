@@ -1,26 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Surfaces */
+  --color-abyss: #060a20;
+  --color-ink: #0b1130;
+  --color-panel: #12183c;
+  --color-panel-2: #161d47;
+  --color-panel-3: #1b2354;
+  --color-edge: #262e63;
+  --color-edge-soft: #1e2650;
+
+  /* Text */
+  --color-hi: #eef0ff;
+  --color-mid: #9aa1c9;
+  --color-low: #6c739b;
+  --color-faint: #4b5180;
+
+  /* Brand + status */
+  --color-accent: #6a73ea;
+  --color-accent-hi: #5f68e2;
+  --color-accent-deep: #4a52c8;
+  --color-pending: #e0566b;
+  --color-pending-soft: #f0899a;
+  --color-reserved: #d9b13b;
+  --color-reserved-soft: #ecd07a;
+  --color-loaded: #3fbdb0;
+  --color-loaded-soft: #7fd9d0;
+  --color-critical: #f0524f;
+  --color-warn: #e5a33c;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-abyss);
+  color: var(--color-hi);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* Page backdrop: deep navy with an indigo bloom behind the vessel */
+.dock-bg {
+  background:
+    radial-gradient(1250px 720px at 62% 32%, rgba(74, 88, 205, 0.34), transparent 62%),
+    radial-gradient(900px 520px at 30% 90%, rgba(40, 48, 130, 0.22), transparent 65%),
+    linear-gradient(180deg, #0b1130 0%, #070b22 55%, #05081c 100%);
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(30, 37, 82, 0.55), rgba(16, 21, 52, 0.55));
+  border: 1px solid rgba(148, 158, 220, 0.12);
+  box-shadow: inset 0 1px 0 rgba(180, 190, 255, 0.05);
+}
+
+.panel-flat {
+  background: rgba(18, 24, 58, 0.72);
+  border: 1px solid rgba(148, 158, 220, 0.12);
+}
+
+.chip {
+  background: rgba(20, 26, 62, 0.85);
+  border: 1px solid rgba(148, 158, 220, 0.14);
+}
+
+.hairline {
+  border-color: rgba(148, 158, 220, 0.14);
+}
+
+::selection {
+  background: rgba(106, 115, 234, 0.4);
 }
