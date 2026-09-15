@@ -59,6 +59,7 @@ class SimConfig:
     seed: int = 0
     pricing: str = "dynamic"             # "dynamic" | "rate_card"
     fleet_every: int = 3                 # days between fleet-action prompts
+    vessel_ids: list[str] | None = None  # subset of fleet (curriculum)
 
 
 class Simulator:
@@ -89,13 +90,18 @@ class Simulator:
         self.start_week = (cfg.start_week if cfg.start_week is not None
                            else int(self.rng.integers(0, max_start + 1)))
 
-        servable = servable_ods(C.VESSEL_LOOPS)
+        # vessels (optionally a subset for curriculum phases)
+        allowed = set(cfg.vessel_ids) if cfg.vessel_ids else None
+        loops = {k: v for k, v in C.VESSEL_LOOPS.items()
+                 if allowed is None or k in allowed}
+        servable = servable_ods(loops)
 
-        # vessels
         dwell = {p[0]: p[8] for p in C.PORTS}
         self.vessels: dict[str, VesselState] = {}
         for (vid, name, cap, reefer, vmin, vserv, vmax, age, draft, burn) \
                 in C.VESSELS:
+            if allowed is not None and vid not in allowed:
+                continue
             spec = VesselSpec(vid, cap, reefer, vmin, vserv, vmax,
                               0.15 * burn, (burn - 0.15 * burn) / vserv ** 3,
                               age, C.VESSEL_LOOPS[vid])
@@ -104,6 +110,7 @@ class Simulator:
             v.name = name
             v.empty_aboard = 0
             self.vessels[vid] = v
+        assert self.vessels, "vessel_ids produced an empty fleet"
 
         # sailing calendar: OD -> sorted planned departure days (drives
         # request generation — shippers book real sailings)

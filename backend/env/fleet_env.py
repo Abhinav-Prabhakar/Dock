@@ -281,7 +281,8 @@ class CargoFleetEnv(gym.Env if gym else object):
             v[i + 3 * k + 1] = sim.empties[p] / 2000.0
             v[i + 3 * k + 2] = float(sim.port_closed[p][di])
         i += 3 * N_PORTS
-        for k, (vid, vv) in enumerate(sim.vessels.items()):
+        vessels = list(sim.vessels.values())[:4]
+        for k, vv in enumerate(vessels):
             v[i + 6 * k + 0] = vv.speed_kt / 20.0
             v[i + 6 * k + 1] = float(vv.mode == "sea")
             v[i + 6 * k + 2] = vv.stowage.used / max(vv.stowage.capacity, 1)
