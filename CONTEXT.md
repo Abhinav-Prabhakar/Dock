@@ -4,15 +4,19 @@
 
 ## Mission right now
 
-Backend is functionally complete. Full PPO curriculum (phases 1–5, ~1.8M
-steps) is running on the remote GPU box via `scripts/run_curriculum.sh`
-(log: `~/Dock/backend/runs/curriculum.log`, checkpoints `runs/ppo_c1..c5/`).
+Backend is **complete and verified**. The full PPO curriculum ran on the
+remote GPU box (phases 1–5, ~1.8M steps total): checkpoints
+`runs/ppo_c1..c5/` are committed locally, `runs/ppo_c5/eval_results.json`
+holds the 5-episode × 90-day holdout eval, and `public/demo/*.json` was
+regenerated with `ppo` included. **PPO is the top policy on holdout
+aggregate ($17.97M mean, +164% vs static) and wins volatile-shocks
+outright.** The GPU box has been shut down — everything needed is in git.
 
-**Remaining:** when the run finishes, pull `runs/ppo_c5/model.zip` back
-here, re-run `scripts/export_demo.py` (it adds `ppo` to the artifacts when
-`--model` is given), and confirm the holdout eval table. Frontend stays
-mock — do not touch `src/` unless the user asks; the artifact-driven
-`/compare` build is technical.md §4.2.
+**Remaining:** the frontend build per `frontend.md` — two screens
+(Customers + Fleet), a persistent money HUD that opens the comparison
+dialog, decision log rail + disaster replay + credibility panel on Fleet.
+`src/` stays mock until that build starts; all data comes from
+`public/demo/*.json` (see `backend.md` for the contract).
 
 **Product direction (explicit):** RL is the decision engine — no classic-ML
 fallback anywhere. Missing artifacts raise `RuntimeError`, never degrade
@@ -79,22 +83,27 @@ backend/
     run_episode.py    # python -m scripts.run_episode --episodes 3 --horizon 90
     export_demo.py    # python -m scripts.export_demo --out ../public/demo
     run_curriculum.sh # full 5-phase PPO curriculum on the GPU box
-  tests/              # 77 pytest tests, all passing (~90s). pytest.ini at backend root
+  tests/              # 83 pytest tests, all passing (~90s). pytest.ini at backend root
+  runs/               # committed checkpoints ppo_c1..c5 + eval_results.json
   requirements.txt    # numpy pandas pyarrow gymnasium pytest + sb3/sb3-contrib/torch
 ```
 
 ## Verified state
 
-- `cd backend && .venv/bin/python -m pytest` → **77 passed**
+- `cd backend && .venv/bin/python -m pytest` → **83 passed**
 - `python -m models.train` → elasticity {1.797, 1.106, 0.553} vs true
   {1.8, 1.1, 0.55}; WTP mults {1.000, 1.080, 1.380}; demand MAPE 0.58.
+- `rl.evaluate --model runs/ppo_c5/model.zip` (5×90d, holdout):
+  volatile-shocks — **ppo 25.9M wins** (bid 24.7 / heuristic 23.2 /
+  greedy 22.0 / static 17.0); depressed-demand — heuristic 9.0 / ppo 8.3 /
+  bid 8.5 / greedy 6.5 / static −5.2 (ppo −7.2% vs heuristic — the
+  forecaster lags a collapsing regime; honest artifact, reported).
 - `rl.evaluate --model none` (3×60d): baseline — static 16.9M / greedy
   20.1M / heuristic 20.7M / heuristic_bid 21.5M (vs 22.7M oracle — inside
-  the ±10% gate); volatile-shocks — bid 23.2M wins; depressed-demand — bid
-  7.3M vs heuristic 9.2M (forecast lags a collapsing regime — honest
-  artifact, reported).
-- `scripts/export_demo.py` → `public/demo/{summary,timeline,offers,shock,
-  meta}.json`, all 4 baseline policies, reason-coded explain blocks.
+  the ±10% gate).
+- `scripts/export_demo.py --model runs/ppo_c5/model.zip` →
+  `public/demo/{summary,timeline,offers,shock,meta}.json`, all 5 policies
+  (`policies_present` includes `ppo`), shock A/B is static-vs-ppo.
 - Env: 44 actions = 12 booking (reject, accept, flex-window{5,10,15,20%},
   alt-hub{5,10,15%}, split{50/50,60/40,70/30}) + 16 speed (4 vessels ×
   {12,14,16,18}kt) + 16 reposition (8 pairs × {75,150} TEU).
@@ -114,13 +123,15 @@ backend/
   `relative_price`, `baseline_volume_teu`, `realized_volume_teu`,
   `elasticity_true` (for elasticity model fitting).
 
-## Remote GPU box (for ALL training)
+## Remote GPU box (training — currently powered off, all results pulled)
 
 - `ssh abhinav@192.168.1.3` — **key-based auth already configured** from this
   Mac (`~/.ssh/id_ed25519`). No password needed. Always `-o BatchMode=yes`.
 - It is **WSL2**, python3.12, ~920GB free, 12 cores, 5GB RAM. GPU: RTX 3050
   8GB, driver 572.70, CUDA 12.8 driver-level. `nvidia-smi` lives at
   `/usr/lib/wsl/lib/nvidia-smi`.
+- **Note:** training is complete and the box is off. Everything it produced
+  is committed under `backend/runs/` — restart only if retraining is wanted.
 - Project synced at `~/Dock`. **`~/Dock/backend/.venv` is BROKEN** (mixed
   cu12/cu13 nvidia wheels — torch dumps core; do not use it). The working
   stack is **`~/.venvs/dock-rl/`**: torch 2.9.1+cu128 (cuda OK),
@@ -164,11 +175,10 @@ backend/
 
 ## What's NOT built yet
 
-- Trained PPO beyond the 12K-step smoke run — **in flight**: full curriculum
-  on the GPU box (see "Mission right now"). Old `ppo_phase1_*` checkpoint
-  used oracle obs — stale, ignore it.
-- Frontend reads `public/demo/` artifacts — `src/` still 100% mock data by
-  explicit instruction; `/compare` build is technical.md §4.2.
+- The frontend surfaces in `frontend.md` — `src/` still 100% mock data by
+  explicit instruction. `public/demo/` artifacts (incl. `ppo`) are ready.
+- Old `runs/ppo_phase1_*` checkpoint was trained on oracle obs — stale,
+  kept for history only; `ppo_c5` is the real artifact.
 
 ## Working agreement
 

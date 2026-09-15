@@ -13,6 +13,8 @@ load, how to negotiate instead of reject, and when to hold capacity for a better
 booking tomorrow.
 
 > `plan.md` is the source of truth. Every feature and claim traces back to it.
+> `backend.md` documents the backend contract for frontend work; `frontend.md`
+> specifies the UI layout. `CONTEXT.md` is the agent handoff / working state.
 
 ## What it does
 
@@ -20,17 +22,17 @@ booking tomorrow.
   on every leg of every voyage, not a flat route rate.
 - **Negotiation, not rejection** — when a booking doesn't fit, Dock issues
   structured counter-offers: flexible-window discounts, alternate-hub routing,
-  split consignments, overbooking with compensation, forward contracts. Every
-  response carries a reason code derived from the bid price.
+  split consignments. Every response carries a reason code derived from the bid
+  price.
 - **Stowage-aware decisions** — a deterministic constraint solver (destination-
   order stacking, IMDG hazmat segregation, weight balance, reefer plugs) masks out
   physically impossible actions before pricing or the RL policy ever sees them.
-- **Sequential strategy via RL** — a PPO agent learns the trade-offs a static
-  scorer can't represent: holding capacity for premium demand, repositioning
-  empties ahead of an export surge, slow-steaming when fuel + carbon savings beat
-  delay costs.
+- **Sequential strategy via RL** — a MaskablePPO agent learns the trade-offs a
+  static scorer can't represent: holding capacity for premium demand,
+  repositioning empties ahead of an export surge, slow-steaming when fuel +
+  carbon savings beat delay costs.
 - **Resilience** — disruption events (port closures, storms, canal blockages)
-  trigger automatic rerouting and repricing in real time.
+  trigger rerouting and repricing in real time.
 
 ## Architecture
 
@@ -38,9 +40,9 @@ booking tomorrow.
                 BOOKING REQUEST
                       │
         ┌─────────────┴──────────────┐
-        │  Demand & risk forecasting │  (supervised: XGBoost / small NNs)
-        └─────────────┬──────────────┘
-                      ▼
+        │  Demand forecasting        │  (closed-form ridge, bound per
+        └─────────────┬──────────────┘   episode; elasticity + WTP models
+                      ▼                  for calibration)
         ┌────────────────────────────┐
         │  Bid-price engine          │  shadow price per leg / time window
         └─────────────┬──────────────┘
@@ -61,69 +63,139 @@ booking tomorrow.
                                       data, powers the demo; >1000× real-time)
 ```
 
-Design principle: **hard constraints are never learned.** The RL agent only ever
-chooses among physically valid, legally compliant options.
+Design principles:
+
+- **Hard constraints are never learned.** The RL agent only ever chooses among
+  physically valid, legally compliant options.
+- **No oracle leakage.** Pricing and the RL observation consume the trained
+  `DemandForecaster`, never the simulator's ground-truth demand intensity.
+  Missing model artifacts raise `RuntimeError` — nothing degrades silently.
+- **Supervised models feed the RL policy; they never replace it.** The demand
+  forecaster supplies the observation features and the bid-price engine's
+  expected demand. Elasticity and WTP models calibrate and prove the pipeline
+  recovers its own generative parameters.
 
 ## Repository layout
 
 ```
 backend/                 Python backend (this is the core system)
   simulator/             Digital twin: ports, fleet, demand, weather, economics
-  env/                   Gymnasium wrapper (CargoFleetEnv)
+  env/                   Gymnasium wrapper (CargoFleetEnv, Discrete(44), obs 112)
   constraints/           Stowage solver + action masking
   pricing/               Bid-price engine + counter-offer generation
-  forecasting/           Supervised models (demand, elasticity, risk, congestion)
-  rl/                    PPO training (Stable-Baselines3 + sb3-contrib)
-  baselines/             Static, rule-based, greedy, supervised policies
-  data/                  Synthetic datasets + generators
+  models/                DemandForecaster (ridge), ElasticityModel, WTPModel,
+                         train CLI, committed artifacts
+  rl/                    MaskablePPO curriculum training + holdout evaluation
+  baselines/             Static / greedy / dynamic heuristic policies
+  data/                  Calibration constants, scenario configs, generators
+  scripts/               run_episode, export_demo, run_curriculum
+  tests/                 83 pytest tests
+  runs/                  Trained checkpoints (ppo_c1..c5) + eval_results.json
+public/demo/             Exported demo artifacts (summary/timeline/offers/
+                         shock/meta JSON) — the frontend reads these
 src/                     Next.js dashboard (App Router, TypeScript, Tailwind)
-plan.md                  Source of truth
+plan.md                  Product source of truth
+backend.md               Backend contract: inputs, wiring, models, outputs
+frontend.md              UI layout spec (two screens + money HUD)
+technical.md             Build directive + resolved-issue log
+CONTEXT.md               Agent handoff / working state
 ```
 
 ## Quickstart
 
-```bash
-# Frontend
-npm install
-npm run dev
+### Backend
 
-# Backend
+```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m data.generate          # build synthetic datasets
-python -m baselines.evaluate     # run head-to-head policy comparison
-python -m rl.train               # PPO training (curriculum phases)
+
+# 1. Generate the synthetic datasets (10 scenarios, 2 held out; ~2.6s)
+python -m data.generate --seed 42 --scale 1.0 --out data/generated
+
+# 2. Train the supervised models (required — pricing and RL error without them)
+python -m models.train --data data/generated --out models/artifacts
+
+# 3. Tests
+python -m pytest -q                                    # 83 tests
+
+# 4. Run a head-to-head episode (baselines only)
+python -m scripts.run_episode --episodes 3 --horizon 60
+
+# 5. Evaluate policies on holdout scenarios (identical seeds per episode)
+python -m rl.evaluate --model none --episodes 5 --horizon 90
+python -m rl.evaluate --model runs/ppo_c5/model.zip --episodes 5 --horizon 90
+
+# 6. Export the demo artifacts the frontend reads
+python -m scripts.export_demo --out ../public/demo \
+    --horizon 90 --episodes 3 --model runs/ppo_c5/model.zip
 ```
+
+### RL training (GPU recommended; ~1.8M steps total)
+
+```bash
+cd backend
+# one phase at a time, warm-starting from the previous checkpoint —
+# or run the whole curriculum:
+bash scripts/run_curriculum.sh            # phases 1-5 + auto holdout eval
+# individual phase:
+python -m rl.train --phase 4 --timesteps 600000 --n-envs 8 \
+    --device cuda --init-from runs/ppo_c3/model.zip
+```
+
+Curriculum: 14d/1-vessel → 30d/2-vessel → +reward shaping → 90d/full-fleet →
++adversarial scenarios. Checkpoints land in `runs/ppo_cN/` with `config.json`
+(git SHA + obs semantics) and TensorBoard logs.
+
+### Frontend
+
+```bash
+npm install
+npm run dev
+```
+
+The dashboard reads `public/demo/*.json` — no live API, nothing can fail on
+stage. Layout spec: `frontend.md`.
 
 ## The demo
 
-Three policies run the **identical simulator on identical demand scenarios**:
+Five policies run the **identical simulator on identical demand scenarios**
+(the ablation ladder — each rung adds one capability):
 
 | Policy | What it represents |
 |---|---|
-| Static baseline | Weekly rate card, binary accept/reject — the industry today |
-| Supervised NN | Dynamic pricing without sequential strategy |
-| Dock (RL) | Full system: bid prices, counter-offers, speed, repositioning |
+| `static` | Weekly rate card, binary accept/reject — the industry today |
+| `greedy` | Myopic market-rate accept |
+| `heuristic` | Dynamic pricing + counter-offers, no scarcity pricing |
+| `heuristic_bid` | Heuristic + bid-price opportunity cost |
+| `ppo` | Dock — learned sequential policy on top of all of it |
 
-Headline metrics: revenue/TEU, utilization %, reject→counter-offer conversions,
-empty container-miles, CO₂/TEU, profit retained under shock. Live **shock
-injection** (port closure mid-simulation) is the wow moment: the baseline sails
-into it; Dock reroutes, reprices, and issues reason-coded counter-offers in real
-time.
+Headline metrics: profit, revenue/TEU, utilization %, reject→counter-offer
+conversions, empty container-miles, CO₂/TEU, and profit retained under shock.
+A precomputed **shock replay** (port closure + demand spike mid-simulation,
+identical seed A/B) is the wow moment: the static policy sails into it; Dock
+reprices, reroutes, and issues reason-coded counter-offers.
 
-Graduated fallback: if RL doesn't converge in hackathon time, the demo runs on
-the supervised or rule-based policy — dynamic pricing beating static pricing is
-already the story.
+Latest holdout evaluation (`runs/ppo_c5/eval_results.json`, 5 episodes × 90
+days, holdout scenarios only):
+
+| Policy | depressed-demand | volatile-shocks |
+|---|---:|---:|
+| static | −$5.2M | $17.0M |
+| greedy | $6.5M | $22.0M |
+| heuristic | $9.0M | $23.2M |
+| heuristic_bid | $8.5M | $24.7M |
+| **ppo** | **$8.3M** | **$25.9M — best** |
 
 ## Data
 
 Models train on synthetic data generated by the simulator — diversified across
-≥5 demand distributions (seasonality, trade imbalance, Poisson shock events,
-elastic customer segments), with 20% of scenarios held out for evaluation. Real-
-world benchmarks (freight indices, port statistics) calibrate generator
-parameters where available; booking-level demand data with negotiation outcomes
-does not exist publicly, which is why the simulator is the load-bearing
+10 demand regimes (seasonality, trade imbalance, Poisson shock events, elastic
+customer segments), with 2 scenarios held out for evaluation (`depressed-demand`,
+`volatile-shocks` — **never trained on**). Real-world anchors (Drewry WCI, SCFI,
+VLSFO, EU ETS) calibrate generator parameters where available — see
+`backend/data/CALIBRATION.md`. Booking-level demand data with negotiation
+outcomes does not exist publicly, which is why the simulator is the load-bearing
 component.
 
 ## Impact
@@ -136,5 +208,8 @@ component.
 
 ## Status
 
-Hackathon build in progress. Feature tiers (P0 must-ship → P3 slides-only) and
-the full technical design live in [`plan.md`](plan.md).
+Backend complete: simulator, stowage constraints, bid-price engine, supervised
+models, full 5-phase PPO curriculum trained (~1.8M steps, `runs/ppo_c5`),
+holdout evaluation, and artifact export all landed — 83 tests green. Frontend
+build per `frontend.md` is the remaining piece (`src/` currently renders the
+stowage/ops screen on mock data by design).
