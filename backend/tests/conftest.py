@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 BACKEND = Path(__file__).resolve().parent.parent
@@ -16,11 +17,41 @@ from simulator.types import (BookingRequest, CargoType, Segment,  # noqa: E402
                              VoyageOption)
 
 
+class StubBoundForecaster:
+    """Bound-forecaster test double (NOT the real model): flat demand,
+    deterministic, and never touches the simulator's ground truth."""
+
+    def daily(self, r, lo, hi):
+        return 300.0
+
+    def next_week(self):
+        return np.full(18, 400.0)
+
+
+class StubForecaster:
+    """DemandForecaster test double: `bind` matches the real signature
+    (Simulator calls it with start_week/horizon_weeks/observed/now kwargs)."""
+
+    def bind(self, start_week, horizon_weeks, observed=None, now=None):
+        return StubBoundForecaster()
+
+
+def stub_forecaster() -> StubForecaster:
+    """Fresh stub for non-fixture call sites."""
+    return StubForecaster()
+
+
+@pytest.fixture
+def forecaster() -> StubForecaster:
+    return StubForecaster()
+
+
 @pytest.fixture
 def sim() -> Simulator:
-    """A reset 45-day simulator on the baseline scenario."""
+    """A reset 45-day simulator on the baseline scenario (stub forecaster
+    keeps attach_pricer working under the default "dynamic" pricing)."""
     s = Simulator(SimConfig(scenario="baseline", horizon_days=45, seed=3,
-                            start_week=10))
+                            start_week=10, forecaster=StubForecaster()))
     s.reset()
     return s
 

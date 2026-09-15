@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -57,6 +58,18 @@ DISRUPTION_WAIT = {"strike": (1.5, 9.0), "congestion": (1.5, 8.0)}
 
 SPEED_TIERS = (12.0, 14.0, 16.0, 18.0)
 
+# where the fitted demand forecaster lives unless SimConfig.forecaster_path
+# overrides it (written by `python -m models.train`)
+DEFAULT_FORECASTER_DIR = (Path(__file__).resolve().parent.parent
+                          / "models" / "artifacts" / "demand_forecaster")
+
+_FORECASTER_MISSING = (
+    "no fitted demand forecaster available — run "
+    "`.venv/bin/python -m models.train --data data/generated "
+    "--out models/artifacts` first, or pass SimConfig(forecaster=...) / "
+    "SimConfig(forecaster_path=...). The oracle demand path was removed; "
+    "there is no silent fallback to ground truth.")
+
 
 @dataclass
 class SimConfig:
@@ -68,11 +81,16 @@ class SimConfig:
     fleet_every: int = 3                 # days between fleet-action prompts
     fleet_actions: bool = True           # False -> booking-only curriculum
     vessel_ids: list[str] | None = None  # subset of fleet (curriculum)
+    forecaster: object | None = None     # fitted models.demand.DemandForecaster
+    forecaster_path: str | None = None   # artifact dir override (default:
+                                         # backend/models/artifacts/
+                                         # demand_forecaster)
 
 
 class Simulator:
     def __init__(self, config: SimConfig):
         self.config = config
+        self.forecaster = None   # bound forecaster, set in reset()
 
     # ------------------------------------------------------------------
     # Reset
@@ -130,10 +148,21 @@ class Simulator:
                                    self.start_week, horizon_weeks)
         self.horizon_weeks = horizon_weeks
 
+        # realized request intensity per route per arrival week, in lam
+        # units (request count x MEAN_TEU_PER_BOOKING — matching the units
+        # the DemandForecaster is trained on; see models/demand.py)
+        self.obs_teu = np.zeros((len(D.ROUTE_KEYS), horizon_weeks))
+        self.forecaster = self._resolve_forecaster()
+
         # bid-price engine (plan §2.5): opportunity-cost quotes + Φ for RL
-        # reward shaping. Lazily attachable via attach_pricer().
-        self.pricer = BidPriceEngine(self) if cfg.pricing == "bid_price" \
-            else None
+        # reward shaping. Lazily attachable via attach_pricer(). Requires
+        # the trained forecaster — no oracle fallback.
+        if cfg.pricing == "bid_price":
+            self.require_forecaster()
+            self.pricer = BidPriceEngine(
+                self, demand_fn=self.forecaster.daily)
+        else:
+            self.pricer = None
 
         # bookings awaiting loading, per vessel per call idx
         self.waiting: dict[str, dict[int, list[dict]]] = {
@@ -300,14 +329,67 @@ class Simulator:
                                    req.cargo_type)
 
     # ------------------------------------------------------------------
+    # Demand forecaster (replaces the oracle — plan §2.5, models/demand.py)
+    # ------------------------------------------------------------------
+
+    def _resolve_forecaster(self):
+        """Bind the fitted demand forecaster to this episode, or None.
+
+        Source order: an explicit ``config.forecaster`` instance, else the
+        artifact dir at ``config.forecaster_path`` (default
+        ``DEFAULT_FORECASTER_DIR``) when it exists."""
+        f = self.config.forecaster
+        if f is None:
+            path = Path(self.config.forecaster_path or DEFAULT_FORECASTER_DIR)
+            if not path.exists():
+                return None
+            from models.demand import DemandForecaster
+            f = DemandForecaster.load(path)
+        return f.bind(start_week=self.start_week,
+                      horizon_weeks=self.horizon_weeks,
+                      observed=self._observed_teu,
+                      now=lambda: self.day)
+
+    def _observed_teu(self, r: int, abs_w: int) -> float | None:
+        """Realized request intensity (lam units) on route r in absolute
+        week abs_w — the ``observed`` callback for BoundDemandForecaster.
+
+        Fully elapsed weeks report their final total. The week in progress
+        reports a provisional nowcast (arrivals so far scaled by
+        7/days-elapsed) once at least one day of it has elapsed — noisy, but
+        it lets the forecaster re-level to the episode's regime within days
+        instead of waiting for the first full week. Future weeks -> None."""
+        rel = abs_w - self.start_week
+        if rel < 0 or rel >= self.horizon_weeks:
+            return None
+        cur = int(self.day // 7)
+        if rel > cur:
+            return None
+        if rel == cur:
+            elapsed = self.day - 7.0 * rel
+            if elapsed < 1.0:
+                return None
+            return float(self.obs_teu[r, rel] * (7.0 / elapsed))
+        return float(self.obs_teu[r, rel])
+
+    def require_forecaster(self):
+        """The bound forecaster, or raise — demand-forecast consumers must
+        never silently degrade to ground truth."""
+        if self.forecaster is None:
+            raise RuntimeError(_FORECASTER_MISSING)
+        return self.forecaster
+
+    # ------------------------------------------------------------------
     # Pricing (replaced by the bid-price engine later — plan §2.5)
     # ------------------------------------------------------------------
 
     def attach_pricer(self) -> BidPriceEngine:
         """Ensure a bid-price engine exists (reward shaping under any
         pricing mode). Returns the engine."""
+        self.require_forecaster()
         if self.pricer is None:
-            self.pricer = BidPriceEngine(self)
+            self.pricer = BidPriceEngine(
+                self, demand_fn=self.forecaster.daily)
         return self.pricer
 
     def quote(self, req: BookingRequest, opt: VoyageOption) -> float:
@@ -339,6 +421,13 @@ class Simulator:
             if alt:
                 req.alt_dest = alt
                 req.alt_options = self._options_for(req, alt)
+            r = D.ROUTE_ID_OF.get(f"{req.origin}>{req.dest}")
+            if r is not None:
+                # count requests, not TEU: request count x
+                # MEAN_TEU_PER_BOOKING estimates lam directly (the TEU-bucket
+                # mixture carries ~1.75x lam, which would overstate demand)
+                self.obs_teu[r, self.demand.week_of(self.day)] \
+                    += C.MEAN_TEU_PER_BOOKING
             self.pending.append(req)
             self.metrics.n_requests += 1
             self.metrics.by_segment[req.segment.value]["requests"] += 1

@@ -10,18 +10,22 @@ import pytest
 from baselines import (DynamicHeuristicPolicy, GreedyPolicy,
                        StaticRateCardPolicy)
 from data import calibration as C
+from data import demand as D
+from pricing import BidPriceEngine
 from simulator import SimConfig, Simulator
 from simulator.types import (BookingDecision, BookingRequest, CargoType,
                              DecisionKind, FleetAction, Segment)
 
-from conftest import anchored_request, first_option, make_request
+from conftest import (anchored_request, first_option, make_request,
+                      stub_forecaster)
 
 
 def run_episode(policy, scenario="baseline", days=45, seed=3,
-                start_week=10) -> tuple[dict, Simulator]:
+                start_week=10, forecaster=None) -> tuple[dict, Simulator]:
     cfg = SimConfig(scenario=scenario, horizon_days=days, seed=seed,
                     start_week=start_week,
-                    pricing=getattr(policy, "pricing_mode", "dynamic"))
+                    pricing=getattr(policy, "pricing_mode", "dynamic"),
+                    forecaster=forecaster or stub_forecaster())
     sim = Simulator(cfg)
     return sim.run(policy), sim
 
@@ -178,7 +182,8 @@ class TestBidPriceProration:
 
     def _ratios_by_legcount(self):
         cfg = SimConfig(scenario="baseline", horizon_days=45, seed=3,
-                        start_week=10, pricing="bid_price")
+                        start_week=10, pricing="bid_price",
+                        forecaster=stub_forecaster())
         sim = Simulator(cfg)
         sim.reset()
         eng = sim.pricer
@@ -207,6 +212,60 @@ class TestBidPriceProration:
         # opportunity cost must not grow materially with leg count
         # (pre-proration medians were ~2.0 / ~3.0 for 2/3 legs)
         assert med3 <= med2 + 0.4
+
+
+class TestForecasterContract:
+    """The bid-price engine runs on the bound demand forecaster — never on
+    the simulator's ground-truth intensity (technical.md §3.1)."""
+
+    def test_bid_price_without_forecaster_raises(self):
+        cfg = SimConfig(pricing="bid_price", forecaster=None,
+                        forecaster_path="/nonexistent-dir",
+                        scenario="baseline", horizon_days=10, seed=1,
+                        start_week=10)
+        with pytest.raises(RuntimeError, match="DemandForecaster|forecaster"):
+            Simulator(cfg).reset()
+
+    def test_no_oracle_demand_path(self):
+        """The whole pricing surface must run without sim.demand.lam —
+        lam is DemandStream's own generative state, so deleting it scopes
+        this test to the pricing/obs consumers, not request sampling."""
+        sim = Simulator(SimConfig(
+            scenario="baseline", horizon_days=14, seed=3, start_week=10,
+            pricing="bid_price", forecaster=stub_forecaster()))
+        sim.reset()
+        eng = sim.pricer
+        assert eng is not None
+        assert not hasattr(eng, "_oracle_demand")
+        req = anchored_request(sim)
+        opt = first_option(sim, req)
+        assert opt is not None
+        del sim.demand.lam
+        eng.refresh()
+        assert eng.leg_bid(opt.vessel_id, opt.legs[0]) > 0
+        assert eng.option_bid(opt) > 0
+        assert eng.quote(req, opt).price > 0
+        assert eng.counter_discount(req, opt) is not None
+        assert eng.network_value() >= 0
+        assert eng.mean_pressure() >= 0
+        ex = eng.explain(req, opt)
+        assert ex["legs"] and ex["quote_per_teu"] > 0
+
+    def test_obs_teu_tracks_requests(self, sim):
+        """obs_teu accumulates realized request intensity per (route, week)
+        — request counts x MEAN_TEU_PER_BOOKING, the lam-unit observation
+        the forecaster is trained on."""
+        per_route = np.zeros(len(D.ROUTE_KEYS))
+        for _ in range(3):                  # days 0-2 all land in week 0
+            reqs = sim.begin_day()
+            for req in reqs:
+                r = D.ROUTE_ID_OF.get(f"{req.origin}>{req.dest}")
+                if r is not None:
+                    per_route[r] += C.MEAN_TEU_PER_BOOKING
+            np.testing.assert_array_equal(sim.obs_teu[:, 0], per_route)
+            assert sim.obs_teu[:, 1:].sum() == 0.0
+            assert sim.obs_teu.sum() == per_route.sum()
+            sim.end_day()
 
 
 class TestNegotiation:

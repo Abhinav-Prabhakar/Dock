@@ -1,0 +1,277 @@
+{
+  "policies": {
+    "static": {
+      "revenue_usd": {
+        "mean": 19390980.0,
+        "std": 11621744.2
+      },
+      "profit_usd": {
+        "mean": 7620590.5,
+        "std": 11282118.26
+      },
+      "revenue_per_teu": {
+        "mean": 1362.85,
+        "std": 79.85
+      },
+      "utilization": {
+        "mean": 0.38,
+        "std": 0.26
+      },
+      "empty_teu_nm": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "co2_per_teu": {
+        "mean": 7.64,
+        "std": 7.81
+      },
+      "fuel_tonnes": {
+        "mean": 16090.0,
+        "std": 314.0
+      },
+      "counter_win_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "reject_to_counter_conv": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "requests": {
+        "mean": 5406.25,
+        "std": 2693.91
+      },
+      "accepted": {
+        "mean": 1084.0,
+        "std": 691.47
+      },
+      "teu_booked": {
+        "mean": 14712.25,
+        "std": 9117.8
+      },
+      "segments": {
+        "flexible": {
+          "requests": 2166.0,
+          "booked": 239.5
+        },
+        "standard": {
+          "requests": 1621.2,
+          "booked": 241.0
+        },
+        "urgent": {
+          "requests": 1619.0,
+          "booked": 603.5
+        }
+      }
+    },
+    "greedy": {
+      "revenue_usd": {
+        "mean": 27656480.25,
+        "std": 7794336.97
+      },
+      "profit_usd": {
+        "mean": 15588062.25,
+        "std": 7683668.07
+      },
+      "revenue_per_teu": {
+        "mean": 1302.3,
+        "std": 201.03
+      },
+      "utilization": {
+        "mean": 0.6,
+        "std": 0.15
+      },
+      "empty_teu_nm": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "co2_per_teu": {
+        "mean": 2.51,
+        "std": 0.51
+      },
+      "fuel_tonnes": {
+        "mean": 16090.0,
+        "std": 314.0
+      },
+      "counter_win_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "reject_to_counter_conv": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "requests": {
+        "mean": 5406.25,
+        "std": 2693.91
+      },
+      "accepted": {
+        "mean": 1491.5,
+        "std": 288.21
+      },
+      "teu_booked": {
+        "mean": 20875.5,
+        "std": 3549.7
+      },
+      "segments": {
+        "flexible": {
+          "requests": 2166.0,
+          "booked": 374.2
+        },
+        "standard": {
+          "requests": 1621.2,
+          "booked": 427.5
+        },
+        "urgent": {
+          "requests": 1619.0,
+          "booked": 689.8
+        }
+      }
+    },
+    "heuristic": {
+      "revenue_usd": {
+        "mean": 26809209.0,
+        "std": 7291151.04
+      },
+      "profit_usd": {
+        "mean": 16403975.0,
+        "std": 7184594.05
+      },
+      "revenue_per_teu": {
+        "mean": 1300.07,
+        "std": 203.24
+      },
+      "utilization": {
+        "mean": 0.55,
+        "std": 0.16
+      },
+      "empty_teu_nm": {
+        "mean": 2542500.0,
+        "std": 1618667.51
+      },
+      "co2_per_teu": {
+        "mean": 2.17,
+        "std": 0.41
+      },
+      "fuel_tonnes": {
+        "mean": 13587.0,
+        "std": 307.0
+      },
+      "counter_win_rate": {
+        "mean": 0.31,
+        "std": 0.07
+      },
+      "reject_to_counter_conv": {
+        "mean": 0.01,
+        "std": 0.0
+      },
+      "requests": {
+        "mean": 5406.25,
+        "std": 2693.91
+      },
+      "accepted": {
+        "mean": 1455.25,
+        "std": 276.33
+      },
+      "teu_booked": {
+        "mean": 20288.75,
+        "std": 3095.75
+      },
+      "segments": {
+        "flexible": {
+          "requests": 2166.0,
+          "booked": 378.0
+        },
+        "standard": {
+          "requests": 1621.2,
+          "booked": 422.2
+        },
+        "urgent": {
+          "requests": 1619.0,
+          "booked": 673.8
+        }
+      }
+    },
+    "heuristic_bid": {
+      "revenue_usd": {
+        "mean": 27137928.75,
+        "std": 10023546.14
+      },
+      "profit_usd": {
+        "mean": 16719002.75,
+        "std": 9870443.16
+      },
+      "revenue_per_teu": {
+        "mean": 1367.17,
+        "std": 248.58
+      },
+      "utilization": {
+        "mean": 0.54,
+        "std": 0.17
+      },
+      "empty_teu_nm": {
+        "mean": 2608125.0,
+        "std": 1586705.92
+      },
+      "co2_per_teu": {
+        "mean": 2.38,
+        "std": 0.68
+      },
+      "fuel_tonnes": {
+        "mean": 13587.0,
+        "std": 307.0
+      },
+      "counter_win_rate": {
+        "mean": 0.27,
+        "std": 0.13
+      },
+      "reject_to_counter_conv": {
+        "mean": 0.01,
+        "std": 0.01
+      },
+      "requests": {
+        "mean": 5406.25,
+        "std": 2693.91
+      },
+      "accepted": {
+        "mean": 1338.0,
+        "std": 339.28
+      },
+      "teu_booked": {
+        "mean": 19178.75,
+        "std": 4374.9
+      },
+      "segments": {
+        "flexible": {
+          "requests": 2166.0,
+          "booked": 324.8
+        },
+        "standard": {
+          "requests": 1621.2,
+          "booked": 378.2
+        },
+        "urgent": {
+          "requests": 1619.0,
+          "booked": 687.5
+        }
+      }
+    }
+  },
+  "lift_vs_static": {
+    "greedy": {
+      "profit_usd_pct": 104.6,
+      "revenue_per_teu_pct": -4.4,
+      "utilization_pp": 22.0
+    },
+    "heuristic": {
+      "profit_usd_pct": 115.3,
+      "revenue_per_teu_pct": -4.6,
+      "utilization_pp": 17.0
+    },
+    "heuristic_bid": {
+      "profit_usd_pct": 119.4,
+      "revenue_per_teu_pct": 0.3,
+      "utilization_pp": 16.0
+    }
+  }
+}

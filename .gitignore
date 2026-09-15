@@ -45,3 +45,4 @@ backend/.venv/
 backend/data/generated/
 __pycache__/
 *.pyc
+backend/eval_results.json

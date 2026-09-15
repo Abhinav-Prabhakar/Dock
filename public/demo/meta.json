@@ -1,0 +1,19 @@
+{
+  "git_sha": "2d7485d",
+  "generated_at": "2026-09-15T14:10:16+00:00",
+  "seed": 42,
+  "episodes": 2,
+  "horizon_days": 60,
+  "scenarios": [
+    "depressed-demand",
+    "volatile-shocks"
+  ],
+  "policies_present": [
+    "static",
+    "greedy",
+    "heuristic",
+    "heuristic_bid"
+  ],
+  "demand_model": "models/artifacts/demand_forecaster",
+  "notes": "Artifact-driven demo export (technical.md \u00a74.1, Decision A). Identical simulator seeds across policies: ep_seed = seed*1000 + ep*101 (same scheme as rl/evaluate.py). shock.json replays a forced NLRTM closure + 2x demand spike mid-horizon (technical.md \u00a74.3). All numbers pre-rounded and pre-aggregated \u2014 the frontend must not recompute."
+}

@@ -78,14 +78,11 @@ class DynamicHeuristicPolicy(GreedyPolicy):
 
     def _engine(self, sim):
         """Bid-price engine if available (attach_pricer works under any
-        pricing mode); None -> fall back to the fixed discount tiers."""
+        pricing mode). A missing forecaster raises — no hidden
+        degradation; callers with a stubbed engine pass None to
+        _discount's fixed-tier path directly."""
         eng = getattr(sim, "pricer", None)
-        if eng is None:
-            try:
-                eng = sim.attach_pricer()
-            except Exception:
-                eng = None
-        return eng
+        return eng if eng is not None else sim.attach_pricer()
 
     def _discount(self, req, opt, eng, fallback: float,
                   ref=None) -> float:
