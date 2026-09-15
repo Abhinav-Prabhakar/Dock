@@ -59,7 +59,10 @@ class TestCapacity:
         assert v.leg_cap(0).teu == v.own_lift_teu - 100
         # both legs consumed
         assert v.leg_cap(1).teu == v.own_lift_teu - 100
-        assert not v.has_capacity(legs, v.own_lift_teu, 1e6, False)
+        # TEU exhaustion must be the binding constraint (weight stays tiny —
+        # a 1e6-tonne weight would fail even if consume() never deducted)
+        assert v.has_capacity(legs, v.own_lift_teu - 100, 1.0, False)
+        assert not v.has_capacity(legs, v.own_lift_teu, 1.0, False)
 
     def test_reefer_subcapacity(self):
         v = make_vessel()

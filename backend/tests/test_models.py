@@ -160,6 +160,46 @@ class TestDemandForecaster:
             fc2.predict_week(_hist_matrix(train), 15),
             fc.predict_week(_hist_matrix(train), 15))
 
+    def test_n_bookings_column_drives_lam_units(self):
+        """The production history path estimates demand intensity as
+        n_bookings x MEAN_TEU_PER_BOOKING (the direct lam estimator);
+        teu_demanded / TEU_OVERSAMPLE is only the fallback for frames
+        that lack the count column."""
+        df = _weekly_frame()
+        train = df[df["scenario_id"] == SCEN_TRAIN].reset_index(drop=True)
+        h_fallback = DemandForecaster._hist_of(train)[SCEN_TRAIN]
+        train2 = train.copy()
+        train2["n_bookings"] = train2["teu_demanded"] / \
+            (2.0 * C.MEAN_TEU_PER_BOOKING)
+        h_counts = DemandForecaster._hist_of(train2)[SCEN_TRAIN]
+        # counts path -> teu/2 ; fallback path -> teu/TEU_OVERSAMPLE
+        np.testing.assert_allclose(
+            h_counts, h_fallback * (demand_mod.TEU_OVERSAMPLE / 2.0),
+            equal_nan=True)
+
+    def test_bind_elapsed_weeks_use_observed_values(self):
+        """BoundDemandForecaster._sync: an elapsed week's observed
+        realization replaces the prediction and is then locked (never
+        re-queried); the week in progress is re-read every sync."""
+        fc, _, _ = self._fitted()
+        w0 = 10
+        calls: list[tuple[int, int]] = []
+
+        def observed(r, abs_w):
+            calls.append((r, abs_w))
+            return 9999.0 if abs_w == w0 else None
+
+        # episode clock at day 7 -> week w0 elapsed, w0+1 in progress
+        bound = fc.bind(start_week=w0, horizon_weeks=8,
+                        observed=observed, now=lambda: 7.0)
+        assert bound.daily(0, 0.0, 7.0) == pytest.approx(9999.0)
+        assert sum(1 for _, w in calls if w == w0) == N_ROUTES
+        bound.daily(0, 7.0, 14.0)                      # syncs again
+        # elapsed week stays locked; in-progress week was re-queried
+        assert sum(1 for _, w in calls if w == w0) == N_ROUTES
+        assert sum(1 for _, w in calls if w == w0 + 1) \
+            == 2 * N_ROUTES
+
 
 # ---------------------------------------------------------------------------
 # ElasticityModel / WTPModel — recover the generative parameters

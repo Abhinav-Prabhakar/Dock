@@ -50,9 +50,12 @@ class TestCLI:
         pd.testing.assert_frame_equal(w1, w2)
         b1 = pd.read_parquet(generated / "bookings.parquet")
         b2 = pd.read_parquet(out2 / "bookings.parquet")
-        assert len(b1) == len(b2)
-        assert b1["willingness_to_pay_per_teu"].sum() == \
-            pytest.approx(b2["willingness_to_pay_per_teu"].sum())
+        pd.testing.assert_frame_equal(b1, b2)
+        m1 = json.loads(
+            (generated / "scenarios" / "manifest.json").read_text())
+        m2 = json.loads((out2 / "scenarios" / "manifest.json").read_text())
+        assert m1["train_scenarios"] == m2["train_scenarios"]
+        assert m1["holdout_scenarios"] == m2["holdout_scenarios"]
 
 
 class TestSchema:
