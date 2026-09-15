@@ -70,7 +70,8 @@ class TestContract:
         for _ in range(500):
             if env._fleet_step:
                 mask = env.action_masks()
-                assert not mask[:12].any()          # booking actions masked
+                assert mask[0]                      # pass stays legal
+                assert not mask[1:12].any()         # booking actions masked
                 return
             mask = env.action_masks()
             env.step(int(np.random.choice(np.flatnonzero(mask))))

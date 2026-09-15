@@ -4,7 +4,12 @@
     .venv/bin/python -m rl.train --phase 1 --timesteps 200000 --n-envs 8
 
 Curriculum phases (§3.7): tiny -> small -> +shaping -> full -> stress.
+All phases train against the bid-price pricing engine (Dock = RL with
+bid-price control); phase >=3 adds potential-based reward shaping.
 Scenario pools always exclude the holdout scenarios.
+
+Warm-start: --init-from runs/ppo_phaseN_*/model.zip loads the previous
+phase's weights and continues training on the new phase's env.
 
 Requires: stable-baselines3, sb3-contrib (MaskablePPO), torch.
 """
@@ -26,11 +31,13 @@ RUNS = Path(__file__).resolve().parent.parent / "runs"
 
 # Curriculum (§3.7) — smaller worlds first, then full scale.
 PHASES = {
-    1: dict(horizon_days=14, vessel_ids=["VES4"], label="tiny"),
+    1: dict(horizon_days=14, vessel_ids=["VES4"], fleet_actions=False,
+            shaping=False, label="tiny"),
     2: dict(horizon_days=30, vessel_ids=["VES4", "VES3"], label="small"),
-    3: dict(horizon_days=30, vessel_ids=None, label="small+shaping"),
-    4: dict(horizon_days=90, vessel_ids=None, label="full"),
-    5: dict(horizon_days=90, vessel_ids=None, label="stress",
+    3: dict(horizon_days=30, vessel_ids=["VES4", "VES3"], shaping=True,
+            label="small+shaping"),
+    4: dict(horizon_days=90, vessel_ids=None, shaping=True, label="full"),
+    5: dict(horizon_days=90, vessel_ids=None, shaping=True, label="stress",
             extra_pool=["adversarial-canal-closure",
                         "adversarial-perfect-storm"]),
 }
@@ -48,6 +55,10 @@ def main() -> int:
     ap.add_argument("--n-envs", type=int, default=8)
     ap.add_argument("--device", type=str, default="auto")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--pricing", type=str, default="bid_price",
+                    choices=["bid_price", "dynamic"])
+    ap.add_argument("--init-from", type=str, default=None,
+                    help="model.zip to warm-start from (prior phase)")
     ap.add_argument("--run-name", type=str, default=None)
     args = ap.parse_args()
 
@@ -62,11 +73,13 @@ def main() -> int:
     ph = PHASES[args.phase]
     pool = train_pool(args.seed, ph.get("extra_pool"))
     cfg = SimConfig(horizon_days=ph["horizon_days"],
-                    vessel_ids=ph["vessel_ids"], pricing="dynamic")
+                    vessel_ids=ph["vessel_ids"], pricing=args.pricing,
+                    fleet_actions=ph.get("fleet_actions", True))
+    shaping = bool(ph.get("shaping", False))
 
     def masked(seed_i):
         def _init():
-            env = CargoFleetEnv(cfg, scenario_pool=pool)
+            env = CargoFleetEnv(cfg, scenario_pool=pool, shaping=shaping)
             return ActionMasker(env, lambda e: e.action_masks())
         return _init
 
@@ -76,17 +89,25 @@ def main() -> int:
     log_dir = RUNS / run_name
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    model = MaskablePPO(
-        "MlpPolicy", venv,
-        learning_rate=3e-4, n_steps=512, batch_size=256,
-        gamma=0.99, ent_coef=0.01, verbose=1,
-        policy_kwargs=dict(net_arch=[256, 256]),
-        tensorboard_log=str(log_dir), device=args.device, seed=args.seed)
+    kwargs = dict(learning_rate=3e-4, n_steps=512, batch_size=256,
+                  gamma=0.99, ent_coef=0.01, verbose=1,
+                  policy_kwargs=dict(net_arch=[256, 256]),
+                  tensorboard_log=str(log_dir), device=args.device,
+                  seed=args.seed)
+    if args.init_from:
+        # warm-start: policy/value weights carry over; env and
+        # hyperparameters are re-set for this phase
+        model = MaskablePPO.load(args.init_from, env=venv, **kwargs)
+        print(f"warm-start from {args.init_from}")
+    else:
+        model = MaskablePPO("MlpPolicy", venv, **kwargs)
 
     (log_dir / "config.json").write_text(json.dumps({
         "phase": args.phase, "timesteps": args.timesteps,
         "n_envs": args.n_envs, "seed": args.seed, "pool": pool,
         "horizon_days": cfg.horizon_days, "vessel_ids": cfg.vessel_ids,
+        "pricing": args.pricing, "shaping": shaping,
+        "init_from": args.init_from,
     }, indent=2))
 
     model.learn(total_timesteps=args.timesteps)

@@ -30,6 +30,7 @@ import numpy as np
 from data import calibration as C
 from data import demand as D
 from data import scenarios as SC
+from pricing import BidPriceEngine
 from .demand import DemandStream, servable_ods
 from .fleet import PORT, SEA, VesselSpec, VesselState
 from .metrics import MetricsTracker
@@ -43,6 +44,12 @@ ROLL_COMP_PER_TEU = 200.0         # compensation when a booking can't load
 PORT_CALL_FEE = 25000.0           # $/port call
 HANDLE_PER_TEU = 12.0             # $/TEU loaded+discharged
 DEMURRAGE_FREE_DAYS = 2.0
+# ~2.5 sd of DemandStream's N(0,1.2) sailing-anchor jitter: req_dep_day is a
+# jittered observation of a real sailing date, so the option search window
+# must be symmetric around it — a strict req_dep_day - flex_days lower bound
+# hides the very sailing the request was anchored to whenever the jitter is
+# positive and flex_days is 0.
+JITTER_TOL_D = 3.0
 # leg duration multipliers by disruption type
 DISRUPTION_LEG_MULT = {"storm": 1.35, "canal_closure": 1.40}
 # extra destination wait days by disruption type
@@ -57,8 +64,9 @@ class SimConfig:
     horizon_days: int = 90
     start_week: int | None = None        # random if None
     seed: int = 0
-    pricing: str = "dynamic"             # "dynamic" | "rate_card"
+    pricing: str = "dynamic"             # "dynamic" | "rate_card" | "bid_price"
     fleet_every: int = 3                 # days between fleet-action prompts
+    fleet_actions: bool = True           # False -> booking-only curriculum
     vessel_ids: list[str] | None = None  # subset of fleet (curriculum)
 
 
@@ -121,6 +129,11 @@ class Simulator:
         self.demand = DemandStream(rng_dem, self.cfg, servable, self.sailings,
                                    self.start_week, horizon_weeks)
         self.horizon_weeks = horizon_weeks
+
+        # bid-price engine (plan §2.5): opportunity-cost quotes + Φ for RL
+        # reward shaping. Lazily attachable via attach_pricer().
+        self.pricer = BidPriceEngine(self) if cfg.pricing == "bid_price" \
+            else None
 
         # bookings awaiting loading, per vessel per call idx
         self.waiting: dict[str, dict[int, list[dict]]] = {
@@ -224,6 +237,8 @@ class Simulator:
             for i, call in enumerate(v.calls):
                 for j in range(i + 1, min(i + len(v.loop), len(v.calls))):
                     key = (call.port, v.calls[j].port)
+                    if key[0] == key[1]:
+                        continue            # loop revisits a port: not an OD
                     if key in out:
                         out[key].append(call.planned_etd)
         return {k: np.sort(np.array(v)) for k, v in out.items() if v}
@@ -235,8 +250,9 @@ class Simulator:
     def _options_for(self, req: BookingRequest, dest: str,
                      day_hi_extra: float = 14.0) -> list[VoyageOption]:
         """All own-fleet carriage options origin->dest departing in
-        [req_dep - flex, req_dep + day_hi_extra]."""
-        lo = max(req.req_dep_day - req.flex_days, self.day)
+        [req_dep - max(flex, JITTER_TOL_D), req_dep + max(flex, day_hi_extra)]."""
+        tol = max(req.flex_days, JITTER_TOL_D)
+        lo = max(req.req_dep_day - tol, self.day)
         hi = req.req_dep_day + max(req.flex_days, day_hi_extra)
         out = []
         for v in self.vessels.values():
@@ -253,7 +269,7 @@ class Simulator:
                     discharge_day_est=dc.planned_etd,
                     legs=legs,
                     within_flex=abs(call.planned_etd - req.req_dep_day)
-                    <= max(req.flex_days, 1.0),
+                    <= tol,
                 )
                 opt.capacity_ok = v.has_capacity(
                     legs, req.teu, req.weight_t,
@@ -287,14 +303,24 @@ class Simulator:
     # Pricing (replaced by the bid-price engine later — plan §2.5)
     # ------------------------------------------------------------------
 
+    def attach_pricer(self) -> BidPriceEngine:
+        """Ensure a bid-price engine exists (reward shaping under any
+        pricing mode). Returns the engine."""
+        if self.pricer is None:
+            self.pricer = BidPriceEngine(self)
+        return self.pricer
+
     def quote(self, req: BookingRequest, opt: VoyageOption) -> float:
-        """Quoted $/TEU. dynamic = market x segment uplift x fill surge;
-        rate_card = flat calibrated route rate (the industry baseline)."""
+        """Quoted $/TEU. rate_card = flat calibrated route rate (industry
+        baseline); dynamic = market x segment uplift x fill surge;
+        bid_price = opportunity-cost floor + competitiveness guard (§2.5)."""
         if self.config.pricing == "rate_card":
             for (o, d, _b, rate, _l, _dir) in C.ROUTES:
                 if o == req.origin and d == req.dest:
                     return float(rate)
             return req.market_rate
+        if self.config.pricing == "bid_price":
+            return self.attach_pricer().quote(req, opt).price
         v = self.vessels[opt.vessel_id]
         fill = 1.0 - v.leg_cap(opt.legs[0]).teu / v.own_lift_teu
         surge = 1.0 + C.QUOTE_SURGE_COEF * np.clip(fill - 0.55, 0.0, 1.0)
@@ -450,6 +476,21 @@ class Simulator:
         if act.kind == "reposition" and act.teu > 0:
             return self._reposition(act)
         return {"ok": False}
+
+    def can_reposition(self, src: str, dst: str, teu: float) -> bool:
+        """Feasibility check mirroring _reposition: enough empties at src and
+        a capacity-clearing own voyage covering src->dst within 21 days."""
+        if self.empties.get(src, 0) < teu:
+            return False
+        for v in self.vessels.values():
+            for call in v.upcoming_calls(src, self.day, self.day + 21):
+                dc = v.next_call_at(call.idx, dst)
+                if dc is None:
+                    continue
+                legs = v.legs_between(call.idx, dc.idx)
+                if v.has_capacity(legs, teu, teu * 4.0, False):
+                    return True
+        return False
 
     def _reposition(self, act: FleetAction) -> dict:
         src, dst, teu = act.port_from, act.port_to, act.teu
@@ -620,7 +661,8 @@ class Simulator:
             for req in self.begin_day():
                 dec = policy.decide_booking(req, self)
                 self.apply_decision(req, dec)
-            if int(self.day) % self.config.fleet_every == 0:
+            if self.config.fleet_actions \
+                    and int(self.day) % self.config.fleet_every == 0:
                 for act in policy.decide_fleet(self):
                     self.apply_fleet_action(act)
             self.end_day()
