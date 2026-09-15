@@ -91,6 +91,23 @@ class Simulator:
     def __init__(self, config: SimConfig):
         self.config = config
         self.forecaster = None   # bound forecaster, set in reset()
+        # event bus: subscriber callables fn(event: dict). Lives on the
+        # instance (NOT cleared by reset()) so settlement-layer listeners
+        # survive across episodes.
+        self.events: list = []
+        # cargo currently aboard: vid -> dest_call_idx -> [booking dicts]
+        # (same shape as self.waiting; populated by reset() once the
+        # fleet exists)
+        self.aboard: dict[str, dict[int, list[dict]]] = {}
+
+    def emit(self, event_type: str, **payload) -> None:
+        """Publish an event to all subscribers. No-op when nobody is
+        listening, so the hot path stays free for uninstrumented runs."""
+        if not self.events:
+            return
+        event = {"type": event_type, "day": float(self.day), **payload}
+        for fn in self.events:
+            fn(event)
 
     # ------------------------------------------------------------------
     # Reset
@@ -167,6 +184,8 @@ class Simulator:
         # bookings awaiting loading, per vessel per call idx
         self.waiting: dict[str, dict[int, list[dict]]] = {
             vid: {} for vid in self.vessels}
+        # bookings currently aboard, per vessel per discharge call idx
+        self.aboard = {vid: {} for vid in self.vessels}
         # reposition manifests: repos_out[board_call] -> [(teu, discharge_call)]
         # is loaded at departure; repos_in[discharge_call] -> [teu] credits
         # the destination port's empty inventory on arrival.
@@ -452,7 +471,11 @@ class Simulator:
                         weight / max(teu, 1), req.cargo_type)
         self.waiting[opt.vessel_id].setdefault(opt.board_call, []).append({
             "teu": teu, "dest_call": opt.discharge_call,
+            "board_call": opt.board_call,
             "origin": req.origin, "dest": req.dest,
+            "request_id": req.request_id, "price": price,
+            "segment": req.segment.value, "req_dep_day": req.req_dep_day,
+            "flex_days": req.flex_days, "kind": kind,
         })
         self.metrics.revenue += price * teu
         self.metrics.teu_booked += teu
@@ -462,6 +485,17 @@ class Simulator:
             "teu": teu, "vessel": opt.vessel_id,
             "board_call": opt.board_call, "discharge_call": opt.discharge_call,
         })
+        # deal-level event for the settlement layer — carries the option's
+        # real schedule so contract terms can be written against it
+        self.emit("cargo.booked",
+                  request_id=req.request_id, kind=kind, price=price,
+                  teu=teu, origin=req.origin, dest=req.dest,
+                  segment=req.segment.value, cargo_type=req.cargo_type.value,
+                  req_dep_day=req.req_dep_day, flex_days=req.flex_days,
+                  vessel_id=opt.vessel_id, board_call=opt.board_call,
+                  discharge_call=opt.discharge_call,
+                  board_day=float(opt.board_day),
+                  discharge_day_est=float(opt.discharge_day_est))
 
     def apply_decision(self, req: BookingRequest,
                        dec: BookingDecision) -> dict:
@@ -470,6 +504,30 @@ class Simulator:
         res = self._apply_decision(req, dec)
         reason = res.get("reason") or res.get("kind") or res["outcome"]
         self.metrics.outcomes[f"{res['outcome']}:{reason}"] += 1
+        options = getattr(req, "options", None) or []
+        vessel_id = ""
+        if options:
+            vessel_id = options[min(dec.option_idx,
+                                  len(options) - 1)].vessel_id
+        self.emit("booking.decision",
+                  request_id=getattr(req, "request_id", None),
+                  decision=dec.kind.value,
+                  kind=res.get("kind") or dec.kind.value,
+                  outcome=res["outcome"],
+                  reason=res.get("reason") or "",
+                  price=res.get("price") or 0.0,
+                  quoted=res.get("quoted"),
+                  teu=getattr(req, "teu", 0),
+                  weight_t=round(getattr(req, "weight_t", 0.0), 1),
+                  origin=getattr(req, "origin", ""),
+                  dest=getattr(req, "dest", ""),
+                  segment=req.segment.value,
+                  cargo_type=req.cargo_type.value,
+                  market_rate=round(getattr(req, "market_rate", 0.0), 2),
+                  req_dep_day=req.req_dep_day,
+                  flex_days=req.flex_days,
+                  n_options=len(options),
+                  vessel_id=vessel_id)
         return res
 
     def _apply_decision(self, req: BookingRequest,
@@ -626,9 +684,10 @@ class Simulator:
     def _depart(self, v: VesselState, call_idx: int) -> None:
         call = v.calls[call_idx]
         nxt = v.calls[call_idx + 1]
+        vid = v.spec.vessel_id
         # load waiting cargo: consume empties or lease
         loaded = 0
-        for bk in self.waiting[v.spec.vessel_id].pop(call_idx, []):
+        for bk in self.waiting[vid].pop(call_idx, []):
             take = min(self.empties[call.port], bk["teu"])
             self.empties[call.port] -= take
             short = bk["teu"] - take
@@ -636,6 +695,13 @@ class Simulator:
                 self.metrics.leased_containers += short
                 self.metrics.lease_cost += LEASE_COST_PER_TEU * short
             loaded += bk["teu"]
+            self.aboard[vid].setdefault(bk["dest_call"], []).append(bk)
+            self.emit("departure.confirmed",
+                      request_id=bk["request_id"], vessel_id=vid,
+                      call_idx=call_idx, port=call.port,
+                      planned_etd=call.planned_etd,
+                      actual_day=float(self.day), teu=bk["teu"],
+                      dest_call=bk["dest_call"])
         v.onboard_teu += loaded
         # load repositioned empties committed for this call
         for teu, dc_idx in self.repos_out[v.spec.vessel_id].pop(call_idx, []):
@@ -689,6 +755,14 @@ class Simulator:
         for teu in self.repos_in[v.spec.vessel_id].pop(arr_idx, []):
             self.empties[port] += teu
             v.empty_aboard = max(0, v.empty_aboard - teu)
+        # bookings whose destination call this is are now delivered
+        for bk in self.aboard[v.spec.vessel_id].pop(arr_idx, []):
+            self.emit("delivery.confirmed",
+                      request_id=bk["request_id"],
+                      vessel_id=v.spec.vessel_id, port=port,
+                      board_call=bk["board_call"],
+                      actual_day=float(self.day), teu=bk["teu"],
+                      price=bk["price"])
 
         self.metrics.port_fees += PORT_CALL_FEE + HANDLE_PER_TEU * n_out
         v.mode = PORT
@@ -739,6 +813,26 @@ class Simulator:
         self.day += 1.0
         if self.day >= self.config.horizon_days:
             self.done = True
+        m = self.metrics
+        # cumulative profit, same definition as MetricsTracker.report()
+        cum_profit = (m.revenue - m.fuel_cost - m.carbon_cost
+                      - m.port_fees - m.demurrage_cost
+                      - m.reposition_cost - m.lease_cost
+                      - m.roll_compensation)
+        self.emit("day.summary", cum_revenue=round(m.revenue, 2),
+                  cum_profit=round(cum_profit, 2),
+                  teu_booked=round(m.teu_booked, 1),
+                  utilization=round(
+                      m.teu_nm_carried / max(m.capacity_nm, 1.0), 4),
+                  requests=m.n_requests, accepted=m.n_accepted,
+                  rejected=m.n_rejected, countered=m.n_countered,
+                  counter_won=m.n_counter_won,
+                  fuel_tonnes=round(m.fuel_tonnes, 1),
+                  co2_tonnes=round(m.co2_tonnes, 1),
+                  leased_containers=round(m.leased_containers, 1),
+                  repositioned_teu=round(m.repositioned_teu, 1),
+                  vessels_at_sea=sum(1 for v in self.vessels.values()
+                                     if v.mode == SEA))
 
     # ------------------------------------------------------------------
     # Convenience driver

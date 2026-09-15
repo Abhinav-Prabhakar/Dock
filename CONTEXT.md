@@ -12,11 +12,20 @@ regenerated with `ppo` included. **PPO is the top policy on holdout
 aggregate ($17.97M mean, +164% vs static) and wins volatile-shocks
 outright.** The GPU box has been shut down — everything needed is in git.
 
+**Live API + settlement layer landed** — `backend/server/` is a FastAPI
+server (`uvicorn server.app:app`) that runs episodes live and streams
+events over WebSocket; every event is hash-chained into
+`runs/ledger/<id>.jsonl`; conditional deals (flex/alt-hub/split counters)
+settle on a real in-process EVM (`settlement/` — py-evm + committed
+`DockSettlement.sol` artifact, real tx hashes). `api.md` is the full
+reference; `scripts/verify_ledger.py` verifies chains. `public/demo/*.json`
+still backs the 5-policy comparison (served via `GET /compare/*`).
+
 **Remaining:** the frontend build per `frontend.md` — two screens
 (Customers + Fleet), a persistent money HUD that opens the comparison
 dialog, decision log rail + disaster replay + credibility panel on Fleet.
-`src/` stays mock until that build starts; all data comes from
-`public/demo/*.json` (see `backend.md` for the contract).
+`src/` stays mock until that build starts; live surfaces read the API,
+comparison reads `/compare/*`.
 
 **Product direction (explicit):** RL is the decision engine — no classic-ML
 fallback anywhere. Missing artifacts raise `RuntimeError`, never degrade
@@ -29,7 +38,7 @@ they do not replace it.
 - `plan.md` — full product spec. Obey its P0 scope; no P1–P3 creep.
 - `README.md` — already rewritten for the hackathon pitch.
 - Frontend: Next.js 16 / React 19, currently a Dock Operations UI. `AGENTS.md` says: read `node_modules/next/dist/docs/` before touching Next code (breaking changes).
-- Backend: pure Python under `backend/` (no web API yet — modules are imported directly).
+- Backend: Python under `backend/` + a live FastAPI server (`backend/server/`, see `api.md`).
 
 ## Backend layout (all implemented, all tested)
 
@@ -79,18 +88,43 @@ backend/
   rl/
     train.py          # MaskablePPO + SubprocVecEnv; --phase 1..5 curriculum
     evaluate.py       # --model none|<path>; holdout-only, pinned seeds
+  ledger/
+    store.py          # hash-chained JSONL event ledger (real Keccak-256,
+                      #   pycryptodome); genesis meta line; Ledger.verify()
+  settlement/
+    DockSettlement.sol      # one contract, many deals: registerDeal/
+                            #   confirmDeparture/confirmDelivery/settle
+    artifacts/DockSettlement.json  # committed bytecode+ABI (py-solc-x build)
+    terms.py          # deal terms: window=board_day±2d, deadline=board+45,
+                      #   penalty 1000bps; deal_id = keccak(tag:rid:call)
+    chain.py          # web3 + eth-tester PyEVM adapter — real local EVM
+    processor.py      # sim-event -> on-chain lifecycle bridge
+  server/
+    app.py            # FastAPI app + CORS; uvicorn server.app:app
+    episodes.py       # EpisodeManager: thread-per-episode, pause/resume/
+                      #   speed, ledger+WS fanout, deals bookkeeping
+    routes.py         # REST surface (api.md)
+    ws.py             # WS /episodes/{id}/stream — replay + live fanout
   scripts/
     run_episode.py    # python -m scripts.run_episode --episodes 3 --horizon 90
     export_demo.py    # python -m scripts.export_demo --out ../public/demo
+    verify_ledger.py  # python -m scripts.verify_ledger <file.jsonl>
     run_curriculum.sh # full 5-phase PPO curriculum on the GPU box
-  tests/              # 83 pytest tests, all passing (~90s). pytest.ini at backend root
+  tests/              # ~130 pytest tests, all passing. pytest.ini at backend root
   runs/               # committed checkpoints ppo_c1..c5 + eval_results.json
-  requirements.txt    # numpy pandas pyarrow gymnasium pytest + sb3/sb3-contrib/torch
+                      #   + ledger/ per-episode event chains
+  requirements.txt    # sim + RL + fastapi/uvicorn/httpx + web3/eth-tester/
+                      #   py-evm/pycryptodome/py-solc-x
 ```
 
 ## Verified state
 
-- `cd backend && .venv/bin/python -m pytest` → **83 passed**
+- `cd backend && .venv/bin/python -m pytest` → **~130 passed** (incl. API,
+  ledger, settlement, sim-event suites)
+- Live API E2E: `uvicorn server.app:app` → `POST /episodes` (heuristic,
+  60d) → 22 deals registered on a real py-evm contract, 2 settled on-chain
+  with register/departure/delivery/settle tx hashes; `ledger/verify` →
+  hash chain intact; PPO episode (15d) streams 1,576 events end-to-end.
 - `python -m models.train` → elasticity {1.797, 1.106, 0.553} vs true
   {1.8, 1.1, 0.55}; WTP mults {1.000, 1.080, 1.380}; demand MAPE 0.58.
 - `rl.evaluate --model runs/ppo_c5/model.zip` (5×90d, holdout):
@@ -176,7 +210,8 @@ backend/
 ## What's NOT built yet
 
 - The frontend surfaces in `frontend.md` — `src/` still 100% mock data by
-  explicit instruction. `public/demo/` artifacts (incl. `ppo`) are ready.
+  explicit instruction. The API (`api.md`) + `public/demo/` artifacts are
+  ready to drive it.
 - Old `runs/ppo_phase1_*` checkpoint was trained on oracle obs — stale,
   kept for history only; `ppo_c5` is the real artifact.
 

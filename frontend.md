@@ -1,10 +1,13 @@
 # Dock frontend — layout & data contract
 
-Two screens plus one piece of persistent chrome. Everything renders from
-`public/demo/*.json` (see `backend.md` for the full schemas) — no live API,
-no mock shapes from `src/lib/data.ts`, all numbers pre-aggregated and
-pre-rounded. `src/app/page.tsx` stays as-is; this doc describes where each
-backend surface lands in the UI.
+Two screens plus one piece of persistent chrome. **Data sources**: the
+live backend API (`api.md`) drives everything real-time — episodes stream
+over `WS /episodes/{id}/stream`, snapshots/deals/ledger via REST; the
+precomputed 5-policy comparison still comes from `public/demo/*.json`,
+served through `GET /compare/*` (see `backend.md` for the artifact
+schemas). No mock shapes from `src/lib/data.ts`; all comparison numbers
+are pre-aggregated and pre-rounded. `src/app/page.tsx` stays as-is; this
+doc describes where each backend surface lands in the UI.
 
 ## App shell
 
