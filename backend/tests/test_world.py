@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -205,6 +207,77 @@ class TestBidPriceProration:
         # opportunity cost must not grow materially with leg count
         # (pre-proration medians were ~2.0 / ~3.0 for 2/3 legs)
         assert med3 <= med2 + 0.4
+
+
+class TestNegotiation:
+    """DynamicHeuristicPolicy's counter-offer layer (technical.md §1.3):
+    proactive bid-justified discounts on accept, blocker-ordered counters
+    on reject — SPLIT only ever last."""
+
+    def _out_of_flex_reject(self, sim) -> BookingRequest:
+        """A request greedy must reject (in-flex option 'full') while a
+        feasible out-of-flex option and a second option exist — the case
+        where the old code led with SPLIT."""
+        for (o, d), deps in sim.sailings.items():
+            for dep in deps:
+                for shift in (0.0, 2.0, 4.0, 6.0, 8.0, 10.0):
+                    req = make_request(origin=o, dest=d,
+                                       dep_day=float(dep) + shift, flex=0)
+                    opts = sim._options_for(req, d)
+                    inflex = [op for op in opts if op.within_flex]
+                    oof = [op for op in opts
+                           if not op.within_flex and sim.feasible(req, op)]
+                    if len(opts) >= 2 and inflex and oof:
+                        for op in inflex:
+                            op.capacity_ok = False      # sailed full
+                        req.options = opts
+                        return req
+        pytest.fail("no OD produced the reject-counter case")
+
+    def test_reject_counter_is_flex_not_split(self, sim):
+        req = self._out_of_flex_reject(sim)
+        dec = DynamicHeuristicPolicy().decide_booking(req, sim)
+        assert dec.kind is DecisionKind.FLEX_WINDOW
+        assert not req.options[dec.option_idx].within_flex
+        assert dec.discount_pct > 0
+
+    def test_reject_counter_works_without_engine(self, sim):
+        # engine unavailable -> fixed discount tier, still never SPLIT first
+        req = self._out_of_flex_reject(sim)
+        pol = DynamicHeuristicPolicy()
+        pol._engine = lambda s: None
+        dec = pol.decide_booking(req, sim)
+        assert dec.kind is DecisionKind.FLEX_WINDOW
+        assert dec.discount_pct == pol.flex_discount
+
+    def test_proactive_counter_fires_on_ev_gain(self, sim):
+        # Full-price quote deep in the WTP tail + a materially cheaper-bid
+        # alternative -> offer the discounted counter instead of ACCEPT.
+        req = anchored_request(sim, origin="NLRTM", dest="SGSIN",
+                               segment=Segment.FLEXIBLE, market=1000.0)
+        req.options = sim._options_for(req, req.dest)
+        assert len(req.options) >= 2
+        sim.quote = lambda r, o: 1400.0 if o is req.options[0] else 1350.0
+        eng = SimpleNamespace(
+            counter_discount=lambda r, a, ref=None: (0.25, "stub"))
+        dec = DynamicHeuristicPolicy()._maybe_counter(
+            req, sim, BookingDecision(DecisionKind.ACCEPT, option_idx=0), eng)
+        assert dec.kind is DecisionKind.FLEX_WINDOW
+        assert dec.option_idx != 0
+        assert dec.discount_pct == 0.25
+
+    def test_proactive_counter_keeps_safe_accept(self, sim):
+        # Same cheaper-bid alternative, but the quote is at market: the
+        # accept is near-certain, so wagering it on counter_prob is -EV.
+        req = anchored_request(sim, origin="NLRTM", dest="SGSIN",
+                               segment=Segment.FLEXIBLE, market=1000.0)
+        req.options = sim._options_for(req, req.dest)
+        sim.quote = lambda r, o: 1000.0
+        eng = SimpleNamespace(
+            counter_discount=lambda r, a, ref=None: (0.25, "stub"))
+        accept = BookingDecision(DecisionKind.ACCEPT, option_idx=0)
+        dec = DynamicHeuristicPolicy()._maybe_counter(req, sim, accept, eng)
+        assert dec is accept
 
 
 class TestFleetActions:

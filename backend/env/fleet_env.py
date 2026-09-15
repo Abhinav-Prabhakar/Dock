@@ -101,10 +101,20 @@ class CargoFleetEnv(gym.Env if gym else object):
         super().reset(seed=seed)
         if seed is not None:
             self._rng = np.random.default_rng(seed)
-        scen = self.scenario_pool[
-            self._rng.integers(0, len(self.scenario_pool))]
+        options = options or {}
+        # options={"sim_seed": int, "scenario": str} pins the simulator
+        # exactly (evaluation); absent either key the randomized training
+        # path is unchanged.
+        if "scenario" in options:
+            scen = options["scenario"]
+        else:
+            scen = self.scenario_pool[
+                self._rng.integers(0, len(self.scenario_pool))]
         self.sim.config.scenario = scen
-        self.sim.config.seed = int(self._rng.integers(0, 1 << 31))
+        if "sim_seed" in options:
+            self.sim.config.seed = int(options["sim_seed"])
+        else:
+            self.sim.config.seed = int(self._rng.integers(0, 1 << 31))
         self.sim.reset()
         if self.shaping:
             self.sim.attach_pricer()
