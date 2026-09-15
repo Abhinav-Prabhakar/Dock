@@ -1,4 +1,4 @@
-import { Grid2X2Plus, Maximize2, SlidersVertical } from "lucide-react";
+import { Grid2x2Plus, Maximize2, SlidersVertical } from "lucide-react";
 import { sidebarContainers, type SidebarContainer } from "@/lib/data";
 import { AiChat } from "@/components/chat/AiChat";
 import { SparkleButton } from "@/components/chat/SparkleButton";
