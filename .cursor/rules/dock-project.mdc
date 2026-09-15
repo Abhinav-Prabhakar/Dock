@@ -1,0 +1,15 @@
+---
+description: Dock project context and assistant working rules
+alwaysApply: true
+---
+
+# Dock Project Rules
+
+- Read `plan.md` first for product scope. It is the source of truth for claims, features, and hackathon priorities.
+- Read `technical.md` before implementation. It is the coding-agent build directive and wins over `plan.md` only for current scope ordering.
+- Read `CONTEXT.md` for live handoff state, known gotchas, current verification, and remote training notes.
+- Keep `AGENTS.md` and `CLAUDE.md` aligned with these rules. `CLAUDE.md` intentionally forwards to `AGENTS.md`.
+- Frontend is Next.js 16 / React 19 / Tailwind 4. Before editing Next.js code, read the relevant guide in `node_modules/next/dist/docs/` because this project uses breaking Next.js APIs.
+- Backend is pure Python under `backend/`; there is no HTTP API. The demo flow is static JSON from `backend/scripts/export_demo.py` into `public/demo/`.
+- The current critical product gap is the artifact-driven `/compare` route in `technical.md` section 4.2. Existing `src/app/page.tsx` is a mock operations UI unless the user asks to change it.
+- Preserve the product rule that RL is the decision engine and missing model artifacts should fail loudly rather than silently falling back to classic ML.

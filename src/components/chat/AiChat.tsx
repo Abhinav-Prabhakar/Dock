@@ -517,21 +517,26 @@ export function AiChat() {
   const lastError = [...messages].reverse().find((m) => m.status === "error");
 
   return (
-    <div className="mt-auto flex min-h-0 flex-col gap-3">
-      {/* messages card */}
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {/* Cargo Optimizer — messages card */}
       <div className="panel-flat flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px]">
-        <div className="flex items-center justify-between px-4 pt-3.5">
-          <div className="flex items-center gap-3.5 text-[10px] text-low">
+        <div className="px-4 pt-3.5">
+          <h2 className="font-display text-[14px] font-medium text-hi">
+            Cargo Optimizer
+          </h2>
+          <div className="mt-2.5 flex items-center gap-3.5 text-[10px] text-low">
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-pending" /> Pending
+              <Box size={11} className="text-pending" strokeWidth={1.75} />{" "}
+              Pending
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-reserved" /> Reserved
+              <Box size={11} className="text-reserved" strokeWidth={1.75} />{" "}
+              Reserved
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Box size={11} className="text-loaded" strokeWidth={1.75} /> Loaded
             </span>
           </div>
-          <span className="flex items-center gap-1.5 text-[10px] text-mid">
-            <Box size={11} className="text-loaded" strokeWidth={1.75} /> Loaded
-          </span>
         </div>
         <div
           ref={scrollRef}
@@ -564,14 +569,9 @@ export function AiChat() {
         </div>
       )}
 
-      {/* composer */}
-      <div className="relative">
+      {/* composer — pinned at bottom of the flex column */}
+      <div className="relative mt-auto shrink-0">
         <div className="relative overflow-hidden rounded-[22px] border hairline bg-panel-2/80">
-          {/* soft colour bloom at the bottom of the card */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(95%_85%_at_12%_115%,rgba(224,86,107,0.16),transparent_55%),radial-gradient(95%_85%_at_90%_118%,rgba(90,112,240,0.18),transparent_55%)]"
-          />
           {attachContext && (
             <div className="relative flex items-center gap-1.5 px-3.5 pt-3">
               <span className="flex items-center gap-1.5 rounded-full bg-accent/25 px-2.5 py-1 text-[10px] text-hi">
@@ -666,14 +666,14 @@ export function AiChat() {
               )}
             </div>
           </div>
-          {/* spectrum edge — sharp core over a soft glow */}
+          {/* spectrum edge — sky blue → red → yellow → green, soft upward glow */}
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-1 bottom-0 h-[3px] rounded-full bg-[linear-gradient(90deg,#3fd8c8_0%,#e0566b_24%,#f0a04b_48%,#8fd16a_72%,#5b8cff_100%)] opacity-70 blur-[2.5px]"
+            className="pointer-events-none absolute inset-x-4 bottom-0 h-3 rounded-full bg-[linear-gradient(90deg,#5b8cff_0%,#e0566b_33%,#f0a04b_66%,#8fd16a_100%)] opacity-35 blur-[6px]"
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-1 bottom-0 h-[1.5px] rounded-full bg-[linear-gradient(90deg,#3fd8c8_0%,#e0566b_24%,#f0a04b_48%,#8fd16a_72%,#5b8cff_100%)]"
+            className="pointer-events-none absolute inset-x-3 bottom-0 h-[1.5px] rounded-full bg-[linear-gradient(90deg,#5b8cff_0%,#e0566b_33%,#f0a04b_66%,#8fd16a_100%)]"
           />
         </div>
 
