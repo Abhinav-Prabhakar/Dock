@@ -1,0 +1,20 @@
+{
+  "phase": 1,
+  "timesteps": 12000,
+  "n_envs": 4,
+  "seed": 42,
+  "pool": [
+    "adversarial-canal-closure",
+    "adversarial-perfect-storm",
+    "baseline",
+    "boom-market",
+    "high-imbalance",
+    "port-strike-season",
+    "seasonal-peak",
+    "steady-growth"
+  ],
+  "horizon_days": 14,
+  "vessel_ids": [
+    "VES4"
+  ]
+}

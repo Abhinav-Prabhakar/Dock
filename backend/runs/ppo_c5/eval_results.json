@@ -1,0 +1,514 @@
+{
+  "episodes": 5,
+  "horizon": 90,
+  "scenarios": [
+    "depressed-demand",
+    "volatile-shocks"
+  ],
+  "results": {
+    "depressed-demand": {
+      "ppo": {
+        "profit_usd": {
+          "mean": 8344086.2,
+          "std": 2320190.35
+        },
+        "revenue_usd": {
+          "mean": 24620506.8,
+          "std": 2478124.26
+        },
+        "revenue_per_teu": {
+          "mean": 1046.74,
+          "std": 43.35
+        },
+        "utilization": {
+          "mean": 0.5,
+          "std": 0.07
+        },
+        "requests": {
+          "mean": 5569.0,
+          "std": 1306.72
+        },
+        "accepted": {
+          "mean": 1503.0,
+          "std": 151.94
+        },
+        "counter_win_rate": {
+          "mean": 0.23,
+          "std": 0.04
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.01,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "co2_per_teu": {
+          "mean": 2.93,
+          "std": 0.26
+        },
+        "fuel_tonnes": {
+          "mean": 21672.4,
+          "std": 611.61
+        },
+        "leased_containers": {
+          "mean": 5201.8,
+          "std": 308.53
+        }
+      },
+      "static": {
+        "profit_usd": {
+          "mean": -5195934.6,
+          "std": 2522657.76
+        },
+        "revenue_usd": {
+          "mean": 12837974.0,
+          "std": 2597313.1
+        },
+        "revenue_per_teu": {
+          "mean": 1394.72,
+          "std": 77.3
+        },
+        "utilization": {
+          "mean": 0.2,
+          "std": 0.07
+        },
+        "requests": {
+          "mean": 5569.0,
+          "std": 1306.72
+        },
+        "accepted": {
+          "mean": 635.4,
+          "std": 178.98
+        },
+        "counter_win_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "co2_per_teu": {
+          "mean": 9.08,
+          "std": 2.41
+        },
+        "fuel_tonnes": {
+          "mean": 25128.0,
+          "std": 526.1
+        },
+        "leased_containers": {
+          "mean": 2865.0,
+          "std": 959.84
+        }
+      },
+      "greedy": {
+        "profit_usd": {
+          "mean": 6505814.0,
+          "std": 1991771.41
+        },
+        "revenue_usd": {
+          "mean": 25082372.2,
+          "std": 2412770.56
+        },
+        "revenue_per_teu": {
+          "mean": 1015.98,
+          "std": 30.88
+        },
+        "utilization": {
+          "mean": 0.55,
+          "std": 0.08
+        },
+        "requests": {
+          "mean": 5569.0,
+          "std": 1306.72
+        },
+        "accepted": {
+          "mean": 1693.8,
+          "std": 111.74
+        },
+        "counter_win_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "co2_per_teu": {
+          "mean": 3.23,
+          "std": 0.27
+        },
+        "fuel_tonnes": {
+          "mean": 25128.0,
+          "std": 526.1
+        },
+        "leased_containers": {
+          "mean": 5477.6,
+          "std": 277.08
+        }
+      },
+      "heuristic": {
+        "profit_usd": {
+          "mean": 8994132.0,
+          "std": 1993554.22
+        },
+        "revenue_usd": {
+          "mean": 24835222.0,
+          "std": 2342416.66
+        },
+        "revenue_per_teu": {
+          "mean": 1028.18,
+          "std": 34.96
+        },
+        "utilization": {
+          "mean": 0.53,
+          "std": 0.09
+        },
+        "requests": {
+          "mean": 5569.0,
+          "std": 1306.72
+        },
+        "accepted": {
+          "mean": 1641.2,
+          "std": 98.6
+        },
+        "counter_win_rate": {
+          "mean": 0.31,
+          "std": 0.02
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.01,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 7469850.0,
+          "std": 1870079.69
+        },
+        "co2_per_teu": {
+          "mean": 2.77,
+          "std": 0.22
+        },
+        "fuel_tonnes": {
+          "mean": 21069.8,
+          "std": 442.36
+        },
+        "leased_containers": {
+          "mean": 5203.2,
+          "std": 342.41
+        }
+      },
+      "heuristic_bid": {
+        "profit_usd": {
+          "mean": 8511215.2,
+          "std": 2103745.58
+        },
+        "revenue_usd": {
+          "mean": 24373396.4,
+          "std": 2278316.48
+        },
+        "revenue_per_teu": {
+          "mean": 1083.46,
+          "std": 45.09
+        },
+        "utilization": {
+          "mean": 0.5,
+          "std": 0.08
+        },
+        "requests": {
+          "mean": 5569.0,
+          "std": 1306.72
+        },
+        "accepted": {
+          "mean": 1446.2,
+          "std": 121.48
+        },
+        "counter_win_rate": {
+          "mean": 0.23,
+          "std": 0.06
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.01,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 8409750.0,
+          "std": 1701445.58
+        },
+        "co2_per_teu": {
+          "mean": 2.97,
+          "std": 0.25
+        },
+        "fuel_tonnes": {
+          "mean": 21069.8,
+          "std": 442.36
+        },
+        "leased_containers": {
+          "mean": 5379.2,
+          "std": 339.74
+        }
+      }
+    },
+    "volatile-shocks": {
+      "ppo": {
+        "profit_usd": {
+          "mean": 25916754.6,
+          "std": 4302666.9
+        },
+        "revenue_usd": {
+          "mean": 42276946.6,
+          "std": 3966098.41
+        },
+        "revenue_per_teu": {
+          "mean": 1483.16,
+          "std": 77.31
+        },
+        "utilization": {
+          "mean": 0.63,
+          "std": 0.04
+        },
+        "requests": {
+          "mean": 10012.8,
+          "std": 2739.6
+        },
+        "accepted": {
+          "mean": 1956.8,
+          "std": 156.36
+        },
+        "counter_win_rate": {
+          "mean": 0.18,
+          "std": 0.05
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "co2_per_teu": {
+          "mean": 2.41,
+          "std": 0.2
+        },
+        "fuel_tonnes": {
+          "mean": 21652.2,
+          "std": 528.85
+        },
+        "leased_containers": {
+          "mean": 5489.8,
+          "std": 862.62
+        }
+      },
+      "static": {
+        "profit_usd": {
+          "mean": 17043309.0,
+          "std": 3624298.07
+        },
+        "revenue_usd": {
+          "mean": 35718944.0,
+          "std": 3031898.15
+        },
+        "revenue_per_teu": {
+          "mean": 1261.56,
+          "std": 32.99
+        },
+        "utilization": {
+          "mean": 0.64,
+          "std": 0.06
+        },
+        "requests": {
+          "mean": 10012.8,
+          "std": 2739.6
+        },
+        "accepted": {
+          "mean": 2112.0,
+          "std": 238.24
+        },
+        "counter_win_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "co2_per_teu": {
+          "mean": 2.82,
+          "std": 0.26
+        },
+        "fuel_tonnes": {
+          "mean": 25136.0,
+          "std": 524.37
+        },
+        "leased_containers": {
+          "mean": 5776.0,
+          "std": 1150.37
+        }
+      },
+      "greedy": {
+        "profit_usd": {
+          "mean": 21969746.6,
+          "std": 3942225.8
+        },
+        "revenue_usd": {
+          "mean": 40652137.8,
+          "std": 3371039.8
+        },
+        "revenue_per_teu": {
+          "mean": 1380.28,
+          "std": 52.87
+        },
+        "utilization": {
+          "mean": 0.67,
+          "std": 0.04
+        },
+        "requests": {
+          "mean": 10012.8,
+          "std": 2739.6
+        },
+        "accepted": {
+          "mean": 2123.2,
+          "std": 152.34
+        },
+        "counter_win_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "co2_per_teu": {
+          "mean": 2.7,
+          "std": 0.22
+        },
+        "fuel_tonnes": {
+          "mean": 25136.0,
+          "std": 524.37
+        },
+        "leased_containers": {
+          "mean": 5656.8,
+          "std": 916.38
+        }
+      },
+      "heuristic": {
+        "profit_usd": {
+          "mean": 23221913.2,
+          "std": 3044104.19
+        },
+        "revenue_usd": {
+          "mean": 39125151.6,
+          "std": 2718018.01
+        },
+        "revenue_per_teu": {
+          "mean": 1409.86,
+          "std": 46.41
+        },
+        "utilization": {
+          "mean": 0.64,
+          "std": 0.04
+        },
+        "requests": {
+          "mean": 10012.8,
+          "std": 2739.6
+        },
+        "accepted": {
+          "mean": 2018.0,
+          "std": 154.1
+        },
+        "counter_win_rate": {
+          "mean": 0.3,
+          "std": 0.04
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 6228900.0,
+          "std": 1382262.04
+        },
+        "co2_per_teu": {
+          "mean": 2.4,
+          "std": 0.17
+        },
+        "fuel_tonnes": {
+          "mean": 21093.2,
+          "std": 470.33
+        },
+        "leased_containers": {
+          "mean": 5441.6,
+          "std": 850.51
+        }
+      },
+      "heuristic_bid": {
+        "profit_usd": {
+          "mean": 24693451.0,
+          "std": 3763675.6
+        },
+        "revenue_usd": {
+          "mean": 40581499.8,
+          "std": 3400335.19
+        },
+        "revenue_per_teu": {
+          "mean": 1514.88,
+          "std": 85.5
+        },
+        "utilization": {
+          "mean": 0.61,
+          "std": 0.04
+        },
+        "requests": {
+          "mean": 10012.8,
+          "std": 2739.6
+        },
+        "accepted": {
+          "mean": 1827.8,
+          "std": 89.81
+        },
+        "counter_win_rate": {
+          "mean": 0.17,
+          "std": 0.04
+        },
+        "reject_to_counter_conv": {
+          "mean": 0.01,
+          "std": 0.0
+        },
+        "empty_teu_nm": {
+          "mean": 7352400.0,
+          "std": 1386307.63
+        },
+        "co2_per_teu": {
+          "mean": 2.49,
+          "std": 0.15
+        },
+        "fuel_tonnes": {
+          "mean": 21093.2,
+          "std": 470.33
+        },
+        "leased_containers": {
+          "mean": 5308.2,
+          "std": 720.27
+        }
+      }
+    }
+  }
+}
