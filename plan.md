@@ -658,14 +658,16 @@ gantt
 | Decision | Options | Default if Not Decided |
 |:---|:---|:---|
 | **Episode horizon for initial RL training** | Single voyage (~14 days) vs. full month | Start with single voyage (Phase 1), extend in curriculum |
-| **Discount/split tier granularity** | 3 tiers vs. 5 tiers per action type | 4 tiers ({5%, 10%, 15%, 20%}) — small enough to train, rich enough to demo |
+| **Discount/split tier granularity** | 3 tiers vs. 5 tiers per action type | Per action type (Section 3.3): flex-window {5%, 10%, 15%, 20%}, alt-hub {5%, 10%, 15%}, split {50/50, 60/40, 70/30} — small enough to train, rich enough to demo |
 | **Network size for demo** | 4 ports vs. 8 ports | 6 ports on 2 major trade lanes (Asia↔Europe, Asia↔North America) |
 | **Number of vessels** | 3 vs. 5 | 4 vessels (heterogeneous capacity) |
 | **Bid-price engine** | Heuristic vs. proper LP | Heuristic first; LP if time permits |
 | **Spot auction + forward contracts in demo** | Core feature vs. slides-only | P2 — slides-only unless P0/P1 are done early |
-| **Frontend framework** | Streamlit vs. React dashboard | Streamlit (faster to build for hackathon) |
+| **Frontend framework** | Streamlit vs. React dashboard | **Decided: Next.js (React) dashboard** — already scaffolded in `src/` |
 | **RL algorithm** | PPO vs. DQN | PPO (more stable for this problem based on literature) |
 
 ---
 
-> **Last updated:** v2.0 — Rebuilt with corrected feasibility, grounded impact numbers, realistic hackathon scope tiers, curriculum-based RL training strategy, and graduated fallback plan.
+> **Last updated:** v2.1 — Locked frontend decision (Next.js dashboard in `src/`); aligned §10 tier-granularity default with §3.3's per-action-type tiers.
+>
+> v2.0 — Rebuilt with corrected feasibility, grounded impact numbers, realistic hackathon scope tiers, curriculum-based RL training strategy, and graduated fallback plan.
