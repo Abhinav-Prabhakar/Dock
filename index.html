@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Shop Floor — Draft</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: "Georgia", "Times New Roman", serif;
+    background: #0b0906;
+  }
+
+  /* ============================= ROOM ============================= */
+
+  .room {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background:
+      /* plank seams */
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,.28) 0 2px,
+        transparent 2px 96px),
+      /* plank tone variation */
+      repeating-linear-gradient(90deg,
+        #6b4a2e 0 48px,
+        #755233 48px 96px),
+      #6b4a2e;
+  }
+
+  /* soft wood grain streaks */
+  .room::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(3deg,
+        rgba(0,0,0,.06) 0 6px,
+        transparent 6px 34px),
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255,220,150,.10), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* vignette — makes the room feel lit by lamps */
+  .room::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 75% 65% at 50% 40%,
+      transparent 40%, rgba(0,0,0,.45) 100%);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* ============================= WALL ============================= */
+
+  .wall {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 44px;
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,.25) 0 3px,
+        transparent 3px 64px),
+      linear-gradient(#3a2a1c, #4a3523);
+    border-bottom: 4px solid #241a10;
+    box-shadow: 0 10px 24px rgba(0,0,0,.5);
+    z-index: 4;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8%;
+  }
+
+  .painting {
+    width: 54px; height: 30px;
+    border: 3px solid #8a6a35;
+    border-radius: 3px;
+    box-shadow: 0 3px 8px rgba(0,0,0,.5), inset 0 0 0 2px #2a1c10;
+  }
+  .painting.p1 { background: linear-gradient(140deg,#c96a3b 20%,#e8b04b 50%,#7a3b2a 80%); }
+  .painting.p2 { background: linear-gradient(160deg,#3b6a8a 30%,#8ac4d4 55%,#2a4a5a 90%); }
+  .painting.p3 { background: linear-gradient(120deg,#5a7a3b 25%,#a8c46a 55%,#3a5a2a 85%); }
+
+  .shelf {
+    width: 90px; height: 8px;
+    background: linear-gradient(#7a5a38, #4a3523);
+    border-radius: 2px;
+    position: relative;
+    box-shadow: 0 3px 6px rgba(0,0,0,.4);
+  }
+  .shelf::before {
+    content: "";
+    position: absolute; bottom: 8px; left: 8px; right: 8px; height: 12px;
+    background:
+      repeating-linear-gradient(90deg,
+        #b44a3a 0 8px, #3a6a8a 8px 15px,
+        #c4a04b 15px 22px, #5a7a4a 22px 30px,
+        #8a4a6a 30px 36px, transparent 36px 74px);
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* door mat at the top centre where customers enter */
+  .doorway {
+    position: absolute;
+    top: 40px; left: 50%;
+    transform: translateX(-50%);
+    width: 110px; height: 26px;
+    background: radial-gradient(ellipse at 50% 0%, #8a2a2a, #5a1a1a);
+    border-radius: 0 0 60px 60px;
+    border: 2px solid #3a1010;
+    border-top: none;
+    z-index: 2;
+    box-shadow: inset 0 4px 8px rgba(0,0,0,.4);
+  }
+
+  /* ============================= DECOR ============================= */
+
+  /* big central rug */
+  .rug {
+    position: absolute;
+    left: 50%; top: 44%;
+    transform: translate(-50%,-50%);
+    width: min(52vw, 620px);
+    height: min(38vh, 340px);
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse at center,
+        #a8452e 0 38%,
+        #c4663a 38% 52%,
+        #8a3a26 52% 66%,
+        #d4a04b 66% 70%,
+        #6a2a1c 70% 100%);
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    z-index: 1;
+    opacity: .92;
+  }
+  .rug::before {
+    content: "";
+    position: absolute; inset: 14%;
+    border-radius: 50%;
+    border: 3px dashed rgba(255,220,150,.35);
+  }
+  .rug::after {
+    content: "";
+    position: absolute; inset: 40%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #d4a04b 0 30%, #8a3a26 30% 100%);
+    box-shadow: inset 0 0 0 3px rgba(255,220,150,.3);
+  }
+
+  /* potted plant — top-down: pot ring + leafy blob */
+  .plant {
+    position: absolute;
+    width: 64px; height: 64px;
+    z-index: 2;
+  }
+  .plant::before {  /* terracotta pot */
+    content: "";
+    position: absolute; inset: 12%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #b05a34, #6a2e1a 75%);
+    box-shadow: 0 6px 12px rgba(0,0,0,.5), inset 0 0 0 4px rgba(0,0,0,.25);
+  }
+  .plant::after {   /* foliage */
+    content: "";
+    position: absolute; inset: -8%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, #6a9a4a 0 12%, transparent 13%),
+      radial-gradient(circle at 70% 35%, #5a8a3a 0 14%, transparent 15%),
+      radial-gradient(circle at 45% 70%, #7aaa5a 0 13%, transparent 14%),
+      radial-gradient(circle at 65% 65%, #4a7a2e 0 12%, transparent 13%),
+      radial-gradient(circle at 50% 45%, #3a6a28 0 26%, #2a5a1e 55%, transparent 70%);
+    animation: sway 4.5s ease-in-out infinite;
+  }
+  .plant.tr { top: 70px; right: 6%; }
+  .plant.tl { top: 70px; left: 6%; animation-delay: -2s; }
+  .plant.bl { bottom: 210px; left: 3%; transform: scale(.85); }
+  .plant.bl::after { animation-delay: -1.3s; }
+
+  @keyframes sway {
+    0%,100% { transform: rotate(-4deg); }
+    50%     { transform: rotate(4deg); }
+  }
+
+  /* side table with candle */
+  .side-table {
+    position: absolute;
+    right: 12%; top: 42%;
+    width: 74px; height: 74px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 42% 38%, #8a6438, #4a3018 78%);
+    box-shadow: 0 8px 18px rgba(0,0,0,.55), inset 0 0 0 5px rgba(0,0,0,.2);
+    z-index: 2;
+  }
+  .side-table::before {  /* candle */
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 10px; height: 10px;
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    background: #f5e6c8;
+    box-shadow: 0 0 10px 4px rgba(255,190,90,.7);
+  }
+  .side-table::after {   /* glow pool on the floor */
+    content: "";
+    position: absolute;
+    inset: -80%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,180,80,.22), transparent 65%);
+    animation: flicker 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes flicker {
+    0%,100% { opacity: 1; }
+    30%     { opacity: .75; }
+    60%     { opacity: .95; }
+    80%     { opacity: .7; }
+  }
+
+  /* hanging lamp glows (top-down: warm pools of light) */
+  .lamp-glow {
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,200,110,.16), transparent 62%);
+    z-index: 1;
+    animation: flicker 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .lamp-glow.g1 { left: 22%; top: 22%; }
+  .lamp-glow.g2 { left: 58%; top: 55%; animation-delay: -1.5s; }
+
+  /* dust motes drifting through the light */
+  .mote {
+    position: absolute;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(255,230,180,.5);
+    z-index: 6;
+    pointer-events: none;
+    animation: drift var(--d,14s) linear infinite;
+    opacity: 0;
+  }
+  @keyframes drift {
+    0%   { opacity: 0; transform: translate(0,0); }
+    15%  { opacity: .8; }
+    85%  { opacity: .5; }
+    100% { opacity: 0; transform: translate(var(--dx,60px), var(--dy,120px)); }
+  }
+
+  /* ============================= CUSTOMERS ============================= */
+
+  .customer {
+    position: absolute;
+    width: 38px; height: 38px;
+    margin: -19px 0 0 -19px;   /* centred on x/y */
+    z-index: 3;
+    transition: none;
+    will-change: transform, left, top;
+  }
+  .customer .shadow {
+    position: absolute;
+    inset: 18% -10% -18% -10%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0,0,0,.45), transparent 70%);
+  }
+  .customer .body {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 34%, var(--skin) 0 22%, transparent 23%),
+      radial-gradient(circle at 50% 55%, var(--c1) 0 46%, var(--c2) 82%);
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,.35), 0 2px 5px rgba(0,0,0,.4);
+    animation: bob .55s ease-in-out infinite;
+  }
+  .customer.idle .body { animation-duration: 1.8s; }
+  @keyframes bob {
+    0%,100% { transform: scale(1) rotate(-2deg); }
+    50%     { transform: scale(1.06, .96) rotate(2deg); }
+  }
+  .customer .face {  /* tiny top-down "hair" dot for direction feel */
+    position: absolute;
+    left: 50%; top: 4px;
+    width: 14px; height: 14px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: var(--hair);
+    box-shadow: inset 0 -2px 3px rgba(0,0,0,.4);
+  }
+
+  /* speech / thought bubble */
+  .bubble {
+    position: absolute;
+    bottom: 110%; left: 50%;
+    transform: translateX(-50%) scale(0);
+    background: #fdf6e3;
+    color: #2a1c10;
+    font-size: 11px;
+    font-style: italic;
+    padding: 4px 9px;
+    border-radius: 10px;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px rgba(0,0,0,.4);
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+    z-index: 8;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #fdf6e3;
+  }
+  .bubble.show { transform: translateX(-50%) scale(1); }
+
+  /* ============================= COUNTER ============================= */
+
+  .counter {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 185px;
+    z-index: 10;
+    background:
+      /* counter top surface */
+      linear-gradient(#8a6438 0 14px, transparent 14px),
+      /* counter front panels */
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,.2) 0 3px,
+        transparent 3px 130px),
+      linear-gradient(#5a3d22, #3a2714);
+    border-top: 5px solid #a8803f;
+    box-shadow: 0 -14px 40px rgba(0,0,0,.6), inset 0 4px 8px rgba(255,220,150,.15);
+    display: flex;
+    align-items: flex-end;
+    padding: 0 20px 14px;
+    gap: 14px;
+  }
+
+  .counter-label {
+    position: absolute;
+    top: -34px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: #d4a04b;
+    text-shadow: 0 2px 6px #000;
+    background: rgba(20,12,6,.75);
+    padding: 4px 18px;
+    border-radius: 12px;
+    border: 1px solid #6a4a24;
+  }
+
+  .slots {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+    justify-content: center;
+    align-items: flex-end;
+  }
+
+  /* ============================= OFFER CARDS ============================= */
+
+  .offer-card {
+    position: relative;
+    width: 152px;
+    flex: 0 0 auto;
+    background:
+      radial-gradient(circle at 18% 12%, rgba(212,160,75,.14), transparent 45%),
+      linear-gradient(165deg, #1c1a16, #0c0b09 60%, #171512);
+    border: 1px solid #8a6a35;
+    border-radius: 10px;
+    box-shadow:
+      0 10px 22px rgba(0,0,0,.7),
+      inset 0 0 0 4px #0c0b09,
+      inset 0 0 0 5px rgba(212,160,75,.35);
+    padding: 10px 12px 9px;
+    color: #e8dcc0;
+    transform: translateY(60px) scale(.8);
+    opacity: 0;
+    animation: deal-in .45s cubic-bezier(.34,1.4,.64,1) forwards;
+    transition: transform .2s;
+  }
+  @keyframes deal-in {
+    to { transform: translateY(-6px) scale(1); opacity: 1; }
+  }
+  .offer-card:hover { transform: translateY(-12px) scale(1.03); }
+
+  .offer-card .corner {
+    position: absolute;
+    font-size: 9px;
+    color: #8a6a35;
+    letter-spacing: 1px;
+  }
+  .offer-card .corner.tl { top: 4px; left: 8px; }
+  .offer-card .corner.br { bottom: 4px; right: 8px; }
+
+  .offer-card .icon {
+    font-size: 26px;
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 5px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
+  }
+  .offer-card .item-name {
+    font-size: 12.5px;
+    text-align: center;
+    letter-spacing: .4px;
+    color: #f0e4c8;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .offer-card .divider {
+    height: 1px;
+    margin: 6px 8px;
+    background: repeating-linear-gradient(90deg, #8a6a35 0 4px, transparent 4px 8px);
+    opacity: .7;
+  }
+  .offer-card .price {
+    text-align: center;
+    font-size: 17px;
+    font-weight: bold;
+    color: #ffd97a;
+    text-shadow: 0 0 10px rgba(255,200,90,.35);
+    margin-bottom: 8px;
+  }
+  .offer-card .price small {
+    display: block;
+    font-size: 8.5px;
+    font-weight: normal;
+    letter-spacing: 2px;
+    color: #9a8a6a;
+    margin-bottom: 1px;
+  }
+
+  .offer-card .actions {
+    display: flex;
+    gap: 7px;
+  }
+  .offer-card button {
+    flex: 1;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 0;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: bold;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: #fff;
+    transition: transform .12s, filter .12s;
+  }
+  .offer-card button:active { transform: scale(.92); }
+  .offer-card .accept {
+    background: linear-gradient(#3f9e4d, #26732f);
+    box-shadow: 0 2px 0 #1a5423, 0 3px 8px rgba(0,0,0,.5);
+  }
+  .offer-card .accept:hover { filter: brightness(1.2); }
+  .offer-card .reject {
+    background: linear-gradient(#c0392b, #8e2418);
+    box-shadow: 0 2px 0 #5e150d, 0 3px 8px rgba(0,0,0,.5);
+  }
+  .offer-card .reject:hover { filter: brightness(1.2); }
+
+  /* card exit animations */
+  .offer-card.sold {
+    animation: sold .55s ease-in forwards;
+  }
+  @keyframes sold {
+    30% { transform: translateY(-26px) scale(1.06); filter: brightness(1.5); }
+    100%{ transform: translateY(-90px) scale(.4) rotate(12deg); opacity: 0; }
+  }
+  .offer-card.rejected {
+    animation: tossed .5s ease-in forwards;
+  }
+  @keyframes tossed {
+    100% { transform: translateY(80px) translateX(60px) rotate(28deg); opacity: 0; }
+  }
+
+  /* coin that flies to the till on accept */
+  .coin {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe9a0, #d4a02e 60%, #8a6014);
+    box-shadow: 0 0 8px rgba(255,210,90,.8);
+    z-index: 20;
+    pointer-events: none;
+    transition: all .6s cubic-bezier(.5,-0.2,.7,.5);
+  }
+
+  /* ============================= HUD ============================= */
+
+  .hud {
+    position: absolute;
+    top: 56px; right: 18px;
+    z-index: 15;
+    text-align: right;
+    color: #ffd97a;
+    text-shadow: 0 2px 8px #000;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+  .hud .till {
+    font-size: 24px;
+    font-weight: bold;
+    background: rgba(20,12,6,.8);
+    border: 1px solid #8a6a35;
+    border-radius: 10px;
+    padding: 6px 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  }
+  .hud .sub { margin-top: 4px; font-size: 10px; color: #b8a678; }
+</style>
+</head>
+<body>
+
+<div class="room" id="room">
+  <!-- wall dressing -->
+  <div class="wall">
+    <div class="shelf"></div>
+    <div class="painting p1"></div>
+    <div class="painting p2"></div>
+    <div class="painting p3"></div>
+    <div class="shelf"></div>
+  </div>
+  <div class="doorway"></div>
+
+  <!-- decor -->
+  <div class="rug"></div>
+  <div class="plant tl"></div>
+  <div class="plant tr"></div>
+  <div class="plant bl"></div>
+  <div class="side-table"></div>
+  <div class="lamp-glow g1"></div>
+  <div class="lamp-glow g2"></div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="till" id="till">$0</div>
+    <div class="sub">TILL</div>
+  </div>
+
+  <!-- counter -->
+  <div class="counter">
+    <div class="counter-label">— OFFERS —</div>
+    <div class="slots" id="slots"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const room   = document.getElementById('room');
+  const slots  = document.getElementById('slots');
+  const tillEl = document.getElementById('till');
+
+  const COUNTER_H = 185;
+  const MAX_CARDS = 5;
+  let till = 0;
+
+  /* ---------- catalogue ---------- */
+  const ITEMS = [
+    ['🕯️', 'Brass Candelabra'], ['📻', 'Vintage Radio'], ['🫖', 'Porcelain Teapot'],
+    ['📚', 'Leather-Bound Set'], ['🎻', 'Old Violin'], ['🪆', 'Nesting Dolls'],
+    ['⌚', 'Pocket Watch'],    ['🖼️', 'Oil Painting'],   ['🏺', 'Glazed Urn'],
+    ['🪞', 'Gilded Mirror'],   ['🎺', 'Tarnished Trumpet'], ['🗿', 'Stone Idol'],
+    ['🧭', 'Brass Compass'],   ['💎', 'Cut Sapphire'],   ['🪙', 'Coin Collection'],
+  ];
+  const NAMES = ['Mabel','Cyrus','Ines','Rolf','Priya','Dmitri','Wren','Aldo','Suki','Bram','Nadia','Otis'];
+  const PALETTES = [
+    ['#7a4a6a','#4a2a44','#e8b890','#3a2418'], // plum coat
+    ['#3a5a7a','#24344a','#d4a878','#1c140c'], // navy
+    ['#6a7a3a','#3f4a24','#c89878','#5a3a1c'], // olive
+    ['#8a3a3a','#4a2020','#e0b090','#2a1a12'], // rust
+    ['#4a7a6a','#2a4a40','#d8a880','#101010'], // teal
+    ['#7a6a3a','#4a3f22','#caa07a','#3a2a14'], // mustard
+  ];
+  const OFFER_LINES = ['Care to make a deal?','This one\'s special…','For you, a fair price.','Rare find, this!','Won\'t find better.'];
+  const HAPPY_LINES = ['A pleasure!','Deal!','You won\'t regret it.','Sold, then!'];
+  const SAD_LINES   = ['Hm. Your loss.','Perhaps next time.','I see how it is…','Oh well.'];
+
+  /* ---------- dust motes ---------- */
+  for (let i = 0; i < 12; i++) {
+    const m = document.createElement('div');
+    m.className = 'mote';
+    m.style.left = (10 + Math.random() * 80) + 'vw';
+    m.style.top  = (10 + Math.random() * 50) + 'vh';
+    m.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+    m.style.setProperty('--dy', (60 + Math.random() * 140) + 'px');
+    m.style.setProperty('--d',  (10 + Math.random() * 14) + 's');
+    m.style.animationDelay = (-Math.random() * 14) + 's';
+    room.appendChild(m);
+  }
+
+  /* ---------- customers ---------- */
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  function wanderTarget() {
+    return {
+      x: rand(60, innerWidth - 60),
+      y: rand(80, innerHeight - COUNTER_H - 50),
+    };
+  }
+
+  class Customer {
+    constructor() {
+      const p = pick(PALETTES);
+      this.el = document.createElement('div');
+      this.el.className = 'customer idle';
+      this.el.innerHTML = `
+        <div class="shadow"></div>
+        <div class="body" style="--c1:${p[0]};--c2:${p[1]};--skin:${p[2]}"></div>
+        <div class="face" style="--hair:${p[3]}"></div>
+        <div class="bubble"></div>`;
+      this.bubble = this.el.querySelector('.bubble');
+
+      this.x = innerWidth / 2 + rand(-30, 30);
+      this.y = 50;                       // spawn at the door
+      this.name = pick(NAMES);
+      this.state = 'enter';
+      this.target = wanderTarget();
+      this.speed = rand(55, 95);         // px per second
+      this.restUntil = 0;
+      this.offerCooldown = rand(1, 4);   // seconds before first offer
+      this.hasOffer = false;
+
+      room.appendChild(this.el);
+      this.render();
+    }
+
+    say(text, ms = 2200) {
+      this.bubble.textContent = text;
+      this.bubble.classList.add('show');
+      clearTimeout(this._bt);
+      this._bt = setTimeout(() => this.bubble.classList.remove('show'), ms);
+    }
+
+    update(dt, now) {
+      // occasionally pick a new wandering target
+      if (this.state === 'wander' && now > this.restUntil) {
+        this.target = wanderTarget();
+        this.restUntil = now + rand(2, 6);
+      }
+
+      // when ready, walk to the counter to make an offer
+      if (this.state === 'wander' && this.offerCooldown <= 0 &&
+          slots.children.length < MAX_CARDS) {
+        this.state = 'toCounter';
+        this.target = {
+          x: innerWidth / 2 + (slots.children.length - MAX_CARDS / 2) * 165 + rand(-20, 20),
+          y: innerHeight - COUNTER_H - 30,
+        };
+      }
+      this.offerCooldown -= dt;
+
+      const dx = this.target.x - this.x;
+      const dy = this.target.y - this.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist > 4) {
+        const step = Math.min(this.speed * dt, dist);
+        this.x += (dx / dist) * step;
+        this.y += (dy / dist) * step;
+        this.el.classList.remove('idle');
+      } else {
+        this.el.classList.add('idle');
+        if (this.state === 'toCounter') {
+          this.state = 'wander';
+          this.makeOffer();
+          this.target = wanderTarget();
+          this.offerCooldown = rand(8, 20); // come back later
+        } else if (this.state === 'enter') {
+          this.state = 'wander';
+        }
+      }
+      this.render();
+    }
+
+    makeOffer() {
+      const [icon, item] = pick(ITEMS);
+      const price = Math.round(rand(15, 480) / 5) * 5;
+      this.say(pick(OFFER_LINES));
+
+      const card = document.createElement('div');
+      card.className = 'offer-card';
+      card.innerHTML = `
+        <span class="corner tl">◆</span><span class="corner br">◆</span>
+        <div class="icon">${icon}</div>
+        <div class="item-name">${item}</div>
+        <div class="divider"></div>
+        <div class="price"><small>OFFERED BY ${this.name.toUpperCase()}</small>$${price}</div>
+        <div class="actions">
+          <button class="reject">✕ No</button>
+          <button class="accept">✓ Deal</button>
+        </div>`;
+      slots.appendChild(card);
+
+      card.querySelector('.accept').onclick = () => {
+        card.classList.add('sold');
+        till += price;
+        tillEl.textContent = '$' + till;
+        this.say(pick(HAPPY_LINES));
+        flyCoin(card);
+        setTimeout(() => card.remove(), 550);
+      };
+      card.querySelector('.reject').onclick = () => {
+        card.classList.add('rejected');
+        this.say(pick(SAD_LINES));
+        setTimeout(() => card.remove(), 500);
+      };
+    }
+
+    render() {
+      this.el.style.left = this.x + 'px';
+      this.el.style.top  = this.y + 'px';
+    }
+  }
+
+  function flyCoin(card) {
+    const r = card.getBoundingClientRect();
+    const coin = document.createElement('div');
+    coin.className = 'coin';
+    coin.style.left = (r.left + r.width / 2) + 'px';
+    coin.style.top  = r.top + 'px';
+    room.appendChild(coin);
+    requestAnimationFrame(() => {
+      const t = tillEl.getBoundingClientRect();
+      coin.style.left = (t.left + t.width / 2) + 'px';
+      coin.style.top  = (t.top + t.height / 2) + 'px';
+      coin.style.transform = 'scale(.5)';
+      coin.style.opacity = '0';
+    });
+    setTimeout(() => coin.remove(), 700);
+  }
+
+  /* ---------- spawn & loop ---------- */
+  const customers = [];
+  const COUNT = Math.max(4, Math.min(8, Math.floor(innerWidth / 220)));
+
+  for (let i = 0; i < COUNT; i++) {
+    setTimeout(() => customers.push(new Customer()), i * 900);
+  }
+
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    const t = now / 1000;
+    for (const c of customers) c.update(dt, t);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
