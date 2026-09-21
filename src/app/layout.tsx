@@ -13,8 +13,12 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Dock Operations — Arvion",
-  description: "Container vessel loading operations",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
+  title: "Dock — revenue management for container fleets",
+  description:
+    "Opportunity-cost pricing, negotiation and settlement for container shipping",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

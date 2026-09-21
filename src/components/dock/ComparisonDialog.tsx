@@ -54,20 +54,29 @@ export default function ComparisonDialog({ open, onClose }: ComparisonDialogProp
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    setFailed(false);
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setLoading(true);
+        setFailed(false);
+      }
+    });
     Promise.all([
-      api.getCompare("summary"),
-      api.getCompare("timeline"),
-      api.getCompare("meta"),
+      api.getCompare<SummaryData>("summary"),
+      api.getCompare<TimelineData>("timeline"),
+      api.getCompare<MetaData>("meta"),
     ])
       .then(([s, t, m]) => {
+        if (cancelled) return;
         setSummary(s);
         setTimeline(t);
         setMeta(m);
       })
-      .catch(() => setFailed(true))
-      .finally(() => setLoading(false));
+      .catch(() => !cancelled && setFailed(true))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   useEffect(() => {

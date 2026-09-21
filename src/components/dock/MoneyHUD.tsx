@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChartLine } from "lucide-react";
 import { useEpisode } from "./EpisodeProvider";
 import ComparisonDialog from "./ComparisonDialog";
-import { api } from "@/lib/api";
+import { api, type SummaryData } from "@/lib/api";
 
 function Sparkline({ points }: { points: { day: number; cum_profit: number }[] }) {
   if (points.length < 2) return null;
@@ -47,7 +47,7 @@ export function MoneyHUD() {
     if (live || fetched.current) return;
     fetched.current = true;
     api
-      .getCompare("summary")
+      .getCompare<SummaryData>("summary")
       .then((s) => setFallback(s?.policies?.ppo?.profit_usd?.mean ?? null))
       .catch(() => setFallback(null));
   }, [live]);

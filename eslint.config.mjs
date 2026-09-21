@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Backend is frozen + vendored; never lint it
+    "backend/**",
+    // Local map assets
+    "public/map/**",
   ]),
 ]);
 
