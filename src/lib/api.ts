@@ -1,8 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_DOCK_API ?? "http://localhost:8399";
+export const API_BASE = process.env.NEXT_PUBLIC_DOCK_API ?? "http://localhost:8399";
+
+export function wsUrl(episodeId: string) {
+  return `${API_BASE.replace(/^http/, 'ws')}/episodes/${episodeId}/stream`;
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 // --- Types ---
 
@@ -143,6 +157,39 @@ export interface MetaData {
 }
 
 // Entities
+export interface PolicyDescriptor {
+  id: string;
+  label: string;
+  desc: string;
+}
+
+export interface Scenario {
+  scenario_id: string;
+  split: string;
+  description: string;
+  base_demand_mult: number;
+  port_closures: unknown[];
+  port_strikes: unknown[];
+  canal_closures: unknown[];
+  demand_spike_events: unknown[];
+  [key: string]: unknown;
+}
+
+export interface EpisodeDescriptor {
+  id: string;
+  policy: string;
+  scenario: string;
+  seed: number;
+  horizon_days: number;
+  speed_days_per_sec: number;
+  status: 'running' | 'paused' | 'stopped' | 'completed';
+  day: number;
+  error: string | null;
+  n_events: number;
+  n_deals: number;
+  created_at: number;
+}
+
 export interface Port {
   port_id: string;
   name: string;
@@ -155,6 +202,14 @@ export interface Vessel {
   name: string;
   capacity_teu: number;
   reefer_plugs: number;
+  min_speed_kt: number;
+  service_speed_kt: number;
+  max_speed_kt: number;
+  fuel_a_tpd: number;
+  fuel_b_tpd: number;
+  age_years: number;
+  draft_m: number;
+  loop: string; // ">"-separated port_ids, e.g. "CNSHA>SGSIN>NLRTM>…"
 }
 export interface Route {
   origin: string;
@@ -239,15 +294,20 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const response = await fetch(url, options);
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    let detail = `${response.status} ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch { /* keep status text */ }
+    throw new ApiError(detail, response.status);
   }
   return response.json();
 }
 
 export const api = {
   getHealth: () => fetchApi<{ ok: boolean }>('/health'),
-  getPolicies: () => fetchApi<Array<{ id: string; label: string; desc: string }>>('/policies'),
-  getScenarios: () => fetchApi<any[]>('/scenarios'),
+  getPolicies: () => fetchApi<PolicyDescriptor[]>('/policies'),
+  getScenarios: () => fetchApi<Scenario[]>('/scenarios'),
   getPorts: () => fetchApi<Port[]>('/ports'),
   getVessels: () => fetchApi<Vessel[]>('/vessels'),
   getRoutes: () => fetchApi<Route[]>('/routes'),
@@ -258,7 +318,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     }),
-  getEpisodes: () => fetchApi<any[]>('/episodes'),
+  getEpisodes: () => fetchApi<EpisodeDescriptor[]>('/episodes'),
   getEpisode: (id: string) => fetchApi<EpisodeSnapshot>(`/episodes/${id}`),
   controlEpisode: (id: string, params: { action: 'pause' | 'resume' | 'stop' | 'set_speed'; speed?: number }) =>
     fetchApi<any>(`/episodes/${id}/control`, {
@@ -270,8 +330,11 @@ export const api = {
     fetchApi<{ events: EpisodeEvent[]; next_seq: number }>(`/episodes/${id}/events?after_seq=${after_seq}&limit=${limit}`),
   getEpisodeDeals: (id: string) => fetchApi<Deal[]>(`/episodes/${id}/deals`),
   verifyLedger: (id: string) => fetchApi<{ ok: boolean; n_events: number; first_bad_seq: number | null; detail: string }>(`/episodes/${id}/ledger/verify`),
-  getCompare: (name: string) => fetchApi<any>(`/compare/${name}`),
+  getCompare: (name: 'summary' | 'timeline' | 'offers' | 'shock' | 'meta') =>
+    fetchApi<any>(`/compare/${name}`),
 };
+
+export type ControlAction = 'pause' | 'resume' | 'stop' | 'set_speed';
 
 // --- Hooks ---
 
