@@ -46,12 +46,12 @@ const STAGES: { key: string; icon: LucideIcon }[] = [
   { key: "settled", icon: BadgeCheck },
 ];
 
-const STAGE_COLOR = ["#6a73ea", "#d9b13b", "#3fbdb0", "#3fbdb0"];
+const STAGE_COLOR = ["#7c87f2", "#d9ae3c", "#3fbfb1", "#3fbfb1"];
 
 function settleColor(outcome: string): string {
   if (outcome === "settled_penalty") return "#e5a33c";
-  if (outcome === "refunded") return "#6c739b";
-  return "#3fbdb0";
+  if (outcome === "refunded") return "#6f77a5";
+  return "#3fbfb1";
 }
 
 const num = (v: unknown) => {
@@ -197,7 +197,7 @@ function DealCard({ deal }: { deal: Deal }) {
   const KindIcon = KIND_ICON[kind] ?? Route;
   const kindLabel = COUNTER_KIND_LABEL[kind] ?? humanizeToken(kind);
   const seg = String(deal.segment ?? "standard");
-  const segColor = SEGMENT_COLORS[seg] ?? "#9aa1c9";
+  const segColor = SEGMENT_COLORS[seg] ?? "#a3abd6";
   const status = String(deal.status ?? "");
   const stageIdx = STAGES.findIndex((s) => s.key === status);
   const outcome = String(deal.settled_outcome ?? "");
@@ -223,7 +223,7 @@ function DealCard({ deal }: { deal: Deal }) {
   );
 
   return (
-    <div className="deal-card panel-flat space-y-2 rounded-2xl p-3">
+    <div className="deal-card space-y-2 rounded-xl border border-edge-soft bg-white/[0.025] p-3 transition-colors hover:border-edge">
       <div className="flex items-center gap-2">
         <span className="chip flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-accent">
           <KindIcon size={12} strokeWidth={1.75} />
@@ -270,7 +270,7 @@ function DealCard({ deal }: { deal: Deal }) {
                   <span
                     className="mx-1 h-px flex-1 rounded"
                     style={{
-                      background: reached ? col : "rgba(148,158,220,0.14)",
+                      background: reached ? col : "rgba(152,162,226,0.14)",
                     }}
                   />
                 )}
@@ -284,7 +284,7 @@ function DealCard({ deal }: { deal: Deal }) {
                           borderColor: col,
                           boxShadow: current ? `0 0 6px ${col}` : "none",
                         }
-                      : { background: "#0b1130", borderColor: "#262e63" }
+                      : { background: "#0a0e1e", borderColor: "#232b4f" }
                   }
                 />
               </Fragment>

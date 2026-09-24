@@ -7,8 +7,8 @@ import { CARGO_ICON, COUNTER_KIND_LABEL, stampFor, fmtUsd } from "@/lib/offers";
 import "./booking-desk.css";
 
 const KEEPER_BODY = {
-  "--c1": "#2e4a3a",
-  "--c2": "#1e3028",
+  "--c1": "#274033",
+  "--c2": "#16261e",
   "--skin": "#e0b090",
 } as CSSProperties;
 const KEEPER_FACE = { "--hair": "#d8d0c0" } as CSSProperties;
@@ -61,7 +61,7 @@ export function BookingDesk({ onSelect }: { onSelect?: (ev: EpisodeEvent) => voi
     const registerEl = registerRef.current;
     if (!live || !slots || !bellEl || !registerEl) return;
 
-    const COUNTER_H = 290;
+    const COUNTER_H = 240;
     const MAX_CARDS = 8;
     const CARD_STEP = 284;
 
@@ -83,18 +83,18 @@ export function BookingDesk({ onSelect }: { onSelect?: (ev: EpisodeEvent) => voi
     const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
     const PALETTES = [
-      ["#7a4a6a","#4a2a44","#e8b890","#3a2418"], // plum coat
-      ["#3a5a7a","#24344a","#d4a878","#1c140c"], // navy
-      ["#6a7a3a","#3f4a24","#c89878","#5a3a1c"], // olive
-      ["#8a3a3a","#4a2020","#e0b090","#2a1a12"], // rust
-      ["#4a7a6a","#2a4a40","#d8a880","#101010"], // teal
-      ["#7a6a3a","#4a3f22","#caa07a","#3a2a14"], // mustard
+      ["#643d58","#3a2134","#e8b890","#3a2418"], // plum coat
+      ["#2f4a66","#1d2a3c","#d4a878","#1c140c"], // navy
+      ["#57632f","#333b1d","#c89878","#5a3a1c"], // olive
+      ["#703030","#3a1a1a","#e0b090","#2a1a12"], // rust
+      ["#3c6357","#223a33","#d8a880","#101010"], // teal
+      ["#645630","#3a311b","#caa07a","#3a2a14"], // mustard
     ];
     const HATS: [string, string][] = [
-      ["#6a3a2a","#3a1e14"],
-      ["#2a3a4a","#16202c"],
-      ["#4a4a26","#2a2a14"],
-      ["#5a2a3a","#30141e"],
+      ["#56301f","#2e1710"],
+      ["#223040","#121a24"],
+      ["#3a3a1e","#22210f"],
+      ["#47222e","#251017"],
     ];
 
     const width = () => live.clientWidth;
@@ -361,6 +361,8 @@ export function BookingDesk({ onSelect }: { onSelect?: (ev: EpisodeEvent) => voi
 
         <div className="live" ref={liveRef} />
 
+        <div className="stage-plaque">booking desk</div>
+
         <div className="hud">
           <div className="till">{fmtUsd(revenue)}</div>
           <div className="sub">
@@ -379,7 +381,7 @@ export function BookingDesk({ onSelect }: { onSelect?: (ev: EpisodeEvent) => voi
         )}
 
         <div className="counter">
-          <div className="counter-label">— OFFERS —</div>
+          <div className="counter-label">OFFERS</div>
           <div className="slots" ref={slotsRef} />
           <div className="counter-props">
             <div className="register" ref={registerRef} />

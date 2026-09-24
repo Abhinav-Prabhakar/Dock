@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WILLOWMERE — Conservatory Research Credential N°1187</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="scene" id="scene">
+
+  <!-- brass cup hook screwed into the wall -->
+  <div class="mount" aria-hidden="true">
+    <svg viewBox="0 0 64 60" width="64" height="60">
+      <defs>
+        <radialGradient id="hkPlate" cx=".38" cy=".32" r=".9">
+          <stop offset="0"   stop-color="#f0dda4"/>
+          <stop offset=".45" stop-color="#c9a55c"/>
+          <stop offset=".8"  stop-color="#96712f"/>
+          <stop offset="1"   stop-color="#7a5a24"/>
+        </radialGradient>
+        <linearGradient id="hkBrass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0"   stop-color="#e8d29a"/>
+          <stop offset=".3"  stop-color="#b28c46"/>
+          <stop offset=".55" stop-color="#e2c684"/>
+          <stop offset=".8"  stop-color="#8f6c2e"/>
+          <stop offset="1"   stop-color="#6f5220"/>
+        </linearGradient>
+        <linearGradient id="hkBrassV" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0"  stop-color="#8a682c"/>
+          <stop offset=".4" stop-color="#e0c487"/>
+          <stop offset=".7" stop-color="#a37e3a"/>
+          <stop offset="1"  stop-color="#75581f"/>
+        </linearGradient>
+      </defs>
+      <!-- round wall plate -->
+      <circle cx="32" cy="13" r="11" fill="url(#hkPlate)"/>
+      <circle cx="32" cy="13" r="11" fill="none" stroke="rgba(52,36,10,.38)" stroke-width=".7"/>
+      <circle cx="32" cy="13" r="7.6" fill="none" stroke="rgba(255,246,214,.30)" stroke-width=".7"/>
+      <!-- screw head + slot -->
+      <circle cx="32" cy="13" r="2.8" fill="#7a5a24"/>
+      <circle cx="32" cy="13" r="2.8" fill="none" stroke="rgba(255,246,214,.4)" stroke-width=".5"/>
+      <rect x="30.4" y="12.4" width="3.2" height="1.1" rx=".5" fill="#3c2c10" transform="rotate(-24 32 13)"/>
+      <!-- threaded stem -->
+      <rect x="29.4" y="23" width="5.2" height="9" rx="1" fill="url(#hkBrassV)"/>
+      <path d="M29.4 25.4h5.2M29.4 28h5.2M29.4 30.6h5.2" stroke="rgba(52,36,10,.35)" stroke-width=".7"/>
+      <!-- J hook the cord loops over -->
+      <path d="M32 30 C32 39 29.5 44.5 23.8 44.5 C18.6 44.5 15.6 40.8 15.6 36"
+            fill="none" stroke="url(#hkBrass)" stroke-width="5.6" stroke-linecap="round"/>
+      <path d="M32 30 C32 39 29.5 44.5 23.8 44.5 C18.6 44.5 15.6 40.8 15.6 36"
+            fill="none" stroke="rgba(255,240,200,.45)" stroke-width="1.4" stroke-linecap="round"
+            transform="translate(-.9 -.9)"/>
+      <!-- ball tip -->
+      <circle cx="15.4" cy="34.6" r="3" fill="url(#hkPlate)" stroke="rgba(52,36,10,.35)" stroke-width=".6"/>
+      <circle cx="14.5" cy="33.6" r=".9" fill="rgba(255,248,220,.7)"/>
+    </svg>
+  </div>
+
+  <!-- soft contact shadow the badge throws on the wall -->
+  <div id="cardShadow" aria-hidden="true"></div>
+
+  <!-- braided leather cord, drawn on canvas -->
+  <canvas id="strap" aria-hidden="true"></canvas>
+
+  <!-- ==================== THE BADGE ==================== -->
+  <div id="card" aria-label="Research credential — drag it, fling it">
+    <!-- laminate slab edge (visible on tilt) -->
+    <div class="edge" aria-hidden="true"></div>
+
+    <div class="face">
+      <!-- punched round hole with brass grommet -->
+      <svg class="grommet" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true">
+        <defs>
+          <linearGradient id="gmBrass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0"   stop-color="#eed9a0"/>
+            <stop offset=".35" stop-color="#b28c46"/>
+            <stop offset=".6"  stop-color="#e4c988"/>
+            <stop offset="1"   stop-color="#84652a"/>
+          </linearGradient>
+          <radialGradient id="gmHole" cx=".5" cy=".42" r=".75">
+            <stop offset="0"   stop-color="#8f8672"/>
+            <stop offset=".55" stop-color="#b7ae9a"/>
+            <stop offset="1"   stop-color="#7d7560"/>
+          </radialGradient>
+        </defs>
+        <!-- metal washer -->
+        <circle cx="13" cy="13" r="11" fill="url(#gmBrass)"/>
+        <circle cx="13" cy="13" r="11" fill="none" stroke="rgba(48,32,8,.42)" stroke-width=".7"/>
+        <circle cx="13" cy="13" r="9.2" fill="none" stroke="rgba(255,248,220,.4)" stroke-width=".7"/>
+        <!-- the punched hole — wall tone shows through -->
+        <circle cx="13" cy="13" r="7.1" fill="url(#gmHole)"/>
+        <circle cx="13" cy="13" r="7.1" fill="none" stroke="rgba(20,12,4,.5)" stroke-width="1.3"/>
+        <path d="M8 17.5 A7.1 7.1 0 0 0 18 17.5" fill="none" stroke="rgba(255,255,255,.4)" stroke-width=".8"/>
+      </svg>
+
+      <!-- security print — clean ellipse fan -->
+      <svg class="guilloche" viewBox="0 0 320 200" aria-hidden="true">
+        <g fill="none" stroke="#7f9a82" stroke-width="0.45" opacity="0.55">
+          <ellipse cx="160" cy="100" rx="158" ry="55"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(15 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(30 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(45 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(60 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(75 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(8 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(30 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(52 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(74 160 100)"/>
+        </g>
+      </svg>
+      <!-- faint fern watermark -->
+      <svg class="uv" viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="none" stroke="#3a5a44" stroke-linecap="round">
+          <path d="M50 93 C46 62 48 32 55 9" stroke-width="2.4"/>
+          <path d="M49.4 82 q-12 -1 -19 -10 M49.9 82 q12 -3 18 -11" stroke-width="1.5"/>
+          <path d="M48.8 72 q-11 -1 -17 -9  M49.7 72 q11 -3 16 -10" stroke-width="1.5"/>
+          <path d="M48.4 62 q-10 -1 -15 -8  M49.6 62 q10 -3 14 -9"  stroke-width="1.4"/>
+          <path d="M48.3 52 q-9 -1 -13 -7   M49.7 52 q9 -3 12 -8"   stroke-width="1.4"/>
+          <path d="M48.6 42 q-8 -1 -11 -6   M50 42 q8 -3 10 -7"     stroke-width="1.3"/>
+          <path d="M49.4 33 q-7 -1 -9 -5    M50.6 33 q7 -3 8 -6"    stroke-width="1.3"/>
+          <path d="M50.8 25 q-5 -1 -7 -4    M52 25 q5 -2 6 -5"      stroke-width="1.2"/>
+        </g>
+      </svg>
+
+      <header>
+        <svg class="mark" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 1.8 C15.4 5.4 16.8 12.4 10 18.4 C3.2 12.4 4.6 5.4 10 1.8z"
+                fill="none" stroke="#3a5a44" stroke-width="1.5"/>
+          <path d="M10 4.5v12M10 8.5l3.4-2.2M10 11.5l-3.2-2.4M10 13.8l2.6-1.8"
+                stroke="#3a5a44" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="org">WILLOWMERE<span>BOTANIC CONSERVATORY</span></div>
+        <div class="tag">RESEARCH</div>
+      </header>
+
+      <div class="rule"></div>
+
+      <div class="mid">
+        <div class="photo">
+          <svg viewBox="0 0 108 134" preserveAspectRatio="xMidYMid slice" aria-label="Portrait photo">
+            <defs>
+              <linearGradient id="pbg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#e8eddb"/><stop offset="1" stop-color="#bccbb0"/>
+              </linearGradient>
+              <linearGradient id="skn" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#eec39a"/><stop offset="1" stop-color="#cd8e63"/>
+              </linearGradient>
+              <linearGradient id="hr" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#4c3a2c"/><stop offset="1" stop-color="#241a12"/>
+              </linearGradient>
+              <linearGradient id="sht" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#7a8759"/><stop offset="1" stop-color="#525e3c"/>
+              </linearGradient>
+              <radialGradient id="pvig" cx=".5" cy=".34" r=".95">
+                <stop offset=".55" stop-color="rgba(0,0,0,0)"/><stop offset="1" stop-color="rgba(24,34,20,.28)"/>
+              </radialGradient>
+              <filter id="sf" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.55"/></filter>
+              <filter id="sf2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
+              <filter id="pgrain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+                <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.55 0.55 0.55 0 0"/></filter>
+            </defs>
+
+            <rect width="108" height="134" fill="url(#pbg)"/>
+            <!-- glasshouse panes behind -->
+            <rect x="12" width="16" height="134" fill="rgba(255,255,255,.20)"/>
+            <rect x="44" width="20" height="134" fill="rgba(255,255,255,.13)"/>
+            <rect x="82" width="14" height="134" fill="rgba(255,255,255,.18)"/>
+            <path d="M30 0v134M70 0v134M0 44h108" stroke="rgba(90,110,80,.28)" stroke-width="1.4"/>
+            <!-- out-of-focus foliage -->
+            <path d="M8 96c8-14 20-20 30-18-4 10-14 18-30 18zM96 88c-9-12-20-16-28-14 3 9 12 15 28 14z"
+                  fill="rgba(70,98,58,.15)" filter="url(#sf2)"/>
+            <ellipse cx="54" cy="122" rx="46" ry="22" fill="rgba(60,74,50,.22)" filter="url(#sf2)"/>
+
+            <!-- shoulders / olive chore jacket -->
+            <path d="M54 93c-25 0-40 13-44 41h88c-4-28-19-41-44-41z" fill="url(#sht)"/>
+            <path d="M54 93c-7.4 0-14 1.3-19.6 3.4l8.6 11.6-5.6 2.8 9.8 23.2h13.6l9.8-23.2-5.6-2.8 8.6-11.6C68 94.3 61.4 93 54 93z" fill="#45503a"/>
+            <path d="M47.5 97l6.5 10.5L60.5 97l-6.5-3.2z" fill="#efe9da"/>
+            <path d="M36 99.5c5.6-2.2 12-3.4 18-3.4s12.4 1.2 18 3.4" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="1"/>
+            <!-- jacket seam + button -->
+            <path d="M40 112v22M68 112v22" stroke="rgba(20,26,12,.25)" stroke-width="1"/>
+            <circle cx="54" cy="120" r="1.6" fill="#3c4730"/><circle cx="53.4" cy="119.4" r=".5" fill="rgba(255,255,255,.4)"/>
+
+            <!-- neck -->
+            <path d="M47 72h14v18c0 6.2-3.2 9.5-7 9.5s-7-3.3-7-9.5z" fill="url(#skn)"/>
+            <path d="M47 74c3.4 5.2 7 7 7 7s3.6-1.8 7-7v-7H47z" fill="rgba(110,60,40,.30)" filter="url(#sf)"/>
+
+            <!-- head -->
+            <ellipse cx="54" cy="51" rx="22.5" ry="27" fill="url(#skn)"/>
+            <ellipse cx="32.6" cy="53" rx="3.2" ry="5.4" fill="#ddab82"/>
+            <ellipse cx="75.4" cy="53" rx="3.2" ry="5.4" fill="#ddab82"/>
+            <ellipse cx="33" cy="53.4" rx="1.5" ry="2.8" fill="rgba(130,72,48,.3)"/>
+            <ellipse cx="75" cy="53.4" rx="1.5" ry="2.8" fill="rgba(130,72,48,.3)"/>
+
+            <!-- face light/shade -->
+            <ellipse cx="54" cy="48" rx="16.5" ry="18" fill="rgba(255,255,255,.10)" filter="url(#sf2)"/>
+            <ellipse cx="43" cy="60" rx="5" ry="3.2" fill="rgba(205,110,88,.11)" filter="url(#sf2)"/>
+            <ellipse cx="65" cy="60" rx="5" ry="3.2" fill="rgba(205,110,88,.11)" filter="url(#sf2)"/>
+
+            <!-- short beard along the jaw -->
+            <path d="M32.5 55 C32.5 73 40 85 54 85 C68 85 75.5 73 75.5 55
+                     C74 62 72.5 66 70.5 67 C69 75 62.5 79.5 54 79.5
+                     C45.5 79.5 39 75 37.5 67 C35.5 66 34 62 32.5 55z"
+                  fill="url(#hr)" opacity=".94" filter="url(#sf)"/>
+            <path d="M40 78 q14 6 28 0" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1.6" filter="url(#sf)"/>
+            <!-- mustache + mouth on the beard -->
+            <path d="M46 69.5 q8 4.4 16 0" fill="none" stroke="#3a2b20" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M48.5 72.8 q5.5 2.4 11 0" fill="none" stroke="#8a5040" stroke-width="1.5" stroke-linecap="round"/>
+
+            <!-- brows -->
+            <path d="M42.5 47.5q5-2.8 10-1.2" stroke="#3a2b20" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+            <path d="M55.5 46.3q5-1.6 10 1.2" stroke="#3a2b20" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+
+            <!-- eyes behind the glasses -->
+            <g>
+              <ellipse cx="47" cy="54" rx="3.9" ry="2.4" fill="#f4efe8"/>
+              <circle cx="47" cy="54.1" r="1.8" fill="#4c3624"/>
+              <circle cx="47" cy="54.1" r="0.9" fill="#1e140c"/>
+              <circle cx="46.4" cy="53.5" r="0.5" fill="rgba(255,255,255,.85)"/>
+              <ellipse cx="62" cy="54" rx="3.9" ry="2.4" fill="#f4efe8"/>
+              <circle cx="62" cy="54.1" r="1.8" fill="#4c3624"/>
+              <circle cx="62" cy="54.1" r="0.9" fill="#1e140c"/>
+              <circle cx="61.4" cy="53.5" r="0.5" fill="rgba(255,255,255,.85)"/>
+            </g>
+
+            <!-- round wire glasses -->
+            <g fill="rgba(255,255,255,.06)" stroke="#8f743c" stroke-width="1.5">
+              <circle cx="46.5" cy="54" r="8"/>
+              <circle cx="62.5" cy="54" r="8"/>
+            </g>
+            <path d="M54.5 53.4h.8" stroke="#8f743c" stroke-width="1.5"/>
+            <path d="M38.5 53.5L32.8 51.5M70.5 53.5l5.7-2" stroke="#8f743c" stroke-width="1.4" fill="none"/>
+            <path d="M42 50.5q4.5-2.4 9-1M58 49.5q4.5-1.4 9 1" stroke="rgba(255,255,255,.5)" stroke-width="1" fill="none"/>
+
+            <!-- nose -->
+            <path d="M53.6 57.5q-1.5 6-2.8 8.8q1.9 1.7 4.4 1" fill="none" stroke="rgba(135,78,52,.42)" stroke-width="1.1" stroke-linecap="round" filter="url(#sf)"/>
+
+            <!-- cropped curls -->
+            <path d="M33.5 56 C30.5 48 30.5 38 35 30 C40 21 47 17.5 54 17.5
+                     C61 17.5 68 21 73 30 C77.5 38 77.5 48 74.5 56 L72 44
+                     C71 36 64 29.5 54 29.5 C44 29.5 37 36 36 44z" fill="url(#hr)"/>
+            <g fill="url(#hr)">
+              <circle cx="36" cy="31" r="6.2"/><circle cx="43" cy="24" r="6.8"/>
+              <circle cx="51.5" cy="20.5" r="7.2"/><circle cx="60" cy="21.5" r="7"/>
+              <circle cx="67.5" cy="26" r="6.6"/><circle cx="73" cy="33" r="6"/>
+              <circle cx="75.5" cy="41.5" r="5.6"/><circle cx="32.5" cy="41.5" r="5.6"/>
+              <circle cx="39.5" cy="26.5" r="5.4"/><circle cx="64" cy="22.5" r="5.6"/>
+            </g>
+            <ellipse cx="54" cy="24" rx="13" ry="5.5" fill="rgba(255,255,255,.09)" filter="url(#sf2)"/>
+
+            <!-- photo vignette + print grain -->
+            <rect width="108" height="134" fill="url(#pvig)"/>
+            <rect width="108" height="134" filter="url(#pgrain)" opacity="0.5"/>
+          </svg>
+          <div class="holo" aria-hidden="true"></div>
+        </div>
+
+        <div class="info">
+          <div class="lbl">Researcher</div>
+          <div class="name" data-t="JONAH REYES">JONAH REYES</div>
+          <div class="role">Senior Horticulturist</div>
+          <div class="dept">Glasshouse Collections · Wing B</div>
+          <div class="rows">
+            <div class="r"><span>Permit</span><b>WC-1187-04</b></div>
+            <div class="r"><span>Issued</span><b>04 / 2022</b></div>
+            <div class="r"><span>Expires</span><b>09 / 2027</b></div>
+            <div class="r"><span>Zone</span><b>B · ALL WINGS</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="micro">WILLOWMERE BOTANIC CONSERVATORY · RESEARCH CREDENTIAL WC-1187 · VERIFY AT DESK.WILLOWMERE.ORG · WILLOWMERE BOTANIC CONSERVATORY · RESEARCH CREDENTIAL WC-1187 · VERIFY AT DESK.WILLOWMERE.ORG · WILLOWMERE</div>
+
+      <div class="bottom">
+        <div class="bar-wrap">
+          <canvas id="barcode" width="118" height="34"></canvas>
+          <div class="cap">1187 0426</div>
+        </div>
+        <div class="vr"></div>
+        <div class="qr-wrap">
+          <canvas id="qr" width="66" height="66"></canvas>
+          <div class="cap">SCAN · LOG ENTRY</div>
+        </div>
+      </div>
+
+      <div class="band">
+        <span class="dot"></span>
+        <span class="band-t">GLASSHOUSE ACCESS&nbsp;&nbsp;—&nbsp;&nbsp;ALL WINGS</span>
+        <svg class="band-mark" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 1.8 C15.4 5.4 16.8 12.4 10 18.4 C3.2 12.4 4.6 5.4 10 1.8z"
+                fill="none" stroke="rgba(240,238,228,.7)" stroke-width="1.4"/>
+          <path d="M10 4.5v12M10 8.5l3.4-2.2M10 11.5l-3.2-2.4" stroke="rgba(240,238,228,.7)"
+                stroke-width="1" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- printed-ink grain over the whole face -->
+      <svg class="grain" aria-hidden="true">
+        <filter id="gnoise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" stitchTiles="stitch"/>
+          <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.5 0.5 0.5 0 0"/></filter>
+        <rect width="100%" height="100%" filter="url(#gnoise)"/>
+      </svg>
+    </div>
+
+    <!-- gloss / laminate reflections -->
+    <div class="laminate" aria-hidden="true"></div>
+
+    <!-- ambient occlusion where the loop grips the card -->
+    <div class="ao" aria-hidden="true"></div>
+
+    <!-- brass split ring + leather loop through the grommet -->
+    <div class="clip" aria-hidden="true">
+      <svg viewBox="0 0 60 62" width="60" height="62">
+        <defs>
+          <linearGradient id="rBrass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0"   stop-color="#e8d29a"/>
+            <stop offset=".3"  stop-color="#a8843e"/>
+            <stop offset=".55" stop-color="#e6cb8c"/>
+            <stop offset=".8"  stop-color="#8a682c"/>
+            <stop offset="1"   stop-color="#6b4e1e"/>
+          </linearGradient>
+        </defs>
+        <!-- leather loop passing down through the grommet -->
+        <path d="M26.4 13 C25.6 30 26.2 45 27.4 56.5" fill="none" stroke="#5a4128" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M33.6 13 C34.4 30 33.8 45 32.6 56.5" fill="none" stroke="#5a4128" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M25.9 14 C25.2 30 25.8 44 27 55" fill="none" stroke="rgba(255,224,180,.28)" stroke-width="1" stroke-linecap="round"/>
+        <!-- shadow where the strands sink into the hole -->
+        <ellipse cx="30" cy="55.5" rx="5.6" ry="2" fill="rgba(18,10,4,.35)"/>
+        <!-- leather keeper wrap binding the loop -->
+        <rect x="24" y="15.5" width="12" height="8" rx="2.4" fill="#4a3421" stroke="rgba(20,10,4,.5)" stroke-width=".6"/>
+        <path d="M27.2 15.5v8M30 15.5v8M32.8 15.5v8" stroke="rgba(20,10,4,.4)" stroke-width=".8"/>
+        <path d="M24.5 16.5h11" stroke="rgba(255,225,185,.25)" stroke-width=".7"/>
+        <!-- brass split ring the cord is knotted to -->
+        <circle cx="30" cy="8.5" r="6.6" fill="none" stroke="url(#rBrass)" stroke-width="3.4"/>
+        <circle cx="30" cy="8.5" r="8.2" fill="none" stroke="rgba(48,32,8,.30)" stroke-width=".5"/>
+        <circle cx="30" cy="8.5" r="4.9" fill="none" stroke="rgba(48,32,8,.22)" stroke-width=".5"/>
+        <path d="M25.2 4.4 A6.6 6.6 0 0 1 33.8 2.6" fill="none" stroke="rgba(255,248,220,.6)" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hint">DRAG THE BADGE&nbsp;&nbsp;·&nbsp;&nbsp;FLING IT&nbsp;&nbsp;·&nbsp;&nbsp;GRAB THE CORD</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

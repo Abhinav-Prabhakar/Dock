@@ -12,8 +12,11 @@ export function CustomersScreen() {
 
   return (
     <div className="h-full flex">
-      <div className="relative flex-1 min-w-0">
-        <BookingDesk onSelect={setSelected} />
+      <div className="relative flex-1 min-w-0 p-4">
+        {/* the desk scene sits in a framed stage — same mount as the fleet map */}
+        <div className="h-full w-full overflow-hidden rounded-2xl border border-edge shadow-[0_24px_60px_-28px_rgba(0,0,0,0.8)]">
+          <BookingDesk onSelect={setSelected} />
+        </div>
         <WhyDrawer offer={selected} onClose={clear} />
       </div>
       <aside className="w-[340px] shrink-0 border-l border-edge panel-flat overflow-y-auto scroll-thin">

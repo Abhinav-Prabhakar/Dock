@@ -17,10 +17,10 @@ import { Empty, Pill, SectionTitle } from "@/components/dock/ui";
    export, plus a "run it live" button that races two real episodes through the
    volatile-shocks scenario on the same chart. */
 
-const STATIC_COLOR = "#4b5180";
-const PPO_COLOR = "#6a73ea";
-const LIVE_STATIC_COLOR = "#9aa1c9";
-const LIVE_PPO_COLOR = "#aab4ff";
+const STATIC_COLOR = "#4c5380";
+const PPO_COLOR = "#7c87f2";
+const LIVE_STATIC_COLOR = "#a3abd6";
+const LIVE_PPO_COLOR = "#a9b1ff";
 
 const REPLAY_PARAMS = {
   scenario: "volatile-shocks",
@@ -122,13 +122,13 @@ function ShockChart({
             y1={getY(t)}
             x2={width - margin.right}
             y2={getY(t)}
-            stroke={Math.abs(t) < (yMax - yMin) * 0.02 ? "rgba(148,158,220,0.22)" : "rgba(148,158,220,0.09)"}
+            stroke={Math.abs(t) < (yMax - yMin) * 0.02 ? "rgba(152,162,226,0.22)" : "rgba(152,162,226,0.09)"}
             strokeDasharray="3 5"
           />
           <text
             x={margin.left - 10}
             y={getY(t)}
-            fill="#4b5180"
+            fill="#4c5380"
             fontSize="11"
             textAnchor="end"
             dominantBaseline="middle"
@@ -138,7 +138,7 @@ function ShockChart({
         </g>
       ))}
       {xTicks.map((t, i) => (
-        <text key={i} x={getX(t)} y={height - 10} fill="#4b5180" fontSize="11" textAnchor="middle">
+        <text key={i} x={getX(t)} y={height - 10} fill="#4c5380" fontSize="11" textAnchor="middle">
           d{t}
         </text>
       ))}
@@ -312,13 +312,11 @@ export function ShockReplay() {
       </SectionTitle>
 
       {failed || !data ? (
-        <div className="panel-flat rounded-2xl">
-          <Empty icon={CloudLightning}>
-            {failed ? "shock export unavailable" : "loading shock export…"}
-          </Empty>
-        </div>
+        <Empty icon={CloudLightning}>
+          {failed ? "shock export unavailable" : "loading shock export…"}
+        </Empty>
       ) : (
-        <div className="panel-flat rounded-2xl p-4">
+        <div>
           {/* event banner */}
           {ev && (
             <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-critical/25 bg-critical/[0.07] px-3 py-2">
@@ -349,7 +347,7 @@ export function ShockReplay() {
               </span>
               {hasLive && (
                 <span className="flex items-center gap-1.5">
-                  <span className="h-[3px] w-4 rounded-full border-t border-dashed border-[#aab4ff]" />
+                  <span className="h-[3px] w-4 rounded-full border-t border-dashed border-accent-soft" />
                   <span className="text-[10px] text-mid">live · seed 42</span>
                 </span>
               )}
@@ -384,7 +382,7 @@ export function ShockReplay() {
             <button
               onClick={runReplay}
               disabled={epLive || replaying || starting || backendUp === false}
-              className="chip flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-hi transition-colors hover:border-accent/50 hover:text-[#aab4ff] disabled:cursor-not-allowed disabled:opacity-40"
+              className="chip flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium text-hi transition-colors hover:border-accent/50 hover:text-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
               title="Run two real episodes: static then ppo — volatile-shocks · seed 42 · 90d · flat out"
             >
               {replaying ? (
@@ -399,7 +397,7 @@ export function ShockReplay() {
             </span>
             {replaying && episode && (
               <span className="ml-auto flex items-center gap-1.5 text-[10px] text-mid tabular-nums">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-loaded shadow-[0_0_8px_rgba(63,189,176,0.8)]" />
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-loaded shadow-[0_0_8px_rgba(63,191,177,0.8)]" />
                 {episode.policy} · d{Math.floor(Number(episode.day))}/{episode.horizon_days}
               </span>
             )}

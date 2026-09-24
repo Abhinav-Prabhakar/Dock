@@ -4,7 +4,7 @@ export const alt = "Dock — revenue management for container fleets";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const anchorMark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12183c"/><stop offset="1" stop-color="#060a20"/></linearGradient><radialGradient id="bloom" cx="0.62" cy="0.3" r="0.75"><stop offset="0" stop-color="#4a58cd" stop-opacity="0.34"/><stop offset="0.62" stop-color="#4a58cd" stop-opacity="0"/></radialGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a93f5"/><stop offset="1" stop-color="#6a73ea"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#bg)"/><rect width="512" height="512" rx="112" fill="url(#bloom)"/><g fill="none" stroke="url(#mark)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"><circle cx="256" cy="146" r="36"/><path d="M256 182v240"/><path d="M186 236h140"/><path d="M134 292c10 88 58 134 122 134s112-46 122-134"/><path d="M134 292l-18-38"/><path d="M378 292l18-38"/></g><rect x="144" y="454" width="224" height="7" rx="3.5" fill="#3fbdb0" fill-opacity="0.3"/><rect x="10" y="10" width="492" height="492" rx="103" fill="none" stroke="#949edc" stroke-opacity="0.25" stroke-width="2"/></svg>`;
+const anchorMark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10152b"/><stop offset="1" stop-color="#04060e"/></linearGradient><radialGradient id="bloom" cx="0.62" cy="0.3" r="0.75"><stop offset="0" stop-color="#4f59cf" stop-opacity="0.34"/><stop offset="0.62" stop-color="#4f59cf" stop-opacity="0"/></radialGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#99a2f8"/><stop offset="1" stop-color="#7c87f2"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#bg)"/><rect width="512" height="512" rx="112" fill="url(#bloom)"/><g fill="none" stroke="url(#mark)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"><circle cx="256" cy="146" r="36"/><path d="M256 182v240"/><path d="M186 236h140"/><path d="M134 292c10 88 58 134 122 134s112-46 122-134"/><path d="M134 292l-18-38"/><path d="M378 292l18-38"/></g><rect x="144" y="454" width="224" height="7" rx="3.5" fill="#3fbfb1" fill-opacity="0.3"/><rect x="10" y="10" width="492" height="492" rx="103" fill="none" stroke="#98a2e0" stroke-opacity="0.25" stroke-width="2"/></svg>`;
 
 const markSrc = `data:image/svg+xml;base64,${Buffer.from(anchorMark).toString("base64")}`;
 
@@ -20,8 +20,8 @@ export default function Image() {
           display: "flex",
           position: "relative",
           background:
-            "linear-gradient(180deg, #0b1130 0%, #070b22 55%, #05081c 100%)",
-          color: "#eef0ff",
+            "linear-gradient(180deg, #0b0f22 0%, #070b1e 55%, #04060e 100%)",
+          color: "#eef1ff",
         }}
       >
         <div
@@ -72,7 +72,7 @@ export default function Image() {
               display: "flex",
               marginTop: 28,
               fontSize: 30,
-              color: "#9aa1c9",
+              color: "#a3abd6",
             }}
           >
             bid pricing · counter-offers · on-chain settlement
@@ -85,9 +85,9 @@ export default function Image() {
                   display: "flex",
                   alignItems: "center",
                   borderRadius: 999,
-                  border: "1px solid rgba(106, 115, 234, 0.4)",
-                  background: "rgba(106, 115, 234, 0.15)",
-                  color: "#aab4ff",
+                  border: "1px solid rgba(124, 135, 242, 0.4)",
+                  background: "rgba(124, 135, 242, 0.15)",
+                  color: "#a9b1ff",
                   fontSize: 22,
                   padding: "10px 24px",
                 }}

@@ -12,10 +12,10 @@ function BalanceRing({ size = 220 }: { size?: number }) {
   return (
     <div className="relative mx-auto mt-2" style={{ height: size * 0.76, width: size }}>
       <svg viewBox="0 0 220 170" className="h-full w-full" fill="none" aria-hidden>
-        <circle cx="110" cy="88" r="78" stroke="rgba(148,158,220,0.14)" strokeWidth="2" />
+        <circle cx="110" cy="88" r="78" stroke="rgba(152,162,226,0.14)" strokeWidth="2" />
         <circle
           cx="110" cy="88" r="78"
-          stroke="rgba(148,158,220,0.4)" strokeWidth="2.5"
+          stroke="rgba(152,162,226,0.4)" strokeWidth="2.5"
           strokeLinecap="round" strokeDasharray={`${rightArc} ${C}`}
           transform="rotate(-38 110 88)"
         />

@@ -180,7 +180,7 @@ export function DecisionLogRail() {
               onClick={() => setFilter(f.id)}
               className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
                 active
-                  ? "border-accent/50 bg-accent/15 text-[#aab4ff]"
+                  ? "border-accent/50 bg-accent/15 text-accent-soft"
                   : "chip text-low hover:text-mid"
               }`}
             >

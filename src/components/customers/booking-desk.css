@@ -1,6 +1,8 @@
 /* Booking desk — scoped port of the standalone index.html draft.
    Every rule lives under .booking-desk so global CSS (Tailwind preflight,
-   globals.css) can't leak in or out. Keyframes are bd-* prefixed. */
+   globals.css) can't leak in or out. Keyframes are bd-* prefixed.
+   Palette grade: deep espresso walnut, brass accents, burgundy rug —
+   the warm scene sits inside the app's midnight chrome. */
 
 .booking-desk {
   position: relative;
@@ -8,7 +10,8 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  font-family: "Georgia", "Times New Roman", serif;
+  font-family: var(--font-sans);
+  color: #e5d6b8;
   background: #0b0906;
 }
 
@@ -22,13 +25,13 @@
   background:
     /* plank seams */
     repeating-linear-gradient(90deg,
-      rgba(0,0,0,.28) 0 2px,
+      rgba(0,0,0,.34) 0 2px,
       transparent 2px 96px),
     /* plank tone variation */
     repeating-linear-gradient(90deg,
-      #6b4a2e 0 48px,
-      #755233 48px 96px),
-    #6b4a2e;
+      #46311f 0 48px,
+      #4e3822 48px 96px),
+    #46311f;
 }
 
 /* soft wood grain streaks, plank end-joints, wear path */
@@ -38,20 +41,20 @@
   background:
     /* plank end joints */
     repeating-linear-gradient(0deg,
-      rgba(0,0,0,.16) 0 2px,
+      rgba(0,0,0,.18) 0 2px,
       transparent 2px 264px),
     /* worn traffic lane door → counter */
     linear-gradient(90deg,
       transparent 44%,
-      rgba(52,32,14,.16) 49% 51%,
+      rgba(38,22,9,.2) 49% 51%,
       transparent 57%),
     /* grain */
     repeating-linear-gradient(3deg,
-      rgba(0,0,0,.06) 0 6px,
+      rgba(0,0,0,.07) 0 6px,
       transparent 6px 34px),
     /* warm pool of light mid-floor */
-    radial-gradient(640px 420px at 50% 44%, rgba(255,198,110,.09), transparent 70%),
-    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255,220,150,.10), transparent 60%);
+    radial-gradient(640px 420px at 50% 44%, rgba(255,198,110,.11), transparent 70%),
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(255,220,150,.11), transparent 60%);
   pointer-events: none;
 }
 
@@ -60,7 +63,7 @@
   content: "";
   position: absolute; inset: 0;
   background: radial-gradient(ellipse 75% 65% at 50% 40%,
-    transparent 40%, rgba(0,0,0,.45) 100%);
+    transparent 36%, rgba(0,0,0,.52) 100%);
   pointer-events: none;
   z-index: 5;
 }
@@ -81,11 +84,11 @@
   height: 44px;
   background:
     repeating-linear-gradient(90deg,
-      rgba(0,0,0,.25) 0 3px,
+      rgba(0,0,0,.3) 0 3px,
       transparent 3px 64px),
-    linear-gradient(#3a2a1c, #4a3523);
-  border-bottom: 4px solid #241a10;
-  box-shadow: 0 10px 24px rgba(0,0,0,.5);
+    linear-gradient(#281c10, #382718);
+  border-bottom: 4px solid #181008;
+  box-shadow: 0 10px 26px rgba(0,0,0,.55);
   z-index: 4;
   display: flex;
   justify-content: space-around;
@@ -95,39 +98,39 @@
 
 .booking-desk .painting {
   width: 54px; height: 30px;
-  border: 3px solid #8a6a35;
+  border: 3px solid #6e5228;
   border-radius: 3px;
-  box-shadow: 0 3px 8px rgba(0,0,0,.5), inset 0 0 0 2px #2a1c10;
+  box-shadow: 0 3px 8px rgba(0,0,0,.55), inset 0 0 0 2px #20150c;
 }
-.booking-desk .painting.p1 { background: linear-gradient(140deg,#c96a3b 20%,#e8b04b 50%,#7a3b2a 80%); }
-.booking-desk .painting.p2 { background: linear-gradient(160deg,#3b6a8a 30%,#8ac4d4 55%,#2a4a5a 90%); }
-.booking-desk .painting.p3 { background: linear-gradient(120deg,#5a7a3b 25%,#a8c46a 55%,#3a5a2a 85%); }
+.booking-desk .painting.p1 { background: linear-gradient(140deg,#a85634 20%,#c48f3e 50%,#5f2f22 80%); }
+.booking-desk .painting.p2 { background: linear-gradient(160deg,#2e546e 30%,#6ba0b2 55%,#223a48 90%); }
+.booking-desk .painting.p3 { background: linear-gradient(120deg,#475e2f 25%,#87a055 55%,#2e4622 85%); }
 
 .booking-desk .shelf {
   width: 90px; height: 8px;
-  background: linear-gradient(#7a5a38, #4a3523);
+  background: linear-gradient(#66492b, #38271a);
   border-radius: 2px;
   position: relative;
-  box-shadow: 0 3px 6px rgba(0,0,0,.4);
+  box-shadow: 0 3px 6px rgba(0,0,0,.45);
 }
 .booking-desk .shelf::before {
   content: "";
   position: absolute; bottom: 8px; left: 8px; right: 8px; height: 12px;
   background:
     repeating-linear-gradient(90deg,
-      #b44a3a 0 8px, #3a6a8a 8px 15px,
-      #c4a04b 15px 22px, #5a7a4a 22px 30px,
-      #8a4a6a 30px 36px, transparent 36px 74px);
+      #9a4032 0 8px, #2f566e 8px 15px,
+      #a3843c 15px 22px, #48603e 22px 30px,
+      #6e3c56 30px 36px, transparent 36px 74px);
   border-radius: 2px 2px 0 0;
 }
 
 /* glowing window on the wall — feeds the light shafts */
 .booking-desk .window {
   width: 66px; height: 28px;
-  border: 3px solid #4a3620;
+  border: 3px solid #3a2a16;
   border-radius: 3px;
-  background: linear-gradient(#ffedb8, #f2c76a);
-  box-shadow: 0 0 26px rgba(255,214,130,.5), inset 0 0 0 2px rgba(120,80,30,.4);
+  background: linear-gradient(#ffeab0, #eebc5e);
+  box-shadow: 0 0 28px rgba(255,208,120,.55), inset 0 0 0 2px rgba(120,80,30,.4);
   position: relative;
   flex: 0 0 auto;
 }
@@ -135,7 +138,7 @@
   content: "";
   position: absolute; left: 50%; top: 0; bottom: 0;
   width: 2px;
-  background: #4a3620;
+  background: #3a2a16;
 }
 
 /* wall clock — hands actually turn */
@@ -143,15 +146,15 @@
   position: relative;
   width: 30px; height: 30px;
   border-radius: 50%;
-  background: radial-gradient(circle at 42% 38%, #f5ecd0, #d8c89a);
-  border: 3px solid #6a4a24;
-  box-shadow: 0 3px 8px rgba(0,0,0,.5);
+  background: radial-gradient(circle at 42% 38%, #e8dcbb, #c2b288);
+  border: 3px solid #54391c;
+  box-shadow: 0 3px 8px rgba(0,0,0,.55);
   flex: 0 0 auto;
 }
 .booking-desk .clock .h {
   position: absolute;
   left: 50%;
-  background: #3a2a14;
+  background: #2e2010;
   border-radius: 2px;
   transform-origin: 50% 100%;
 }
@@ -164,47 +167,47 @@
   top: 40px; left: 50%;
   transform: translateX(-50%);
   width: 110px; height: 26px;
-  background: radial-gradient(ellipse at 50% 0%, #8a2a2a, #5a1a1a);
+  background: radial-gradient(ellipse at 50% 0%, #6e1f1f, #451212);
   border-radius: 0 0 60px 60px;
-  border: 2px solid #3a1010;
+  border: 2px solid #2b0d0d;
   border-top: none;
   z-index: 2;
-  box-shadow: inset 0 4px 8px rgba(0,0,0,.4);
+  box-shadow: inset 0 4px 8px rgba(0,0,0,.45);
 }
 
 /* ============================= DECOR ============================= */
 
-/* big central rug */
+/* big central rug — deep oxblood with a muted brass ring */
 .booking-desk .rug {
   position: absolute;
   left: 50%; top: 44%;
   transform: translate(-50%,-50%);
-  width: min(52vw, 620px);
-  height: min(38vh, 340px);
+  width: min(46vw, 540px);
+  height: min(33vh, 300px);
   border-radius: 50%;
   background:
     radial-gradient(ellipse at center,
-      #a8452e 0 38%,
-      #c4663a 38% 52%,
-      #8a3a26 52% 66%,
-      #d4a04b 66% 70%,
-      #6a2a1c 70% 100%);
-  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+      #6e2b1a 0 38%,
+      #84401f 38% 52%,
+      #58200f 52% 66%,
+      #96702f 66% 69%,
+      #3a1810 69% 100%);
+  box-shadow: 0 6px 20px rgba(0,0,0,.45);
   z-index: 1;
-  opacity: .92;
+  opacity: .85;
 }
 .booking-desk .rug::before {
   content: "";
   position: absolute; inset: 14%;
   border-radius: 50%;
-  border: 3px dashed rgba(255,220,150,.35);
+  border: 3px dashed rgba(255,220,150,.22);
 }
 .booking-desk .rug::after {
   content: "";
   position: absolute; inset: 40%;
   border-radius: 50%;
-  background: radial-gradient(circle, #d4a04b 0 30%, #8a3a26 30% 100%);
-  box-shadow: inset 0 0 0 3px rgba(255,220,150,.3);
+  background: radial-gradient(circle, #96702f 0 30%, #58200f 30% 100%);
+  box-shadow: inset 0 0 0 3px rgba(255,220,150,.2);
 }
 
 /* potted plant — top-down: pot ring + leafy blob */
@@ -217,24 +220,24 @@
   content: "";
   position: absolute; inset: 12%;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #b05a34, #6a2e1a 75%);
-  box-shadow: 0 6px 12px rgba(0,0,0,.5), inset 0 0 0 4px rgba(0,0,0,.25);
+  background: radial-gradient(circle at 40% 35%, #8a462a, #4e2212 75%);
+  box-shadow: 0 6px 12px rgba(0,0,0,.55), inset 0 0 0 4px rgba(0,0,0,.28);
 }
 .booking-desk .plant::after {   /* foliage */
   content: "";
   position: absolute; inset: -8%;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 30% 30%, #6a9a4a 0 12%, transparent 13%),
-    radial-gradient(circle at 70% 35%, #5a8a3a 0 14%, transparent 15%),
-    radial-gradient(circle at 45% 70%, #7aaa5a 0 13%, transparent 14%),
-    radial-gradient(circle at 65% 65%, #4a7a2e 0 12%, transparent 13%),
-    radial-gradient(circle at 50% 45%, #3a6a28 0 26%, #2a5a1e 55%, transparent 70%);
+    radial-gradient(circle at 30% 30%, #54793a 0 12%, transparent 13%),
+    radial-gradient(circle at 70% 35%, #486e2e 0 14%, transparent 15%),
+    radial-gradient(circle at 45% 70%, #5f8a46 0 13%, transparent 14%),
+    radial-gradient(circle at 65% 65%, #3a6124 0 12%, transparent 13%),
+    radial-gradient(circle at 50% 45%, #2e5220 0 26%, #214016 55%, transparent 70%);
   animation: bd-sway 4.5s ease-in-out infinite;
 }
 .booking-desk .plant.tr { top: 70px; right: 6%; }
 .booking-desk .plant.tl { top: 70px; left: 6%; animation-delay: -2s; }
-.booking-desk .plant.bl { bottom: 315px; left: 3%; transform: scale(.85); }
+.booking-desk .plant.bl { bottom: 264px; left: 3%; transform: scale(.85); }
 .booking-desk .plant.bl::after { animation-delay: -1.3s; }
 
 @keyframes bd-sway {
@@ -248,8 +251,8 @@
   right: 12%; top: 42%;
   width: 74px; height: 74px;
   border-radius: 50%;
-  background: radial-gradient(circle at 42% 38%, #8a6438, #4a3018 78%);
-  box-shadow: 0 8px 18px rgba(0,0,0,.55), inset 0 0 0 5px rgba(0,0,0,.2);
+  background: radial-gradient(circle at 42% 38%, #6e4c2a, #38230f 78%);
+  box-shadow: 0 8px 18px rgba(0,0,0,.6), inset 0 0 0 5px rgba(0,0,0,.22);
   z-index: 2;
 }
 .booking-desk .side-table::before {  /* candle */
@@ -283,7 +286,7 @@
   position: absolute;
   width: 260px; height: 260px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,200,110,.16), transparent 62%);
+  background: radial-gradient(circle, rgba(255,200,110,.18), transparent 62%);
   z-index: 1;
   animation: bd-flicker 4s ease-in-out infinite;
   pointer-events: none;
@@ -315,8 +318,8 @@
   left: 13%; top: 19%;
   width: 180px; height: 180px;
   z-index: 3;
-  opacity: .5;
-  filter: blur(1.6px);
+  opacity: .42;
+  filter: blur(1.8px);
   animation: bd-spin 7.5s linear infinite;
   pointer-events: none;
 }
@@ -326,7 +329,7 @@
   width: 80px; height: 24px;
   margin-top: -12px;
   border-radius: 50%;
-  background: linear-gradient(#4a3826, #2a1e12);
+  background: linear-gradient(#38281a, #221608);
   transform-origin: 0 50%;
 }
 .booking-desk .fan .b1 { transform: rotate(0deg); }
@@ -338,7 +341,7 @@
   width: 26px; height: 26px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #9a7a45, #3a2a14);
+  background: radial-gradient(circle at 40% 35%, #7d6038, #2e2010);
   box-shadow: 0 2px 6px rgba(0,0,0,.5);
   filter: none;
 }
@@ -350,7 +353,7 @@
   top: 44px;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(rgba(255,222,150,.10), transparent 78%);
+  background: linear-gradient(rgba(255,222,150,.1), transparent 78%);
   transform: skewX(-16deg);
   transform-origin: top center;
   animation: bd-shimmer 7s ease-in-out infinite;
@@ -373,8 +376,8 @@
 .booking-desk .cat .cat-body {
   position: absolute; inset: 0;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 42% 35%, #a87848, #6a4626 78%);
-  box-shadow: 0 3px 7px rgba(0,0,0,.45);
+  background: radial-gradient(ellipse at 42% 35%, #8a5e38, #54381e 78%);
+  box-shadow: 0 3px 7px rgba(0,0,0,.5);
   animation: bd-breathe 3.6s ease-in-out infinite;
 }
 .booking-desk .cat .cat-head {
@@ -382,14 +385,14 @@
   left: -5px; top: 4px;
   width: 21px; height: 21px;
   border-radius: 50%;
-  background: radial-gradient(circle at 45% 35%, #a87848, #5a3a1e);
+  background: radial-gradient(circle at 45% 35%, #8a5e38, #462e16);
 }
 .booking-desk .cat .cat-head::before,
 .booking-desk .cat .cat-head::after {
   content: "";
   position: absolute; top: -3px;
   border: 4px solid transparent;
-  border-bottom-color: #6a4626;
+  border-bottom-color: #54381e;
 }
 .booking-desk .cat .cat-head::before { left: 1px; transform: rotate(-24deg); }
 .booking-desk .cat .cat-head::after  { right: 1px; transform: rotate(24deg); }
@@ -397,7 +400,7 @@
   position: absolute;
   right: -13px; top: 10px;
   width: 26px; height: 10px;
-  border: 5px solid #7a5230;
+  border: 5px solid #5e4022;
   border-left: none;
   border-top: none;
   border-radius: 0 0 14px 0;
@@ -427,7 +430,7 @@
   position: absolute;
   inset: 18% -10% -18% -10%;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(0,0,0,.45), transparent 70%);
+  background: radial-gradient(ellipse, rgba(0,0,0,.5), transparent 70%);
 }
 .booking-desk .customer .body {
   position: absolute; inset: 0;
@@ -435,7 +438,7 @@
   background:
     radial-gradient(circle at 50% 34%, var(--skin) 0 22%, transparent 23%),
     radial-gradient(circle at 50% 55%, var(--c1) 0 46%, var(--c2) 82%);
-  box-shadow: inset 0 -3px 6px rgba(0,0,0,.35), 0 2px 5px rgba(0,0,0,.4);
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.45);
   animation: bd-bob .55s ease-in-out infinite;
 }
 .booking-desk .customer.idle .body { animation-duration: 1.8s; }
@@ -450,7 +453,7 @@
   transform: translateX(-50%);
   border-radius: 50%;
   background: var(--hair);
-  box-shadow: inset 0 -2px 3px rgba(0,0,0,.4);
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,.45);
 }
 /* some customers wear hats — dark brim ring, lighter crown */
 .booking-desk .customer .hat {
@@ -460,29 +463,30 @@
   transform: translateX(-50%);
   border-radius: 50%;
   background: radial-gradient(circle at 50% 42%, var(--hat) 0 42%, var(--hat-d) 44% 100%);
-  box-shadow: 0 2px 4px rgba(0,0,0,.45), inset 0 -2px 4px rgba(0,0,0,.3);
+  box-shadow: 0 2px 4px rgba(0,0,0,.5), inset 0 -2px 4px rgba(0,0,0,.3);
 }
 /* the shopkeeper — fixed behind the counter, feet tucked under its edge */
 .booking-desk .keeper {
   margin: 0;
   right: 185px;
-  top: calc(100% - 314px);
+  top: calc(100% - 266px);
   z-index: 9;
 }
 
-/* speech / thought bubble */
+/* speech / thought bubble — the room's one serif voice */
 .booking-desk .bubble {
   position: absolute;
   bottom: 110%; left: 50%;
   transform: translateX(-50%) scale(0);
-  background: #fdf6e3;
+  background: #f6ecd4;
   color: #2a1c10;
+  font-family: "Georgia", "Times New Roman", serif;
   font-size: 11px;
   font-style: italic;
   padding: 4px 9px;
   border-radius: 10px;
   white-space: nowrap;
-  box-shadow: 0 3px 8px rgba(0,0,0,.4);
+  box-shadow: 0 3px 8px rgba(0,0,0,.45);
   transition: transform .25s cubic-bezier(.34,1.56,.64,1);
   z-index: 8;
 }
@@ -492,7 +496,7 @@
   top: 100%; left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: #fdf6e3;
+  border-top-color: #f6ecd4;
 }
 .booking-desk .bubble.show { transform: translateX(-50%) scale(1); }
 
@@ -501,26 +505,26 @@
 .booking-desk .counter {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 290px;
+  height: 240px;
   z-index: 10;
   background:
     /* the whole strip is counter surface, ending in a thin dark foot */
     linear-gradient(
-      #a8803f 0 5px,
-      #8a6438 5px 280px,
-      #4a3018 280px 100%),
+      #8a6430 0 4px,
+      #5c4124 4px 226px,
+      #33200e 226px 100%),
     /* long plank seams across the surface */
     repeating-linear-gradient(90deg,
-      rgba(0,0,0,.22) 0 3px,
+      rgba(0,0,0,.24) 0 3px,
       transparent 3px 150px),
-    linear-gradient(#54391f, #382512);
-  border-top: 5px solid #b08a48;
+    linear-gradient(#432d18, #2e1d0e);
+  border-top: 4px solid #a07a3a;
   box-shadow:
-    0 -18px 50px rgba(0,0,0,.65),
-    inset 0 4px 10px rgba(255,220,150,.18),
+    0 -18px 50px rgba(0,0,0,.68),
+    inset 0 4px 10px rgba(255,220,150,.14),
     /* tooled-leather style inlay border on the surface */
-    inset 0 0 0 9px rgba(0,0,0,.10),
-    inset 0 0 0 11px rgba(212,160,75,.22);
+    inset 0 0 0 8px rgba(0,0,0,.12),
+    inset 0 0 0 10px rgba(212,160,75,.18);
   display: flex;
   padding: 0;
 }
@@ -528,9 +532,9 @@
 .booking-desk .counter::before {
   content: "";
   position: absolute;
-  left: 0; right: 0; top: 272px;
+  left: 0; right: 0; top: 222px;
   height: 4px;
-  background: linear-gradient(#d4aa58, #7a5a28);
+  background: linear-gradient(#b8934a, #64461e);
   box-shadow: 0 2px 8px rgba(0,0,0,.5);
   pointer-events: none;
 }
@@ -540,22 +544,26 @@
   position: absolute;
   left: 0; right: 0; top: 0; bottom: 0;
   background: radial-gradient(ellipse 60% 80% at 50% 20%,
-    rgba(255,210,130,.14), transparent 70%);
+    rgba(255,210,130,.13), transparent 70%);
   pointer-events: none;
 }
 
+/* engraved brass plaque over the counter */
 .booking-desk .counter-label {
   position: absolute;
-  top: -42px; left: 50%;
+  top: -38px; left: 50%;
   transform: translateX(-50%);
-  font-size: 12px;
-  letter-spacing: 4px;
-  color: #d4a04b;
-  text-shadow: 0 2px 6px #000;
-  background: rgba(20,12,6,.75);
-  padding: 4px 18px;
-  border-radius: 12px;
-  border: 1px solid #6a4a24;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .32em;
+  text-indent: .32em; /* re-centre tracked text */
+  color: #d9b269;
+  background: linear-gradient(180deg, #2e1f10, #1d1308);
+  padding: 5px 18px;
+  border-radius: 8px;
+  border: 1px solid #6e5228;
+  box-shadow: 0 3px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,210,130,.14);
 }
 
 .booking-desk .slots {
@@ -565,18 +573,18 @@
   min-width: 0;
   justify-content: safe center;
   align-items: flex-start;
-  padding: 14px 28px 0;
+  padding: 12px 26px 0;
   height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: rgba(212,160,75,.5) transparent;
+  scrollbar-color: rgba(212,160,75,.45) transparent;
 }
 .booking-desk .slots::-webkit-scrollbar { height: 6px; }
 .booking-desk .slots::-webkit-scrollbar-track { background: transparent; }
 .booking-desk .slots::-webkit-scrollbar-thumb {
-  background: rgba(212,160,75,.45);
+  background: rgba(212,160,75,.4);
   border-radius: 3px;
 }
 
@@ -588,35 +596,35 @@
 }
 .booking-desk .register {
   position: absolute;
-  right: 18px; top: 26px;
-  width: 96px; height: 62px;
+  right: 18px; top: 24px;
+  width: 96px; height: 60px;
   border-radius: 9px;
-  background: linear-gradient(#3c2c18, #241708);
-  border: 2px solid #8a6a35;
-  box-shadow: 0 5px 12px rgba(0,0,0,.55), inset 0 0 0 2px rgba(212,160,75,.18);
+  background: linear-gradient(#2e2110, #1a1106);
+  border: 2px solid #6e5228;
+  box-shadow: 0 5px 12px rgba(0,0,0,.6), inset 0 0 0 2px rgba(212,160,75,.16);
 }
 .booking-desk .register::before {  /* key grid */
   content: "";
   position: absolute;
   left: 9px; top: 9px;
-  width: 42px; height: 28px;
+  width: 42px; height: 26px;
   background:
-    repeating-linear-gradient(90deg, rgba(212,160,75,.65) 0 8px, transparent 8px 12px),
-    repeating-linear-gradient(0deg,  rgba(212,160,75,.65) 0 8px, transparent 8px 12px);
+    repeating-linear-gradient(90deg, rgba(212,160,75,.6) 0 8px, transparent 8px 12px),
+    repeating-linear-gradient(0deg,  rgba(212,160,75,.6) 0 8px, transparent 8px 12px);
 }
 .booking-desk .register::after {   /* little green display */
   content: "";
   position: absolute;
-  right: 9px; top: 11px;
+  right: 9px; top: 10px;
   width: 24px; height: 16px;
   border-radius: 2px;
-  background: #16220f;
-  border: 1px solid #5a7a45;
+  background: #14200e;
+  border: 1px solid #4e6e3a;
   box-shadow: inset 0 0 7px rgba(130,220,110,.35);
 }
 .booking-desk .bell {
   position: absolute;
-  right: 50px; top: 104px;
+  right: 50px; top: 98px;
   width: 30px; height: 21px;
   border-radius: 15px 15px 5px 5px;
   background: radial-gradient(circle at 40% 28%, #ffe9a0, #d4a02e 62%, #8a6014);
@@ -642,12 +650,12 @@
 }
 .booking-desk .ledger-book {
   position: absolute;
-  right: 24px; top: 142px;
+  right: 24px; top: 134px;
   width: 76px; height: 46px;
   border-radius: 4px;
-  background: linear-gradient(105deg, #2a5240 58%, #1f3d30 58%);
-  border: 1px solid #142a20;
-  box-shadow: 0 4px 9px rgba(0,0,0,.5), inset 0 0 0 3px rgba(255,255,255,.05);
+  background: linear-gradient(105deg, #26443a 58%, #1a2f28 58%);
+  border: 1px solid #122019;
+  box-shadow: 0 4px 9px rgba(0,0,0,.55), inset 0 0 0 3px rgba(255,255,255,.05);
 }
 .booking-desk .ledger-book::before {  /* spine */
   content: "";
@@ -660,7 +668,7 @@
   content: "";
   position: absolute; inset: 7px;
   background: repeating-linear-gradient(0deg,
-    rgba(232,222,190,.14) 0 1.5px, transparent 1.5px 7px);
+    rgba(232,222,190,.13) 0 1.5px, transparent 1.5px 7px);
 }
 
 /* ============================= OFFER CARDS ============================= */
@@ -670,14 +678,14 @@
   width: 264px;
   flex: 0 0 auto;
   background:
-    radial-gradient(circle at 18% 12%, rgba(212,160,75,.14), transparent 45%),
-    linear-gradient(165deg, #1c1a16, #0c0b09 60%, #171512);
-  border: 1px solid #8a6a35;
+    radial-gradient(circle at 18% 12%, rgba(212,160,75,.13), transparent 45%),
+    linear-gradient(165deg, #1a1815, #0b0a08 60%, #151310);
+  border: 1px solid rgba(212,164,80,.45);
   border-radius: 12px;
   box-shadow:
-    0 12px 26px rgba(0,0,0,.7),
-    inset 0 0 0 4px #0c0b09,
-    inset 0 0 0 5px rgba(212,160,75,.35);
+    0 12px 26px rgba(0,0,0,.72),
+    inset 0 0 0 4px #0b0a08,
+    inset 0 0 0 5px rgba(212,160,75,.3);
   padding: 14px 17px 12px;
   color: #e8dcc0;
   text-align: center;
@@ -695,7 +703,7 @@
 .booking-desk .offer-card .corner {
   position: absolute;
   font-size: 9px;
-  color: #8a6a35;
+  color: #96712e;
   letter-spacing: 1px;
 }
 .booking-desk .offer-card .corner.tl { top: 4px; left: 8px; }
@@ -703,34 +711,35 @@
 
 .booking-desk .offer-card .route {
   display: inline-block;
-  font-size: 17px;
-  font-weight: bold;
-  letter-spacing: .6px;
+  font-family: var(--font-display);
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
   color: #f0e4c8;
-  background: rgba(212,160,75,.12);
-  border: 1px solid rgba(212,160,75,.4);
+  background: rgba(212,160,75,.1);
+  border: 1px solid rgba(212,160,75,.38);
   border-radius: 6px;
   padding: 4px 11px;
   margin-bottom: 5px;
 }
 .booking-desk .offer-card .teu-line {
-  font-size: 11.5px;
-  letter-spacing: 1.8px;
+  font-size: 10.5px;
+  letter-spacing: .18em;
   color: #a89878;
   margin-bottom: 7px;
   text-transform: uppercase;
 }
 /* segment + cargo as coloured text, not badges */
 .booking-desk .offer-card .spec-line {
-  font-size: 12px;
-  letter-spacing: 2px;
+  font-size: 10.5px;
+  letter-spacing: .16em;
   text-transform: uppercase;
   margin-bottom: 7px;
   color: #8a7a5e;
 }
 .booking-desk .offer-card .spec-line .seg::before {
   content: "●";
-  font-size: 8px;
+  font-size: 7px;
   margin-right: 6px;
   vertical-align: 1px;
 }
@@ -738,46 +747,50 @@
 .booking-desk .offer-card .seg-urgent   { color: #ff8a76; }
 .booking-desk .offer-card .seg-standard { color: #a8b8d8; }
 .booking-desk .offer-card .seg-flexible { color: #8ad89a; }
-.booking-desk .offer-card .spec-line .cargo { color: #d8bd88; letter-spacing: 1.2px; }
+.booking-desk .offer-card .spec-line .cargo { color: #d8bd88; letter-spacing: .1em; }
 
 .booking-desk .offer-card .divider {
   height: 1px;
   margin: 6px 10px;
   background: repeating-linear-gradient(90deg, #8a6a35 0 4px, transparent 4px 8px);
-  opacity: .7;
+  opacity: .6;
 }
 .booking-desk .offer-card .price {
-  font-size: 30px;
-  font-weight: bold;
-  color: #ffd97a;
-  text-shadow: 0 0 10px rgba(255,200,90,.35);
+  font-family: var(--font-display);
+  font-size: 29px;
+  font-weight: 600;
+  color: #f0c86e;
+  text-shadow: 0 0 10px rgba(255,200,90,.3);
   margin-bottom: 3px;
   line-height: 1.15;
 }
 .booking-desk .offer-card .price .per {
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 11px;
   font-weight: normal;
   color: #9a8a6a;
 }
 .booking-desk .offer-card .price small {
   display: block;
-  font-size: 9px;
-  font-weight: normal;
-  letter-spacing: 2px;
+  font-family: var(--font-sans);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .2em;
+  text-transform: uppercase;
   color: #9a8a6a;
   margin-bottom: 2px;
 }
 .booking-desk .offer-card .market {
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: #a89878;
   margin-bottom: 6px;
 }
-.booking-desk .offer-card .market .delta { font-weight: bold; }
+.booking-desk .offer-card .market .delta { font-weight: 600; }
 .booking-desk .offer-card .market .delta.above { color: #ff9a8a; }
 .booking-desk .offer-card .market .delta.below { color: #8ad89a; }
 .booking-desk .offer-card .meta {
-  font-size: 11.5px;
-  letter-spacing: .4px;
+  font-size: 10.5px;
+  letter-spacing: .03em;
   color: #8a7a5e;
   margin-bottom: 9px;
 }
@@ -792,9 +805,9 @@
   border-radius: 8px;
   padding: 8px 0;
   font-family: inherit;
-  font-size: 12.5px;
-  font-weight: bold;
-  letter-spacing: .8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
   text-transform: uppercase;
   cursor: pointer;
   color: #fff;
@@ -819,7 +832,7 @@
   position: absolute; inset: 0;
   border-radius: 12px;
   background: linear-gradient(115deg,
-    transparent 32%, rgba(255,232,175,.16) 47%, transparent 62%);
+    transparent 32%, rgba(255,232,175,.14) 47%, transparent 62%);
   transform: translateX(-130%);
   animation: bd-sheen .9s ease .18s forwards;
   pointer-events: none;
@@ -831,9 +844,10 @@
   position: absolute;
   top: 40%; left: 50%;
   transform: translate(-50%,-50%) rotate(-14deg) scale(2.2);
+  font-family: var(--font-sans);
   font-size: 15px;
-  font-weight: bold;
-  letter-spacing: 3px;
+  font-weight: 700;
+  letter-spacing: .2em;
   padding: 3px 12px;
   border: 2.5px solid currentColor;
   border-radius: 7px;
@@ -845,7 +859,7 @@
   mask-size: cover;
 }
 .booking-desk .stamp.show { animation: bd-stamp-in .28s cubic-bezier(.3,1.7,.5,1) forwards; }
-.booking-desk .stamp.booked { color: #7fe08f; background: rgba(60,150,80,.12); }
+.booking-desk .stamp.booked { color: #7fd9c8; background: rgba(63,191,177,.12); }
 .booking-desk .stamp.passed { color: #ff8a76; background: rgba(180,70,55,.12); }
 @keyframes bd-stamp-in {
   to { transform: translate(-50%,-50%) rotate(-14deg) scale(1); opacity: .95; }
@@ -878,6 +892,25 @@
   transition: all .6s cubic-bezier(.5,-0.2,.7,.5);
 }
 
+/* engraved plaque — names the stage the way "fleet positions" names the map */
+.booking-desk .stage-plaque {
+  position: absolute;
+  top: 56px; left: 18px;
+  z-index: 15;
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .3em;
+  text-indent: .3em;
+  text-transform: uppercase;
+  color: #b8925a;
+  background: linear-gradient(180deg, rgba(46,31,16,.85), rgba(29,19,8,.85));
+  border: 1px solid rgba(110,82,40,.55);
+  border-radius: 7px;
+  padding: 5px 14px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,210,130,.12);
+}
+
 /* ============================= HUD ============================= */
 
 .booking-desk .hud {
@@ -885,21 +918,30 @@
   top: 56px; right: 18px;
   z-index: 15;
   text-align: right;
-  color: #ffd97a;
-  text-shadow: 0 2px 8px #000;
+  color: #ecc987;
   font-size: 13px;
   letter-spacing: 1px;
 }
 .booking-desk .hud .till {
-  font-size: 24px;
-  font-weight: bold;
-  background: rgba(20,12,6,.8);
-  border: 1px solid #8a6a35;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  background: rgba(26,18,9,.85);
+  border: 1px solid rgba(212,164,80,.45);
   border-radius: 10px;
   padding: 6px 14px;
-  box-shadow: 0 4px 14px rgba(0,0,0,.5);
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,220,150,.12);
 }
-.booking-desk .hud .sub { margin-top: 4px; font-size: 10px; color: #b8a678; }
+.booking-desk .hud .sub {
+  margin-top: 5px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #a08a5e;
+}
 
 /* ============================= LIVE-MODE ADDITIONS =============================
    Same warm palette — only new classes the live data feed requires. */
@@ -908,13 +950,13 @@
 .booking-desk .offer-card .kind-tag {
   position: absolute;
   top: 8px; right: -2px;
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 1.6px;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: #ffd97a;
-  background: linear-gradient(#4a3520, #2e2110);
-  border: 1px solid rgba(212,160,75,.5);
+  color: #ecc987;
+  background: linear-gradient(#3f2d16, #281c0c);
+  border: 1px solid rgba(212,160,75,.45);
   border-right: none;
   border-radius: 5px 0 0 5px;
   padding: 2.5px 8px;
@@ -924,8 +966,8 @@
 .booking-desk .offer-card { cursor: pointer; }
 
 /* extra stamp verdicts in the same rubber-stamp language */
-.booking-desk .stamp.counter  { color: #ffd97a; background: rgba(212,160,75,.14); font-size: 12px; }
-.booking-desk .stamp.rejected { color: #c96a5a; background: rgba(150,60,45,.12); }
+.booking-desk .stamp.counter  { color: #ecc987; background: rgba(212,160,75,.14); font-size: 12px; }
+.booking-desk .stamp.rejected { color: #cf6f5e; background: rgba(150,60,45,.12); }
 
 /* non-winning cards linger a beat then fade out of the ticker */
 .booking-desk .offer-card.expired {
@@ -943,17 +985,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(11,9,6,.5);
+  background: rgba(9,7,4,.55);
   backdrop-filter: blur(1.5px);
   pointer-events: none;
 }
 .booking-desk .desk-overlay-chip {
-  font-size: 13px;
-  letter-spacing: .6px;
-  color: #e8dcc0;
-  background: rgba(20,12,6,.85);
-  border: 1px solid #8a6a35;
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: #e5d2a8;
+  background: rgba(26,18,9,.88);
+  border: 1px solid rgba(212,164,80,.4);
   border-radius: 999px;
   padding: 8px 20px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.5), 0 0 18px rgba(255,200,110,.15);
+  box-shadow: 0 6px 24px rgba(0,0,0,.55), 0 0 18px rgba(255,200,110,.12);
 }

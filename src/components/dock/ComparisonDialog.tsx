@@ -23,11 +23,11 @@ interface ComparisonDialogProps {
 }
 
 const POLICY_COLORS: Record<string, string> = {
-  static: "#4b5180",
-  greedy: "#9aa1c9",
-  heuristic: "#d9b13b",
-  heuristic_bid: "#3fbdb0",
-  ppo: "#6a73ea",
+  static: "#4c5380",
+  greedy: "#a3abd6",
+  heuristic: "#d9ae3c",
+  heuristic_bid: "#3fbfb1",
+  ppo: "#7c87f2",
 };
 
 const POLICY_NAMES: Record<string, string> = {
@@ -154,7 +154,7 @@ function PolicyLadder({ summary, meta }: { summary: SummaryData; meta: MetaData 
             key={key}
             className={`relative rounded-2xl px-4 pb-4 pt-3.5 ${
               isPpo
-                ? "border border-accent/50 bg-gradient-to-b from-accent/15 to-accent-deep/10 shadow-[0_0_24px_rgba(106,115,234,0.15)]"
+                ? "border border-accent/50 bg-gradient-to-b from-accent/15 to-accent-deep/10 shadow-[0_0_24px_rgba(124,135,242,0.18)]"
                 : "panel-flat"
             }`}
           >
@@ -273,13 +273,13 @@ function RacingChart({ timeline }: { timeline: TimelineData }) {
               y1={getY(t)}
               x2={width - margin.right}
               y2={getY(t)}
-              stroke="rgba(148,158,220,0.09)"
+              stroke="rgba(152,162,226,0.09)"
               strokeDasharray="3 5"
             />
             <text
               x={margin.left - 10}
               y={getY(t)}
-              fill="#4b5180"
+              fill="#4c5380"
               fontSize="11"
               textAnchor="end"
               dominantBaseline="middle"
@@ -293,7 +293,7 @@ function RacingChart({ timeline }: { timeline: TimelineData }) {
             key={i}
             x={getX(t)}
             y={height - 12}
-            fill="#4b5180"
+            fill="#4c5380"
             fontSize="11"
             textAnchor="middle"
           >

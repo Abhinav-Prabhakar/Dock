@@ -13,6 +13,8 @@ import {
   Globe,
   TriangleAlert,
   X,
+  ChevronDown,
+  type LucideIcon,
 } from "lucide-react";
 import type { Scenario } from "@/lib/api";
 
@@ -33,11 +35,48 @@ function isShocky(s: Scenario) {
 }
 
 const STATUS_DOT: Record<string, string> = {
-  running: "bg-loaded shadow-[0_0_8px_rgba(63,189,176,0.8)] animate-pulse",
+  running: "bg-loaded shadow-[0_0_8px_rgba(63,191,177,0.9)] animate-pulse",
   paused: "bg-warn",
   completed: "bg-accent",
   stopped: "bg-low",
 };
+
+/* One instrument field: icon + stacked micro-label over the control. */
+function Field({
+  icon: Icon,
+  label,
+  children,
+  disabled,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: React.ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2.5 px-4 py-2 transition-opacity ${
+        disabled ? "opacity-45" : ""
+      }`}
+    >
+      <Icon size={13} className="shrink-0 text-low" strokeWidth={1.75} />
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[8px] font-medium uppercase leading-none tracking-[0.2em] text-faint">
+          {label}
+        </span>
+        <div className="flex items-center">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+const Divider = () => <div className="w-px self-stretch bg-edge-soft/70" />;
+
+const selectCls =
+  "cursor-pointer appearance-none bg-transparent pr-4 font-display text-[12.5px] font-medium leading-tight text-hi outline-none disabled:cursor-not-allowed [&>option]:bg-ink";
+
+const numInputCls =
+  "w-10 bg-transparent font-display text-[12.5px] font-medium leading-tight tabular-nums text-hi outline-none disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
 export function EpisodeControls() {
   const {
@@ -72,17 +111,16 @@ export function EpisodeControls() {
     start({ policy, scenario, seed, horizon_days: horizon, speed_days_per_sec: speed });
 
   return (
-    <div className="panel-flat border-edge border-b px-6 py-2">
-      <div className="flex items-center justify-between gap-4">
-        {/* selectors */}
-        <div className="flex items-center gap-2">
-          <div className="chip flex h-8 items-center gap-2 rounded-full px-3" title="Policy">
-            <BrainCircuit size={13} className="text-accent shrink-0" strokeWidth={1.75} />
+    <div className="shrink-0 px-4 pt-3">
+      <div className="panel scroll-thin flex items-stretch overflow-x-auto rounded-2xl">
+        {/* config fields */}
+        <Field icon={BrainCircuit} label="policy" disabled={!!live}>
+          <div className="relative flex items-center">
             <select
               value={policy}
               onChange={(e) => setPolicy(e.target.value)}
               disabled={!!live}
-              className="bg-transparent text-[12px] font-medium text-hi outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&>option]:bg-ink"
+              className={selectCls}
             >
               {policies.length === 0 && <option value={policy}>{titleCase(policy)}</option>}
               {policies.map((p) => (
@@ -91,15 +129,19 @@ export function EpisodeControls() {
                 </option>
               ))}
             </select>
+            <ChevronDown size={10} className="pointer-events-none absolute right-0 text-faint" />
           </div>
+        </Field>
 
-          <div className="chip flex h-8 items-center gap-2 rounded-full px-3" title="Scenario">
-            <Globe size={13} className="text-mid shrink-0" strokeWidth={1.75} />
+        <Divider />
+
+        <Field icon={Globe} label="scenario" disabled={!!live}>
+          <div className="relative flex items-center">
             <select
               value={scenario}
               onChange={(e) => setScenario(e.target.value)}
               disabled={!!live}
-              className="bg-transparent text-[12px] font-medium text-hi outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed [&>option]:bg-ink"
+              className={selectCls}
             >
               {scenarios.length === 0 && <option value={scenario}>{titleCase(scenario)}</option>}
               {scenarios.map((s) => (
@@ -109,67 +151,72 @@ export function EpisodeControls() {
                 </option>
               ))}
             </select>
+            <ChevronDown size={10} className="pointer-events-none absolute right-0 text-faint" />
           </div>
+        </Field>
 
-          <div className="chip flex h-8 items-center gap-1.5 rounded-full px-3" title="Seed">
-            <Dices size={13} className="text-mid shrink-0" strokeWidth={1.75} />
-            <input
-              type="number"
-              value={seed}
-              onChange={(e) => setSeed(Number(e.target.value))}
-              disabled={!!live}
-              className="w-12 bg-transparent text-[12px] font-medium text-hi outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </div>
+        <Divider />
 
-          <div className="chip flex h-8 items-center gap-1.5 rounded-full px-3" title="Horizon (days)">
-            <CalendarDays size={13} className="text-mid shrink-0" strokeWidth={1.75} />
-            <input
-              type="number"
-              value={horizon}
-              min={5}
-              max={365}
-              onChange={(e) => setHorizon(Number(e.target.value))}
-              disabled={!!live}
-              className="w-12 bg-transparent text-[12px] font-medium text-hi outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          </div>
+        <Field icon={Dices} label="seed" disabled={!!live}>
+          <input
+            type="number"
+            value={seed}
+            onChange={(e) => setSeed(Number(e.target.value))}
+            disabled={!!live}
+            className={numInputCls}
+          />
+        </Field>
 
-          <div
-            className="chip flex h-8 items-center gap-2 rounded-full px-3"
+        <Divider />
+
+        <Field icon={CalendarDays} label="horizon" disabled={!!live}>
+          <input
+            type="number"
+            value={horizon}
+            min={5}
+            max={365}
+            onChange={(e) => setHorizon(Number(e.target.value))}
+            disabled={!!live}
+            className={numInputCls}
+          />
+          <span className="pl-0.5 text-[9px] leading-tight text-faint">d</span>
+        </Field>
+
+        <Divider />
+
+        <Field icon={Gauge} label="speed">
+          <input
+            type="range"
+            min={0.5}
+            max={120}
+            step={0.5}
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="w-24 accent-accent"
             title="Sim speed (days / sec)"
-          >
-            <Gauge size={13} className="text-mid shrink-0" strokeWidth={1.75} />
-            <input
-              type="range"
-              min={0.5}
-              max={120}
-              step={0.5}
-              value={speed}
-              onChange={(e) => setSpeed(Number(e.target.value))}
-              className="w-20 accent-accent"
-            />
-            <span className="w-8 text-right font-display text-[11px] font-medium text-mid tabular-nums">
-              {speed}×
-            </span>
-          </div>
-        </div>
+          />
+          <span className="w-9 pl-1.5 text-right font-display text-[11px] font-medium leading-tight text-mid tabular-nums">
+            {speed}×
+          </span>
+        </Field>
 
-        {/* transport */}
-        <div className="flex items-center gap-3">
-          {episode && (
-            <div className="flex items-center gap-2" title={`Day ${Math.floor(day)} of ${horizonDays}`}>
+        {/* episode status + transport */}
+        <div className="ml-auto flex items-center gap-3 border-l border-edge-soft/70 px-4">
+          {episode ? (
+            <div className="flex items-center gap-2.5" title={`Day ${Math.floor(day)} of ${horizonDays}`}>
               <span
                 className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[episode.status] ?? "bg-low"}`}
               />
-              <div className="w-20">
+              <div className="w-[72px]">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-display text-[11px] font-semibold text-hi tabular-nums">
+                  <span className="font-display text-[11.5px] font-semibold leading-none text-hi tabular-nums">
                     d{Math.floor(day)}
                   </span>
-                  <span className="text-[9px] text-faint tabular-nums">/{horizonDays}</span>
+                  <span className="text-[9px] leading-none text-faint tabular-nums">
+                    /{horizonDays}
+                  </span>
                 </div>
-                <div className="mt-0.5 h-[3px] w-full overflow-hidden rounded-full bg-ink">
+                <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-ink">
                   <div
                     className="h-full rounded-full bg-accent transition-[width] duration-500"
                     style={{ width: `${progress * 100}%` }}
@@ -177,22 +224,26 @@ export function EpisodeControls() {
                 </div>
               </div>
             </div>
+          ) : (
+            <span className="text-[9px] font-medium uppercase tracking-[0.18em] text-faint">
+              no episode
+            </span>
           )}
 
-          <div className="flex items-center gap-1 border-l border-edge pl-3">
+          <div className="flex items-center gap-1.5">
             {!running ? (
               <button
                 onClick={episode?.status === "paused" ? () => control("resume") : handleStart}
                 disabled={starting}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-accent-hi to-accent-deep text-white shadow-[0_0_14px_rgba(90,100,230,0.4)] transition-transform hover:scale-105 disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-accent-hi to-accent-deep text-white shadow-[0_0_16px_rgba(124,135,242,0.45)] transition-transform hover:scale-105 disabled:opacity-50"
                 title={episode?.status === "paused" ? "Resume" : "Start episode"}
               >
-                <Play size={13} fill="currentColor" />
+                <Play size={13} fill="currentColor" className="ml-px" />
               </button>
             ) : (
               <button
                 onClick={() => control("pause")}
-                className="flex h-8 w-8 items-center justify-center rounded-full chip text-warn transition-colors hover:text-reserved-soft"
+                className="chip flex h-8 w-8 items-center justify-center rounded-full text-warn transition-colors hover:text-reserved-soft"
                 title="Pause"
               >
                 <Pause size={13} fill="currentColor" />
@@ -201,17 +252,17 @@ export function EpisodeControls() {
             <button
               onClick={() => control("stop")}
               disabled={!episode}
-              className="flex h-8 w-8 items-center justify-center rounded-full chip text-low transition-colors hover:text-critical disabled:opacity-40 disabled:hover:text-low"
+              className="chip flex h-8 w-8 items-center justify-center rounded-full text-low transition-colors hover:text-critical disabled:opacity-40 disabled:hover:text-low"
               title="Stop"
             >
-              <Square size={12} fill="currentColor" />
+              <Square size={11} fill="currentColor" />
             </button>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="mt-2 flex items-center gap-2 rounded-lg border border-critical/30 bg-critical/10 px-3 py-1.5 text-[11.5px] text-pending-soft">
+        <div className="mt-2 flex items-center gap-2 rounded-xl border border-critical/25 bg-critical/[0.08] px-3.5 py-2 text-[11.5px] text-pending-soft">
           <TriangleAlert size={12} className="shrink-0 text-critical" />
           <span className="flex-1">{error}</span>
           <button onClick={dismissError} className="text-low hover:text-hi">

@@ -117,7 +117,7 @@ function PairRows({ rows, decimals }: { rows: [string, SegPair][]; decimals: num
           <span className="chip flex w-[76px] shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5">
             <span
               className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ backgroundColor: SEGMENT_COLORS[seg] ?? "#a8b8d8" }}
+              style={{ backgroundColor: SEGMENT_COLORS[seg] ?? "#aab4da" }}
             />
             <span className="truncate text-[9.5px] font-medium text-mid">{seg}</span>
           </span>
@@ -211,7 +211,7 @@ export function CredibilityPanel() {
         credibility
       </SectionTitle>
 
-      <div className="panel-flat rounded-2xl p-4">
+      <div>
         {failed || !report ? (
           <Empty icon={Gauge}>
             {failed ? "model report unavailable" : "loading model report…"}

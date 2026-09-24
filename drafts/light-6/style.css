@@ -1,0 +1,1348 @@
+/* ============================================================
+   MERIDIAN LINE cargo-booking credential — light mode, warm
+   cream, sage + terracotta, leather cord, material realism
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --wall: #f4f0e4;
+  --ink: #1d1a14;
+  --ink2: #45423a;
+  --faint: #908d81;
+  --hair: #d9d3c1;
+  --accent: #3a5a44;          /* deep sage */
+  --terra: #b96f4b;           /* terracotta */
+}
+
+html, body { height: 100%; }
+
+body {
+  background-color: var(--wall);
+  /* fine plaster grain + warm light pooling on the wall */
+  background-image:
+    radial-gradient(60% 42% at 50% 30%, rgba(255,252,236,.55), rgba(255,252,236,0) 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0.35 0.35 0 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  font-family: "Helvetica Neue", Helvetica, -apple-system, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* soft room vignette */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(130% 105% at 50% 26%, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%),
+    radial-gradient(120% 110% at 50% 45%, rgba(0,0,0,0) 58%, rgba(112,98,72,.17) 100%);
+  pointer-events: none;
+  z-index: 60;
+}
+
+.scene {
+  position: fixed; inset: 0;
+  perspective: 1400px;
+  perspective-origin: 50% 42%;
+  z-index: 5;              /* whole scene (badge incl.) floats above the panel on overlap */
+  pointer-events: none;    /* clicks fall through to the panel; the window-level
+                              pointerdown handler still drives card physics */
+}
+
+/* faint great-circle route arcs drifting on the wall behind the badge */
+.scene::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: -560px;
+  width: 920px; height: 920px;
+  margin-left: -430px;
+  border: 1.1px dashed rgba(58,90,68,.10);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+.scene::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: -430px;
+  width: 700px; height: 700px;
+  margin-left: -415px;
+  border: 1px dashed rgba(185,111,75,.09);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ---------------- wall hook ---------------- */
+.mount {
+  position: absolute;
+  left: 50%; top: 24px;
+  margin-left: -32px;
+  width: 64px;
+  filter: drop-shadow(3px 6px 5px rgba(58,48,32,.32));
+  z-index: 5;
+}
+
+/* ---------------- strap canvas ---------------- */
+#strap {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ---------------- wall contact shadow ---------------- */
+#cardShadow {
+  position: absolute;
+  left: 0; top: 0;
+  width: 332px; height: 468px;
+  border-radius: 12px;
+  background: rgba(34,29,20,.6);
+  z-index: 1;
+  will-change: transform, filter, opacity;
+}
+
+/* ============================================================
+   THE CARD — slim vertical staff credential
+   ============================================================ */
+#card {
+  position: absolute;
+  left: 0; top: 0;
+  width: 332px; height: 468px;
+  z-index: 4;
+  cursor: grab;
+  pointer-events: auto;    /* re-enable inside the inert .scene (grab cursor,
+                              containers tooltip, text hit-testing) */
+  transform-style: preserve-3d;
+  will-change: transform;
+  --sx: 0px;
+  --ho: 0deg;
+}
+body.grabbing #card { cursor: grabbing; }
+
+/* laminate slab edge seen on tilt */
+.edge {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ddd6c2, #bcb298);
+  transform: translateZ(-3px);
+  transform-style: preserve-3d;
+  box-shadow: inset 0 -3px 5px rgba(40,34,22,.25),
+              inset 0 2px 3px rgba(255,255,255,.5);
+}
+/* mid laminate layer — gives the edge a strata line */
+.edge::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: 12px;
+  background: #e9e3d0;
+  transform: translateZ(1.5px);
+  box-shadow: inset 0 0 0 1px rgba(30,26,18,.10);
+}
+
+/* ---------------- printed face ---------------- */
+.face {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    linear-gradient(172deg, #fdfbf3 0%, #f8f4e7 55%, #f1ecd9 100%);
+  box-shadow: inset 0 0 0 1px rgba(28,24,16,.14);
+  transform: translateZ(0.1px);
+}
+
+/* punched hole + brass grommet */
+.grommet {
+  position: absolute;
+  top: 5px; left: 50%;
+  width: 26px; height: 26px;
+  margin-left: -13px;
+  filter: drop-shadow(0 .8px 1px rgba(40,30,12,.28));
+}
+
+/* security print layers */
+.guilloche {
+  position: absolute;
+  left: 50%; top: 112px;
+  width: 320px; height: 200px;
+  margin-left: -160px;
+  opacity: .5;
+}
+.uv {
+  position: absolute;
+  left: 50%; top: 120px;
+  width: 220px; height: 220px;
+  margin-left: -110px;
+  opacity: .06;
+}
+
+/* header */
+header {
+  display: flex; align-items: center;
+  gap: 8px;
+  padding: 32px 18px 0;
+}
+.mark { width: 18px; height: 18px; flex: none; }
+.org {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .20em;
+  color: var(--ink);
+  line-height: 1;
+}
+.org span {
+  display: block;
+  font-size: 6px; font-weight: 600;
+  letter-spacing: .30em;
+  color: var(--accent);
+  margin-top: 2.5px;
+}
+.tag {
+  margin-left: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px; font-weight: 600;
+  letter-spacing: .22em;
+  color: #f4f1e4;
+  background: var(--accent);
+  padding: 3.5px 6px 3px 7px;
+  border-radius: 2px;
+  box-shadow: 0 0.5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
+}
+
+.rule {
+  margin: 10px 18px 0;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+/* mid: framed print + info */
+.mid {
+  display: flex;
+  gap: 14px;
+  padding: 10px 18px 0;
+  position: relative;
+}
+
+.frame {
+  position: relative;
+  flex: none;
+  width: 116px; height: 118px;
+  background: #fff;
+  padding: 3px;
+  border: 1px solid #d3ccb8;
+  box-shadow:
+    inset 0 0 0 .5px rgba(255,255,255,.9),
+    0 1px 2px rgba(40,34,22,.10);
+}
+.frame svg { display: block; width: 100%; height: 100%; }
+
+/* holographic foil patch overlapping the frame corner */
+.holo {
+  position: absolute;
+  right: -9px; bottom: -9px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.28) 0 .6px, rgba(0,0,0,0) .6px 2.4px),
+    conic-gradient(from var(--ho),
+      #ffe9c8, #d6ecd4, #fbe8f0, #d9e6ff, #f6f0c2, #ffd9c4, #ffe9c8);
+  box-shadow:
+    0 1px 2.5px rgba(30,25,16,.35),
+    inset 0 0 0 .8px rgba(255,255,255,.55),
+    inset 0 0 6px rgba(255,255,255,.35);
+  opacity: .94;
+}
+.holo::after {
+  content: "M";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800;
+  color: rgba(255,255,255,.75);
+  text-shadow: 0 0 2px rgba(60,90,60,.5);
+}
+
+/* info column */
+.info { display: flex; flex-direction: column; min-width: 0; }
+.lbl {
+  font-size: 7px; font-weight: 600;
+  letter-spacing: .24em;
+  color: #9a9587;
+  text-transform: uppercase;
+}
+.name {
+  position: relative;
+  margin-top: 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px; font-weight: 700;
+  letter-spacing: .015em;
+  color: var(--ink);
+  line-height: 1.12;
+  opacity: .94;               /* slightly imperfect ink density */
+}
+/* print misregistration ghosts */
+.name::before, .name::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.name::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.name::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+.role {
+  margin-top: 6px;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .05em;
+  color: var(--ink2);
+}
+.dept {
+  margin-top: 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7.8px; font-weight: 600;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.rows {
+  margin-top: auto;
+  display: grid;
+  gap: 4px;
+}
+.rows .r {
+  display: flex; align-items: baseline;
+  border-bottom: .6px solid rgba(28,24,16,.10);
+  padding-bottom: 3px;
+}
+.rows .r span {
+  width: 56px; flex: none;
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #a19d90;
+}
+.rows .r b {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 9.2px; font-weight: 600;
+  letter-spacing: .08em;
+  color: #26241e;
+}
+
+/* ---------------- stats strip — booking manifest figures ---------------- */
+.stats {
+  display: flex;
+  margin: 9px 18px 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.stat {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 0 7px;
+}
+.stat + .stat {
+  border-left: .6px solid rgba(28,24,16,.10);
+  padding-left: 11px;
+  margin-left: 11px;
+}
+.stat-ctn { flex: 1.35 1 0; cursor: help; }
+.stat-ctn:focus { outline: none; }
+.stat-ctn:focus-visible {
+  outline: .8px solid rgba(58,90,68,.55);
+  outline-offset: 3px;
+}
+
+/* containers hero figure: big count + mini vessel-bay stack */
+.ctn-line {
+  display: flex; align-items: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.ctn-num {
+  position: relative;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px; font-weight: 700;
+  line-height: .9;
+  color: var(--ink);
+  opacity: .94;
+}
+/* print misregistration ghosts, same treatment as .name */
+.ctn-num::before, .ctn-num::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.ctn-num::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.ctn-num::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+.ctn-stack { flex: 1; min-width: 0; height: 19px; display: block; }
+
+/* pure-black breakdown tooltip — the one allowed off-palette element */
+.tip {
+  position: absolute;
+  left: -2px; bottom: calc(100% + 6px);
+  padding: 6px 8px 5px;
+  background: #0e0d0b;
+  color: #f0ebdc;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .16em;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(22,17,9,.45);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity .18s ease, transform .18s ease;
+  pointer-events: none;
+  z-index: 9;
+}
+.tip::after {
+  content: "";
+  position: absolute; top: 100%; left: 17px;
+  border: 3.6px solid transparent;
+  border-top-color: #0e0d0b;
+}
+.stat-ctn:hover .tip,
+.stat-ctn:focus .tip { opacity: 1; transform: none; }
+
+/* gross weight figure + capacity gauge */
+.wt {
+  display: flex; align-items: baseline;
+  gap: 3px;
+  margin-top: 6px;
+}
+.wt b {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px; font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink);
+}
+.wt i {
+  font-style: normal;
+  font-size: 7.6px; font-weight: 600;
+  letter-spacing: .1em;
+  color: var(--faint);
+}
+.gauge {
+  position: relative;
+  margin-top: 7px;
+  height: 3px;
+  background: #e5dfc9;
+  box-shadow: inset 0 0 0 .5px rgba(28,24,16,.14);
+}
+.gauge i {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 64%;
+  background: var(--accent);
+}
+.gauge::after {                       /* needle at the read point */
+  content: "";
+  position: absolute;
+  left: 64%; top: -2.4px; bottom: -2.4px;
+  width: 1.5px; margin-left: -.75px;
+  background: var(--terra);
+}
+
+/* earliest-start calendar chip */
+.cal {
+  display: flex; align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+}
+.cal-chip {
+  flex: none;
+  width: 25px;
+  text-align: center;
+  background: #fbf7ea;
+  border: .8px solid rgba(28,24,16,.24);
+  box-shadow: 0 1px 1.5px rgba(40,34,22,.12), inset 0 0 0 .5px rgba(255,255,255,.8);
+}
+.cal-chip span {
+  display: block;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 5.6px; font-weight: 700;
+  letter-spacing: .2em;
+  color: #f4f1e4;
+  background: var(--terra);
+  padding: 2px 0 1.5px 1px;
+}
+.cal-chip b {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13.5px; font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.cal-sub {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6px; font-weight: 600;
+  letter-spacing: .16em;
+  line-height: 1.8;
+  color: var(--faint);
+}
+
+/* ---------------- alt-hub routing stepper ---------------- */
+.hubs {
+  margin: 9px 18px 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--hair);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+}
+.hmap { display: block; width: 100%; height: auto; }
+.hp {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px; font-weight: 600;
+  letter-spacing: .12em;
+  fill: #55503f;
+}
+.hp-alt { fill: #b96f4b; }
+
+/* microtext line */
+.micro {
+  margin: 7px 18px 0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 5.2px;
+  letter-spacing: .06em;
+  color: #b2ab98;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* bottom: barcode + qr */
+.bottom {
+  display: flex; align-items: center;
+  gap: 14px;
+  margin: 6px 18px 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--hair);
+}
+.bar-wrap canvas { display: block; }
+.cap {
+  margin-top: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px;
+  letter-spacing: .26em;
+  color: #77756c;
+  text-align: center;
+}
+.vr { width: 1px; align-self: stretch; background: var(--hair); }
+.qr-wrap { margin-left: auto; }
+.qr-wrap canvas { display: block; border: .6px solid rgba(28,24,16,.14); }
+
+/* access band — deep sage with terracotta edge */
+.band {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 36px;
+  display: flex; align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 40%),
+    #2c4234;
+  box-shadow: inset 0 2px 0 rgba(198,120,86,.9), inset 0 1px 0 rgba(0,0,0,.4);
+}
+.band .dot {
+  width: 6px; height: 6px; flex: none;
+  border-radius: 50%;
+  background: #d08358;
+  box-shadow: 0 0 5px rgba(208,131,88,.8), inset 0 0 1px rgba(0,0,0,.4);
+}
+.band-t {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8.2px; font-weight: 700;
+  letter-spacing: .22em;
+  color: #eae6d6;
+}
+.band-mark { margin-left: auto; width: 15px; height: 15px; opacity: .8; }
+
+/* printed-ink grain covering the face */
+.grain {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: .16;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* ---------------- laminate gloss ---------------- */
+.laminate {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateZ(1px);
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.02) 26%, rgba(255,255,255,0) 40%),
+    linear-gradient(335deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 30%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 1px 0 0 rgba(255,255,255,.30),
+    inset -1px 0 0 rgba(20,16,10,.06),
+    inset 0 -1px 0 rgba(20,16,10,.10),
+    inset 0 0 0 1px rgba(26,22,14,.10);
+}
+/* the sweeping specular band */
+.laminate::before {
+  content: "";
+  position: absolute;
+  top: -32%; bottom: -32%;
+  left: 18%;
+  width: 58%;
+  background: linear-gradient(102deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.06) 34%,
+    rgba(255,255,255,.42) 47%,
+    rgba(255,255,255,.80) 50%,
+    rgba(255,255,255,.40) 53%,
+    rgba(255,255,255,.05) 66%,
+    rgba(255,255,255,0) 100%);
+  transform: translateX(var(--sx));
+  mix-blend-mode: screen;
+  opacity: .6;
+  filter: blur(.6px);
+}
+/* faint vertical laminate streak texture */
+.laminate::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  background: repeating-linear-gradient(90deg,
+    rgba(255,255,255,.016) 0 1px,
+    rgba(0,0,0,0) 1px 3px);
+}
+
+/* contact AO where the loop meets the card */
+.ao {
+  position: absolute;
+  top: -6px; left: 50%;
+  width: 64px; height: 32px;
+  margin-left: -32px;
+  background: radial-gradient(ellipse 50% 60% at 50% 20%, rgba(15,12,8,.32), rgba(15,12,8,0) 72%);
+  filter: blur(2.5px);
+  pointer-events: none;
+}
+
+/* brass ring + leather loop hardware */
+.clip {
+  position: absolute;
+  left: 50%; top: -36px;
+  width: 60px; height: 62px;
+  margin-left: -30px;
+  transform: translateZ(2px);
+  filter: drop-shadow(0 2px 1.6px rgba(30,24,14,.30));
+  pointer-events: none;
+}
+
+/* ---------------- hint ---------------- */
+.hint {
+  position: fixed;
+  left: 50%; bottom: 24px;
+  transform: translateX(-50%);   /* JS adds the peg offset */
+  text-align: center;
+  white-space: nowrap;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: .34em;
+  color: #a49e8d;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* ============================================================
+   SPLIT VIEW — booking-details panel pinned right.
+   Cream sheet, hairline rules, mono labels, serif numerals.
+   Hidden until #panel.on; children cascade in via .rvl.
+   ============================================================ */
+#panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(44vw, 470px);
+  padding: 0 clamp(22px, 3.2vw, 42px);
+  display: flex; flex-direction: column;
+  background:
+    linear-gradient(181deg, #fdfbf3 0%, #f8f4e7 55%, #f1ecd9 100%);
+  border-left: 1px solid var(--hair);
+  box-shadow: -18px 0 46px rgba(58,48,32,.10),
+              inset 1px 0 0 rgba(255,255,255,.7);
+  opacity: 0;
+  transform: translateX(34px);
+  visibility: hidden;
+  transition: opacity .6s ease,
+              transform .65s cubic-bezier(.22,.8,.3,1),
+              visibility 0s .7s;
+  pointer-events: none;
+  z-index: 3;
+  overflow: hidden;
+}
+#panel.on {
+  opacity: 1; transform: none; visibility: visible;
+  transition-delay: 0s;
+  pointer-events: auto;
+}
+.p-inner {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: clamp(20px, 6vh, 64px) 0;
+  /* clip lives on this STATIC box, not on .pages — a transformed element
+     carries its overflow clip with it, so overflow:hidden on the sliding
+     track itself would clip page 2 out of view forever                */
+  overflow: hidden;
+}
+
+/* ---------------- pager — sub-pages slide left on CONTINUE ---------------- */
+.pages {
+  flex: 1; min-height: 0;
+  display: flex;
+  transition: transform .62s cubic-bezier(.3,.8,.25,1);
+  will-change: transform;
+}
+.page {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex; flex-direction: column;
+}
+.pg-scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ---------------- footer buttons ---------------- */
+.btnrow {
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.btn {
+  appearance: none;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8px; font-weight: 700;
+  letter-spacing: .22em;
+  padding: 10px 15px 9px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .2s ease,
+              background .2s ease, color .15s ease,
+              border-color .15s ease, opacity .3s ease;
+}
+.btn:active:not([disabled]) { transform: translateY(1px) scale(.98); }
+.btn.ghost {
+  background: none;
+  color: var(--ink2);
+  border: .8px solid rgba(28,24,16,.28);
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.5);
+}
+.btn.ghost:hover { color: var(--terra); border-color: rgba(185,111,75,.55); }
+.btn.go {
+  margin-left: auto;
+  background: var(--accent);
+  color: #f4f1e4;
+  border: .8px solid rgba(20,30,24,.35);
+  box-shadow: 0 1px 0 rgba(255,255,255,.4),
+              0 2px 5px rgba(38,58,44,.28),
+              inset 0 1px 0 rgba(255,255,255,.14);
+}
+.btn.go:hover:not([disabled]) {
+  background: #334f3d;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 0 rgba(255,255,255,.4),
+              0 4px 9px rgba(38,58,44,.32),
+              inset 0 1px 0 rgba(255,255,255,.16);
+}
+.btn.go .arr { display: inline-block; transition: transform .18s ease; }
+.btn.go:hover:not([disabled]) .arr { transform: translateX(2.5px); }
+.btn.go[disabled] { opacity: .38; cursor: default; }
+
+/* reveal primitive — anything with .rvl joins the staggered cascade */
+.rvl {
+  opacity: 0;
+  transform: translateY(9px);
+  transition: opacity .55s ease, transform .55s cubic-bezier(.22,.8,.3,1);
+}
+.rvl.on { opacity: 1; transform: none; }
+
+/* panel header — same register as the card's header */
+.p-head { display: flex; align-items: center; gap: 10px; }
+.p-eyebrow {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7.4px; font-weight: 600;
+  letter-spacing: .24em;
+  color: var(--faint);
+}
+.p-tag {
+  margin-left: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.6px; font-weight: 700;
+  letter-spacing: .2em;
+  color: #f4f1e4;
+  background: var(--accent);
+  padding: 3px 6px 2.5px 7px;
+  border-radius: 2px;
+  box-shadow: 0 .5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
+}
+.p-rule {
+  margin-top: 10px;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+/* question block — heading with a trailing hairline, like a form ledger */
+.q { margin-top: 24px; }
+.q-h {
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .24em;
+  color: var(--ink);
+}
+.q-h::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.6);
+}
+.q-sub {
+  margin-top: 5px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .2em;
+  color: #a19d90;
+}
+
+/* ---------------- container TYPE block ---------------- */
+.ctype { margin-top: 15px; }
+.ctype + .ctype {
+  margin-top: 18px;
+  padding-top: 15px;
+  border-top: .8px solid var(--hair);
+}
+.ct-head {
+  display: flex; align-items: center;
+  padding-bottom: 6px;
+  border-bottom: .6px solid rgba(28,24,16,.12);
+}
+.ct-name {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8.4px; font-weight: 700;
+  letter-spacing: .22em;
+  color: var(--ink2);
+}
+.ct-chip {                     /* paint swatch for the type's colorway */
+  width: 9px; height: 9px;
+  margin-left: 9px;
+  background: var(--cc);
+  border-radius: 1px;
+  box-shadow: inset 0 0 0 .7px rgba(28,22,14,.45);
+}
+.ct-body {
+  display: flex; align-items: stretch;
+  gap: 14px;
+  margin-top: 11px;
+}
+.ct-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px 10px;
+  align-content: center;
+}
+
+/* one container cell — dimmed until the count reaches it */
+.cell {
+  position: relative;
+  opacity: .24;
+  filter: saturate(.3);
+  transition: opacity .4s ease, filter .4s ease;
+}
+.cell.on { opacity: 1; filter: none; }
+.cell svg { display: block; width: 100%; height: auto; }
+.cell .plus {                  /* overflow count chip on the last cell */
+  display: none;
+  position: absolute; right: 1px; bottom: 2px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.4px; font-weight: 700;
+  letter-spacing: .08em;
+  color: #5c5749;
+  background: rgba(251,247,234,.92);
+  border: .6px solid rgba(28,24,16,.3);
+  border-radius: 1.5px;
+  padding: 0 3px 0 2.5px;
+}
+.cell.over .plus { display: block; }
+
+/* ---------------- vertical steppers ---------------- */
+.stepper { display: flex; flex-direction: column; align-items: center; }
+.st-w { margin-left: auto; }
+.st-c { justify-content: center; padding: 0 2px; }
+.sbtn {
+  width: 24px; height: 14px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: #96907e;
+  transition: color .15s ease, transform .15s ease;
+}
+.sbtn:hover { color: var(--terra); }
+.sbtn:active { transform: scale(.86); }
+.sbtn svg { width: 10px; height: 6px; display: block; }
+.sbtn svg path {
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.sval {
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;   /* equal digit widths — kills scroll jitter */
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  white-space: nowrap;
+  text-align: center;
+  cursor: ns-resize;
+}
+.sval:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.sv-w { font-size: 14px; min-width: 7ch; }   /* room for 30000 KG */
+.sv-c { font-size: 27px; min-width: 2.2ch; } /* room for 99 */
+.sval .u {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 5.6px; font-weight: 700;
+  letter-spacing: .14em;
+  color: #a49e8d;
+  margin-left: 3px;
+}
+.sunit {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 5.8px; font-weight: 700;
+  letter-spacing: .2em;
+  color: #a49e8d;
+  margin-top: 2px;
+}
+
+/* ---------------- + ADD NEW TYPE ---------------- */
+.add-type {
+  margin-top: 15px;
+  padding: 0 0 2.5px;
+  background: none; border: none; cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7.8px; font-weight: 700;
+  letter-spacing: .24em;
+  color: var(--accent);
+  border-bottom: .8px solid rgba(58,90,68,.45);
+  transition: color .15s ease, border-color .15s ease;
+}
+.add-type:hover:not([disabled]) { color: var(--terra); border-bottom-color: rgba(185,111,75,.55); }
+.add-type[disabled] { color: #b2ab98; border-bottom-color: transparent; cursor: default; }
+
+/* ---------------- container paint classes ----------------
+   one SVG, recolored per type via --cc on the .ctype block.
+   shades derive with color-mix(); hardware stays near-black
+   and stencil ink comes from --cc-ink for dark colorways.  */
+.cell .cc-body { fill: var(--cc); }
+.cell .cc-door { fill: color-mix(in srgb, var(--cc) 90%, #14100a); }
+.cell .cc-hi   { fill: color-mix(in srgb, var(--cc) 72%, #ffffff); }
+.cell .cc-lo   { fill: color-mix(in srgb, var(--cc) 70%, #14100a); }
+.cell .cc-dark { fill: color-mix(in srgb, var(--cc) 68%, #14100a); }
+.cell .cc-hw   { fill: color-mix(in srgb, var(--cc) 60%, #100c06); }
+.cell .cc-hw2  { fill: color-mix(in srgb, var(--cc) 40%, #100c06); }
+.cell .cc-mark  { fill: var(--cc-ink); }
+.cell .cc-mark2 { fill: var(--cc-ink); opacity: .6; }
+.cell svg text {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 600;
+}
+
+/* ---------------- narrow fallbacks ---------------- */
+@media (max-width: 860px) {
+  #panel { width: min(52vw, 400px); padding: 0 18px; }
+  .ct-body { gap: 10px; }
+}
+@media (max-width: 640px) {
+  /* overlay sheet — badge stays centered, panel slides up over it */
+  #panel {
+    left: 0; right: 0; top: auto; bottom: 0;
+    width: auto;
+    height: min(52vh, 420px);
+    border-left: none;
+    border-top: 1px solid var(--hair);
+    box-shadow: 0 -16px 42px rgba(58,48,32,.14);
+    transform: translateY(36px);
+    z-index: 7;
+  }
+  .p-inner { padding: 16px 4px 20px; }
+}
+
+/* ============================================================
+   CARGO-TYPE TOGGLE — 20px round chip in .ct-head, immediately
+   left of the weight stepper. Click cycles DRY → HAZMAT → REEFER
+   (per-block, wired in buildType). Hand-drawn SVG glyphs are
+   recolored via currentColor; the disc takes a faint tint of the
+   same hue. .cg-ic is re-inserted on each change so the pop
+   animation replays.
+   ============================================================ */
+.ct-cargo {
+  flex: none;
+  width: 20px; height: 20px;
+  margin-right: 10px;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  color: #8a8577;                              /* grey dot — dry */
+  background: rgba(138,133,119,.10);
+  box-shadow: inset 0 0 0 .7px rgba(28,22,14,.25);
+  transition: color .2s ease, background .2s ease,
+              box-shadow .2s ease, transform .15s ease;
+}
+.ct-cargo:hover {
+  box-shadow: inset 0 0 0 .9px rgba(28,22,14,.45);
+}
+.ct-cargo:active { transform: scale(.9); }
+.ct-cargo:focus-visible {
+  outline: .8px solid rgba(58,90,68,.55);
+  outline-offset: 2px;
+}
+.ct-cargo[data-cargo="haz"] {                  /* amber trefoil */
+  color: #c98f1f;
+  background: rgba(201,143,31,.16);
+}
+.ct-cargo[data-cargo="reef"] {                 /* ice-blue flake */
+  color: #4a7f9e;
+  background: rgba(74,127,158,.16);
+}
+.cg-ic {
+  display: flex; align-items: center; justify-content: center;
+  animation: cg-pop .22s cubic-bezier(.3,1.35,.45,1) both;
+}
+.cg-ic svg { display: block; width: 11px; height: 11px; }
+@keyframes cg-pop {
+  from { transform: scale(.68); opacity: .4; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* ============================================================
+   SCHEDULING CALENDAR — flexible departure window (page 2).
+   Stacked month blocks of circular day cells; drag-selects a
+   continuous range — sage interior, terracotta endpoints, a
+   tinted band joining the circles. Not-bookable days hatch.
+   All selectors prefixed .cal-… — appended section, no edits.
+   ============================================================ */
+
+/* stat line — serif hero count + mono caption, ledger rule below */
+.cal-stat {
+  display: flex; align-items: baseline;
+  gap: 14px;
+  margin-top: 16px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+.cal-num {
+  position: relative;
+  min-width: 3ch;
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 34px; font-weight: 700;
+  line-height: .9;
+  letter-spacing: .01em;
+  color: var(--ink);
+  opacity: .94;
+  transition: color .2s ease;
+}
+.cal-num.cal-nil { color: #b2ab98; }          /* muted — state */
+/* print misregistration ghosts, same treatment as .ctn-num */
+.cal-num::before, .cal-num::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.cal-num::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.cal-num::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+.cal-side { display: flex; flex-direction: column; gap: 4px; padding-bottom: 2px; }
+.cal-cap {
+  font-style: normal;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px; font-weight: 700;
+  letter-spacing: .24em;
+  color: var(--accent);
+}
+.cal-rng {
+  font-style: normal;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.6px; font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--faint);
+}
+
+/* ---------------- month blocks ---------------- */
+.cal-grid { margin-top: 4px; padding-bottom: 14px; }
+.cal-mo { margin-top: 18px; }
+.cal-mo:first-child { margin-top: 14px; }
+.cal-mh {
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7.6px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--ink2);
+}
+.cal-mh::after {                             /* trailing hairline, like .q-h */
+  content: "";
+  order: 1;                                   /* label · hairline · pager */
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.6);
+}
+
+/* month pager — two ‹ › chevrons after the hairline, .sbtn register */
+.cal-navs {
+  order: 2;
+  align-self: center;
+  display: flex;
+  gap: 5px;
+}
+.cal-nav {
+  width: 20px; height: 16px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: #96907e;
+  transition: color .15s ease, transform .15s ease, opacity .2s ease;
+}
+.cal-nav:hover:not([disabled]) { color: var(--terra); }
+.cal-nav:active:not([disabled]) { transform: scale(.86); }
+.cal-nav:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.cal-nav[disabled] { opacity: .22; cursor: default; }
+.cal-nav svg { width: 6px; height: 10px; display: block; }
+.cal-nav svg path {
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* month swap — the fresh block slides in from the direction of travel */
+.cal-mo.cal-nx { animation: cal-in-nx .2s cubic-bezier(.22,.8,.3,1) both; }
+.cal-mo.cal-pv { animation: cal-in-pv .2s cubic-bezier(.22,.8,.3,1) both; }
+@keyframes cal-in-nx { from { opacity: 0; transform: translateX(10px); } }
+@keyframes cal-in-pv { from { opacity: 0; transform: translateX(-10px); } }
+.cal-wk {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 8px;
+}
+.cal-wk i {
+  font-style: normal;
+  text-align: center;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.2px; font-weight: 700;
+  letter-spacing: .1em;
+  color: #a49e8d;
+}
+.cal-wk i:last-child { color: rgba(185,111,75,.62); }   /* Sunday column */
+
+/* ---------------- day cells ---------------- */
+.cal-ds {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 3px;
+  margin-top: 5px;
+}
+.cal-d {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  height: 30px;
+}
+.cal-d:not(.cal-na):not(.cal-x) { cursor: cell; }
+.cal-d.cal-x { visibility: hidden; }         /* off-month spacer */
+
+/* the circle itself — thin printed ring, serif numeral */
+.cal-d i {
+  position: relative; z-index: 1;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  font-style: normal;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11px; font-weight: 600;
+  color: var(--ink2);
+  border: .8px solid rgba(28,24,16,.12);
+  border-radius: 50%;
+  transition: background-color .18s ease, color .18s ease,
+              border-color .18s ease;
+}
+.cal-d:not(.cal-na):not(.cal-x):hover i { border-color: rgba(58,90,68,.60); }
+
+/* selected — sage fill, cream numeral, soft pop on entry */
+.cal-d.cal-sel i {
+  background: var(--accent);
+  border-color: rgba(20,30,24,.40);
+  color: #f4f1e4;
+  animation: cal-pop .2s ease both;
+}
+.cal-d.cal-end i {                           /* the two endpoints */
+  background: var(--terra);
+  border-color: rgba(90,45,25,.40);
+}
+@keyframes cal-pop {
+  from { transform: scale(.72); }
+  to   { transform: scale(1); }
+}
+
+/* tinted band joining adjacent selected circles — half-bars per cell
+   so the run reads as one continuous strip across a row            */
+.cal-d::before {
+  content: ""; display: none;
+  position: absolute; top: 50%;
+  height: 14px;
+  transform: translateY(-50%);
+  background: rgba(58,90,68,.11);
+}
+.cal-d.cal-l::before { display: block; left: 0;  right: 50%; }
+.cal-d.cal-r::before { display: block; left: 50%; right: 0; }
+.cal-d.cal-l.cal-r::before { left: 0; right: 0; }
+
+/* not bookable — faint numeral, dashed ring, diagonal hatch */
+.cal-d.cal-na i {
+  color: rgba(28,24,16,.24);
+  border: .8px dashed rgba(28,24,16,.18);
+  background:
+    repeating-linear-gradient(-45deg,
+      rgba(28,24,16,.05) 0 1px,
+      rgba(0,0,0,0) 1px 4.2px);
+}
+
+/* ============================================================
+   PORT PAIR + REQUEST PRICE — appended section, .pp- prefixed.
+   Two rubber datestamps pressed onto the sheet (sage origin ink,
+   terracotta destination ink, each hand-tilted) joined by a dashed
+   booked route with a faint terracotta alternate arc, like the
+   alt-hubs map. A little freighter rides the line; a ledger readout
+   under it gives miles + days at sea. Tapping a stamp slams down a
+   re-inked one with the next port. The price stepper reuses
+   .stepper/.sbtn/.sval untouched.
+   ============================================================ */
+.pp-row {
+  display: flex; align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.pp-map { position: relative; flex: 1 1 auto; min-width: 0; }
+.pp-svg { display: block; width: 100%; height: auto; }
+
+/* route legs — same inks + dash register as the badge's hub map */
+.pp-alt {
+  fill: none; stroke: var(--terra);
+  stroke-width: .9; stroke-dasharray: 2.6 3;
+  opacity: .5;
+}
+.pp-route {
+  fill: none; stroke: var(--accent);
+  stroke-width: 1.1; stroke-dasharray: 3.4 3;
+}
+.pp-route.pp-run { animation: pp-dash .7s ease; }
+@keyframes pp-dash {
+  from { stroke-dashoffset: 13; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ---------------- port datestamps ---------------- */
+/* ink-only rubber stamps pressed onto the sheet — no disc, the paper
+   shows through. Per-end ink + hand-tilt; the slam animation re-inks
+   the stamp when the port changes.                                   */
+.pp-stamp {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(var(--pp-rot));
+}
+.pp-origin { --pp-ink: var(--accent); --pp-ghost: var(--terra); --pp-rot: -3.5deg; }
+.pp-dest   { --pp-ink: var(--terra);  --pp-ghost: var(--accent); --pp-rot:  2.5deg; }
+.pp-stamp.pp-slam { animation: pp-slam .3s cubic-bezier(.2,1.35,.4,1) both; }
+@keyframes pp-slam {
+  0%   { transform: rotate(var(--pp-rot)) scale(1.7); opacity: 0; }
+  55%  { transform: rotate(var(--pp-rot)) scale(.93); opacity: 1; }
+  100% { transform: rotate(var(--pp-rot)) scale(1); }
+}
+.pp-ring-out { fill: none; stroke: var(--pp-ink); stroke-width: 2; }
+.pp-ring-in  { fill: none; stroke: var(--pp-ink); stroke-width: .7; opacity: .85; }
+.pp-sep      { fill: var(--pp-ink); opacity: .85; }
+/* print misregistration ghost of the outer ring, same motif as the numerals */
+.pp-ghost-ring {
+  fill: none; stroke: var(--pp-ghost);
+  stroke-width: 2; opacity: .14;
+}
+.pp-code {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12.5px; font-weight: 700;
+  letter-spacing: .04em;
+  fill: var(--pp-ink);
+}
+.pp-city {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6px; font-weight: 700;
+  letter-spacing: .2em;
+  fill: var(--pp-ink);
+}
+.pp-role {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 5.2px; font-weight: 700;
+  letter-spacing: .26em;
+  fill: var(--pp-ink);
+  opacity: .88;
+}
+.pp-date {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 4.8px; font-weight: 600;
+  letter-spacing: .14em;
+  fill: var(--pp-ink);
+  opacity: .88;
+}
+/* ledger readout under the route — miles + days at sea */
+.pp-dist {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6px; font-weight: 600;
+  letter-spacing: .18em;
+  fill: #8f947f;
+}
+
+/* ---------------- freighter ---------------- */
+.pp-ship-in { animation: pp-bob 2.8s ease-in-out infinite; }
+@keyframes pp-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-.9px); }
+}
+
+/* invisible stamp hit targets — real buttons, so Enter/Space cycles.
+   positions track the stamp centres in viewBox fractions            */
+.pp-hit {
+  position: absolute;
+  top: 50%;
+  width: 22%; aspect-ratio: 1;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: none; border-radius: 50%;
+  background: none; cursor: pointer;
+  transition: box-shadow .18s ease, background-color .18s ease;
+}
+.pp-hit-a { left: 18%; }
+.pp-hit-b { left: 82%; }
+.pp-hit:hover {
+  background: rgba(185,111,75,.045);
+  box-shadow: inset 0 0 0 1.1px rgba(28,24,16,.30);
+}
+.pp-hit:focus-visible {
+  outline: .9px solid rgba(58,90,68,.60);
+  outline-offset: 3px;
+}
+
+/* ---------------- request price ---------------- */
+.pp-price { flex: none; margin-left: 4px; }
+.pp-val { font-size: 24px; min-width: 8.4ch; }   /* room for USD 999,990 */
+.pp-val .u {
+  margin-left: 0; margin-right: 4px;
+  font-size: 6.4px;
+}
+/* print misregistration ghosts, same treatment as .ctn-num */
+.pp-num { position: relative; }
+.pp-num::before, .pp-num::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.pp-num::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.pp-num::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }

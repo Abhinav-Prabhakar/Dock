@@ -4,32 +4,39 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-outfit), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  /* Surfaces */
-  --color-abyss: #060a20;
-  --color-ink: #0b1130;
-  --color-panel: #12183c;
-  --color-panel-2: #161d47;
-  --color-panel-3: #1b2354;
-  --color-edge: #262e63;
-  --color-edge-soft: #1e2650;
+  /* Surfaces — midnight ops palette */
+  --color-abyss: #04060e;
+  --color-ink: #0a0e1e;
+  --color-panel: #10152b;
+  --color-panel-2: #151b36;
+  --color-panel-3: #1b2344;
+  --color-edge: #232b4f;
+  --color-edge-soft: #1a2140;
 
   /* Text */
-  --color-hi: #eef0ff;
-  --color-mid: #9aa1c9;
-  --color-low: #6c739b;
-  --color-faint: #4b5180;
+  --color-hi: #eef1ff;
+  --color-mid: #a3abd6;
+  --color-low: #6f77a5;
+  --color-faint: #4c5380;
 
-  /* Brand + status */
-  --color-accent: #6a73ea;
-  --color-accent-hi: #5f68e2;
-  --color-accent-deep: #4a52c8;
+  /* Brand — indigo, a touch brighter */
+  --color-accent: #7c87f2;
+  --color-accent-hi: #6d77ee;
+  --color-accent-deep: #4f59cf;
+  --color-accent-soft: #a9b1ff;
+
+  /* Brass — money & the booking desk's warmth */
+  --color-brass: #d9a84e;
+  --color-brass-soft: #ecc987;
+
+  /* Status */
   --color-pending: #e0566b;
   --color-pending-soft: #f0899a;
-  --color-reserved: #d9b13b;
+  --color-reserved: #d9ae3c;
   --color-reserved-soft: #ecd07a;
-  --color-loaded: #3fbdb0;
+  --color-loaded: #3fbfb1;
   --color-loaded-soft: #7fd9d0;
-  --color-critical: #f0524f;
+  --color-critical: #f2524f;
   --color-warn: #e5a33c;
 }
 
@@ -46,42 +53,55 @@ body {
   overflow-x: clip;
 }
 
-/* Page backdrop: deep navy with an indigo bloom behind the vessel */
+/* Page backdrop: near-black with a cool indigo bloom up top and a faint
+   warm ember low — the booking desk's lamplight echoing in the chrome. */
 .dock-bg {
   background:
-    radial-gradient(1250px 720px at 62% 32%, rgba(74, 88, 205, 0.34), transparent 62%),
-    radial-gradient(900px 520px at 30% 90%, rgba(40, 48, 130, 0.22), transparent 65%),
-    linear-gradient(180deg, #0b1130 0%, #070b22 55%, #05081c 100%);
+    radial-gradient(1150px 640px at 66% -8%, rgba(96, 108, 232, 0.16), transparent 62%),
+    radial-gradient(860px 500px at 10% 110%, rgba(217, 168, 78, 0.05), transparent 60%),
+    linear-gradient(180deg, #0a0f22 0%, #06091a 52%, #04060e 100%);
 }
 
+/* Card with a soft top sheen — primary surface for framed instruments. */
 .panel {
-  background: linear-gradient(180deg, rgba(30, 37, 82, 0.55), rgba(16, 21, 52, 0.55));
-  border: 1px solid rgba(148, 158, 220, 0.12);
-  box-shadow: inset 0 1px 0 rgba(180, 190, 255, 0.05);
+  background:
+    linear-gradient(180deg, rgba(170, 180, 242, 0.05), rgba(170, 180, 242, 0) 38%),
+    rgba(16, 21, 43, 0.72);
+  border: 1px solid rgba(152, 162, 226, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(198, 206, 255, 0.06),
+    0 14px 34px -20px rgba(0, 0, 0, 0.7);
 }
 
+/* Recessed surface — rails, wells, secondary cards. */
 .panel-flat {
-  background: rgba(18, 24, 58, 0.72);
-  border: 1px solid rgba(148, 158, 220, 0.12);
+  background: rgba(12, 16, 34, 0.78);
+  border: 1px solid rgba(152, 162, 226, 0.11);
 }
 
+/* Translucent pill surface — buttons, tags, filter chips. */
 .chip {
-  background: rgba(20, 26, 62, 0.85);
-  border: 1px solid rgba(148, 158, 220, 0.14);
+  background: rgba(152, 162, 226, 0.06);
+  border: 1px solid rgba(152, 162, 226, 0.13);
 }
 
 .hairline {
-  border-color: rgba(148, 158, 220, 0.14);
+  border-color: rgba(152, 162, 226, 0.13);
 }
 
 ::selection {
-  background: rgba(106, 115, 234, 0.4);
+  background: rgba(124, 135, 242, 0.38);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(124, 135, 242, 0.55);
+  outline-offset: 1px;
 }
 
 /* thin themed scrollbars for rails and lists */
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(106, 115, 234, 0.4) transparent;
+  scrollbar-color: rgba(124, 135, 242, 0.35) transparent;
 }
 .scroll-thin::-webkit-scrollbar {
   width: 5px;
@@ -91,6 +111,6 @@ body {
   background: transparent;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: rgba(106, 115, 234, 0.35);
+  background: rgba(124, 135, 242, 0.3);
   border-radius: 3px;
 }

@@ -77,7 +77,7 @@ function SpeedTrack({
         />
         {speed !== null && (
           <span
-            className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_7px_rgba(106,115,234,0.9)] transition-[left] duration-500"
+            className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_7px_rgba(124,135,242,0.9)] transition-[left] duration-500"
             style={{ left: pos(speed) }}
           />
         )}
@@ -102,7 +102,7 @@ function LoopChain({ loop, current }: { loop: string; current: string | null }) 
             <span
               className={`rounded-full border px-1.5 py-px text-[9px] font-medium tracking-wide ${
                 active
-                  ? "border-accent/60 bg-accent/15 text-[#aab4ff] shadow-[0_0_8px_rgba(106,115,234,0.25)]"
+                  ? "border-accent/60 bg-accent/15 text-accent-soft shadow-[0_0_8px_rgba(124,135,242,0.25)]"
                   : "chip text-low"
               }`}
             >

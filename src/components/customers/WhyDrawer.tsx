@@ -93,7 +93,7 @@ export function WhyDrawer({
   const teu = num(offer.teu);
   const weight = num(offer.weight_t);
   const seg = str(offer.segment) || "standard";
-  const segColor = SEGMENT_COLORS[seg] ?? "#9aa1c9";
+  const segColor = SEGMENT_COLORS[seg] ?? "#a3abd6";
   const cargo = str(offer.cargo_type) || "dry";
   const reqDep = num(offer.req_dep_day);
   const flex = num(offer.flex_days);

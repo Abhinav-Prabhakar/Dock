@@ -8,8 +8,8 @@ import { api, type SummaryData } from "@/lib/api";
 
 function Sparkline({ points }: { points: { day: number; cum_profit: number }[] }) {
   if (points.length < 2) return null;
-  const w = 64;
-  const h = 18;
+  const w = 72;
+  const h = 22;
   const vals = points.slice(-48).map((p) => p.cum_profit);
   const min = Math.min(...vals);
   const max = Math.max(...vals);
@@ -63,23 +63,32 @@ export function MoneyHUD() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="chip flex items-center gap-2.5 rounded-full py-1.5 pl-3.5 pr-3 transition-colors hover:border-edge"
+        className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-1 transition-colors hover:border-edge hover:bg-white/[0.03]"
         title={live ? "Live cumulative profit — open policy comparison" : "PPO holdout average — open policy comparison"}
       >
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            live ? "bg-loaded shadow-[0_0_8px_rgba(63,189,176,0.9)] animate-pulse" : "bg-faint"
-          }`}
-        />
-        {live && <Sparkline points={profitSeries} />}
-        <span
-          className={`font-display text-[15px] font-semibold tracking-wide tabular-nums ${
-            profit < 0 ? "text-pending-soft" : "text-hi"
-          }`}
-        >
-          {formatted}
+        <Sparkline points={profitSeries} />
+        <span className="flex flex-col items-end gap-0.5">
+          <span className="flex items-center gap-1.5 text-[8px] font-medium uppercase leading-none tracking-[0.2em] text-faint">
+            <span
+              className={`h-1 w-1 rounded-full ${
+                live ? "bg-loaded shadow-[0_0_6px_rgba(63,191,177,0.9)] animate-pulse" : "bg-faint"
+              }`}
+            />
+            {live ? "cum profit · live" : "ppo holdout avg"}
+          </span>
+          <span
+            className={`font-display text-[19px] font-semibold leading-tight tracking-tight tabular-nums ${
+              profit < 0 ? "text-pending-soft" : "text-brass-soft"
+            }`}
+          >
+            {formatted}
+          </span>
         </span>
-        <ChartLine size={13} className="text-accent" strokeWidth={1.75} />
+        <ChartLine
+          size={13}
+          className="text-faint transition-colors group-hover:text-accent-soft"
+          strokeWidth={1.75}
+        />
       </button>
       <ComparisonDialog open={open} onClose={() => setOpen(false)} />
     </>

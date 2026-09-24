@@ -1,0 +1,482 @@
+/* ============================================================
+   WILLOWMERE conservatory credential — light mode, warm cream,
+   sage + terracotta, leather cord, material realism
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --wall: #f4f0e4;
+  --ink: #1d1a14;
+  --ink2: #45423a;
+  --faint: #908d81;
+  --hair: #d9d3c1;
+  --accent: #3a5a44;          /* deep sage */
+  --terra: #b96f4b;           /* terracotta */
+}
+
+html, body { height: 100%; }
+
+body {
+  background-color: var(--wall);
+  /* fine plaster grain */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0.35 0.35 0 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  font-family: "Helvetica Neue", Helvetica, -apple-system, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* soft room vignette */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(130% 105% at 50% 26%, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%),
+    radial-gradient(120% 110% at 50% 45%, rgba(0,0,0,0) 58%, rgba(112,98,72,.17) 100%);
+  pointer-events: none;
+  z-index: 60;
+}
+
+.scene {
+  position: fixed; inset: 0;
+  perspective: 1400px;
+  perspective-origin: 50% 42%;
+}
+
+/* ---------------- wall hook ---------------- */
+.mount {
+  position: absolute;
+  left: 50%; top: 24px;
+  margin-left: -32px;
+  width: 64px;
+  filter: drop-shadow(3px 6px 5px rgba(58,48,32,.32));
+  z-index: 5;
+}
+
+/* ---------------- coffee ring ---------------- */
+.stain {
+  position: absolute;
+  left: 11%; top: 57%;
+  width: 170px; height: 170px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ---------------- strap canvas ---------------- */
+#strap {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ---------------- wall contact shadow ---------------- */
+#cardShadow {
+  position: absolute;
+  left: 0; top: 0;
+  width: 320px; height: 460px;
+  border-radius: 12px;
+  background: rgba(34,29,20,.6);
+  z-index: 1;
+  will-change: transform, filter, opacity;
+}
+
+/* ============================================================
+   THE CARD — slim vertical staff credential
+   ============================================================ */
+#card {
+  position: absolute;
+  left: 0; top: 0;
+  width: 320px; height: 460px;
+  z-index: 4;
+  cursor: grab;
+  transform-style: preserve-3d;
+  will-change: transform;
+  --sx: 0px;
+  --ho: 0deg;
+}
+body.grabbing #card { cursor: grabbing; }
+
+/* laminate slab edge seen on tilt */
+.edge {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ddd6c2, #bcb298);
+  transform: translateZ(-3px);
+  transform-style: preserve-3d;
+  box-shadow: inset 0 -3px 5px rgba(40,34,22,.25),
+              inset 0 2px 3px rgba(255,255,255,.5);
+}
+/* mid laminate layer — gives the edge a strata line */
+.edge::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: 12px;
+  background: #e9e3d0;
+  transform: translateZ(1.5px);
+  box-shadow: inset 0 0 0 1px rgba(30,26,18,.10);
+}
+
+/* ---------------- printed face ---------------- */
+.face {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    linear-gradient(172deg, #fdfbf3 0%, #f8f4e7 55%, #f1ecd9 100%);
+  box-shadow: inset 0 0 0 1px rgba(28,24,16,.14);
+  transform: translateZ(0.1px);
+}
+
+/* punched hole + brass grommet */
+.grommet {
+  position: absolute;
+  top: 5px; left: 50%;
+  width: 26px; height: 26px;
+  margin-left: -13px;
+  filter: drop-shadow(0 .8px 1px rgba(40,30,12,.28));
+}
+
+/* security print layers */
+.guilloche {
+  position: absolute;
+  left: 50%; top: 112px;
+  width: 270px; height: 240px;
+  margin-left: -135px;
+  opacity: .5;
+}
+.uv {
+  position: absolute;
+  left: 50%; top: 120px;
+  width: 220px; height: 220px;
+  margin-left: -110px;
+  opacity: .06;
+}
+
+/* rotated type rail down the left edge */
+.rail {
+  position: absolute;
+  left: 6px; top: 118px; bottom: 46px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 5.6px; font-weight: 600;
+  letter-spacing: .30em;
+  color: #aaa392;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* header */
+header {
+  display: flex; align-items: center;
+  gap: 8px;
+  padding: 36px 18px 0;
+}
+.mark { width: 18px; height: 18px; flex: none; }
+.org {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .20em;
+  color: var(--ink);
+  line-height: 1;
+}
+.org span {
+  display: block;
+  font-size: 5.4px; font-weight: 600;
+  letter-spacing: .30em;
+  color: var(--accent);
+  margin-top: 2.5px;
+}
+.tag {
+  margin-left: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.4px; font-weight: 600;
+  letter-spacing: .20em;
+  color: #f4f1e4;
+  background: var(--accent);
+  padding: 3.5px 6px 3px 7px;
+  border-radius: 2px;
+  box-shadow: 0 0.5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
+}
+
+.rule {
+  margin: 9px 18px 0;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+/* mid: photo + info */
+.mid {
+  display: flex;
+  gap: 13px;
+  padding: 14px 18px 0;
+  position: relative;
+}
+
+.photo {
+  position: relative;
+  flex: none;
+  width: 108px; height: 134px;
+  background: #fff;
+  padding: 3px;
+  border: 1px solid #d3ccb8;
+  box-shadow:
+    inset 0 0 0 .5px rgba(255,255,255,.9),
+    0 1px 2px rgba(40,34,22,.10);
+}
+.photo svg { display: block; width: 100%; height: 100%; }
+
+/* holographic foil patch overlapping the photo corner */
+.holo {
+  position: absolute;
+  right: -9px; bottom: -9px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.28) 0 .6px, rgba(0,0,0,0) .6px 2.4px),
+    conic-gradient(from var(--ho),
+      #ffe9c8, #d6ecd4, #fbe8f0, #d9e6ff, #f6f0c2, #ffd9c4, #ffe9c8);
+  box-shadow:
+    0 1px 2.5px rgba(30,25,16,.35),
+    inset 0 0 0 .8px rgba(255,255,255,.55),
+    inset 0 0 6px rgba(255,255,255,.35);
+  opacity: .94;
+}
+.holo::after {
+  content: "W";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800;
+  color: rgba(255,255,255,.75);
+  text-shadow: 0 0 2px rgba(60,90,60,.5);
+}
+
+/* info column */
+.info { display: flex; flex-direction: column; min-width: 0; }
+.lbl {
+  font-size: 6.4px; font-weight: 600;
+  letter-spacing: .26em;
+  color: #9a9587;
+  text-transform: uppercase;
+}
+.name {
+  position: relative;
+  margin-top: 3px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px; font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--ink);
+  line-height: 1.04;
+  opacity: .94;               /* slightly imperfect ink density */
+}
+/* print misregistration ghosts */
+.name::before, .name::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.name::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.name::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+.role {
+  margin-top: 5px;
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .045em;
+  color: var(--ink2);
+}
+.dept {
+  margin-top: 2px;
+  font-size: 7.2px; font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.rows {
+  margin-top: auto;
+  display: grid;
+  gap: 4px;
+}
+.rows .r {
+  display: flex; align-items: baseline;
+  border-bottom: .6px solid rgba(28,24,16,.10);
+  padding-bottom: 3px;
+}
+.rows .r span {
+  width: 52px; flex: none;
+  font-size: 6.2px; font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #a19d90;
+}
+.rows .r b {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8.4px; font-weight: 600;
+  letter-spacing: .07em;
+  color: #26241e;
+}
+
+/* microtext line */
+.micro {
+  margin: 10px 18px 0;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 4.4px;
+  letter-spacing: .05em;
+  color: #b2ab98;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* bottom: barcode + qr */
+.bottom {
+  display: flex; align-items: center;
+  gap: 13px;
+  margin: 8px 18px 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--hair);
+}
+.bar-wrap canvas { display: block; }
+.cap {
+  margin-top: 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.4px;
+  letter-spacing: .26em;
+  color: #77756c;
+  text-align: center;
+}
+.vr { width: 1px; align-self: stretch; background: var(--hair); }
+.qr-wrap { margin-left: auto; }
+.qr-wrap canvas { display: block; border: .6px solid rgba(28,24,16,.14); }
+
+/* access band — deep sage with terracotta edge */
+.band {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 34px;
+  display: flex; align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 40%),
+    #2c4234;
+  box-shadow: inset 0 2px 0 rgba(198,120,86,.9), inset 0 1px 0 rgba(0,0,0,.4);
+}
+.band .dot {
+  width: 6px; height: 6px; flex: none;
+  border-radius: 50%;
+  background: #d08358;
+  box-shadow: 0 0 5px rgba(208,131,88,.8), inset 0 0 1px rgba(0,0,0,.4);
+}
+.band-t {
+  font-size: 7.6px; font-weight: 700;
+  letter-spacing: .22em;
+  color: #eae6d6;
+}
+.band-mark { margin-left: auto; width: 15px; height: 15px; opacity: .8; }
+
+/* printed-ink grain covering the face */
+.grain {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: .16;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* ---------------- worn laminate ---------------- */
+.wear {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  transform: translateZ(.4px);
+  background:
+    radial-gradient(30px 22px at 7px 9px,      rgba(255,253,242,.50), rgba(255,253,242,0) 70%),
+    radial-gradient(34px 24px at calc(100% - 5px) calc(100% - 7px), rgba(255,253,242,.44), rgba(255,253,242,0) 70%),
+    radial-gradient(22px 15px at calc(100% - 9px) 11px, rgba(255,253,242,.30), rgba(255,253,242,0) 70%),
+    linear-gradient(0deg, rgba(255,253,242,.14), rgba(255,253,242,0) 4%);
+  opacity: .6;
+}
+
+/* ---------------- laminate gloss ---------------- */
+.laminate {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateZ(1px);
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.02) 26%, rgba(255,255,255,0) 40%),
+    linear-gradient(335deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 30%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 1px 0 0 rgba(255,255,255,.30),
+    inset -1px 0 0 rgba(20,16,10,.06),
+    inset 0 -1px 0 rgba(20,16,10,.10),
+    inset 0 0 0 1px rgba(26,22,14,.10);
+}
+/* the sweeping specular band */
+.laminate::before {
+  content: "";
+  position: absolute;
+  top: -32%; bottom: -32%;
+  left: 18%;
+  width: 58%;
+  background: linear-gradient(102deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.06) 34%,
+    rgba(255,255,255,.42) 47%,
+    rgba(255,255,255,.80) 50%,
+    rgba(255,255,255,.40) 53%,
+    rgba(255,255,255,.05) 66%,
+    rgba(255,255,255,0) 100%);
+  transform: translateX(var(--sx));
+  mix-blend-mode: screen;
+  opacity: .6;
+  filter: blur(.6px);
+}
+/* faint vertical laminate streak texture */
+.laminate::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  background: repeating-linear-gradient(90deg,
+    rgba(255,255,255,.016) 0 1px,
+    rgba(0,0,0,0) 1px 3px);
+}
+
+/* contact AO where the loop meets the card */
+.ao {
+  position: absolute;
+  top: -6px; left: 50%;
+  width: 64px; height: 32px;
+  margin-left: -32px;
+  background: radial-gradient(ellipse 50% 60% at 50% 20%, rgba(15,12,8,.32), rgba(15,12,8,0) 72%);
+  filter: blur(2.5px);
+  pointer-events: none;
+}
+
+/* brass ring + leather loop hardware */
+.clip {
+  position: absolute;
+  left: 50%; top: -36px;
+  width: 60px; height: 62px;
+  margin-left: -30px;
+  transform: translateZ(2px);
+  filter: drop-shadow(0 2px 1.6px rgba(30,24,14,.30));
+  pointer-events: none;
+}
+
+/* ---------------- hint ---------------- */
+.hint {
+  position: fixed;
+  left: 0; right: 0; bottom: 24px;
+  text-align: center;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: .34em;
+  color: #a49e8d;
+  z-index: 6;
+  pointer-events: none;
+}
