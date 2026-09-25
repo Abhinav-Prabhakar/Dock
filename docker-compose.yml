@@ -1,0 +1,56 @@
+# Local dev stack: ui (nginx, both static sites + /api proxy) · api
+# (FastAPI backend) · db (Postgres). `docker compose up --build`, then
+# open http://localhost:8080 (operator) and http://localhost:8080/customers/.
+#
+# api is temporarily also published on :8399 (its own port, matching what
+# customers/*.js currently hard-codes) — this goes away once the frontends
+# are migrated to call same-origin /api/* through the ui service (see
+# docs/INTEGRATION_PLAN.md, "same-origin /api").
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dockpw}
+      POSTGRES_DB: ${POSTGRES_DB:-dock}
+    volumes:
+      - dock_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"           # host access for local pytest/alembic (see tests/test_api.py)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dock} -d ${POSTGRES_DB:-dock}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-dock}:${POSTGRES_PASSWORD:-dockpw}@db:5432/${POSTGRES_DB:-dock}
+      DOCK_SEED: ${DOCK_SEED:-0}
+      DOCK_PPO_MODEL: ${DOCK_PPO_MODEL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8399:8000"          # temporary — see header note
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+volumes:
+  dock_pgdata:

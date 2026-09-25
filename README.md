@@ -108,7 +108,25 @@ CONTEXT.md               Agent handoff / working state
 
 ## Quickstart
 
-### Backend
+### Docker (whole stack)
+
+```bash
+cp .env.example .env      # optional — defaults work as-is
+docker compose up --build
+```
+
+- **http://localhost:8080** — port-operator console
+- **http://localhost:8080/customers/** — customer booking site
+- **http://localhost:8399** — backend API directly (temporary; see
+  `docker-compose.yml`'s header comment)
+
+First run pulls/builds everything (Postgres, then the backend image with
+its RL/settlement deps, then nginx) — a few minutes. The `api` container
+runs migrations and generates the reference datasets on every start; the
+database itself persists in the `dock_pgdata` volume across restarts.
+`docker compose down -v` wipes it back to empty.
+
+### Backend (without Docker)
 
 ```bash
 cd backend
@@ -121,7 +139,8 @@ python -m data.generate --seed 42 --scale 1.0 --out data/generated
 # 2. Train the supervised models (required — pricing and RL error without them)
 python -m models.train --data data/generated --out models/artifacts
 
-# 3. Tests
+# 3. Tests (test_api.py needs a reachable, migrated Postgres — see its
+#    docstring; `docker compose up -d db && alembic upgrade head` first)
 python -m pytest -q                                    # 83 tests
 
 # 4. Run a head-to-head episode (baselines only)
@@ -152,10 +171,12 @@ Curriculum: 14d/1-vessel → 30d/2-vessel → +reward shaping → 90d/full-fleet
 +adversarial scenarios. Checkpoints land in `runs/ppo_cN/` with `config.json`
 (git SHA + obs semantics) and TensorBoard logs.
 
-### Live API server
+### Live API server (without Docker)
 
 ```bash
+docker compose up -d db                # just the database
 cd backend
+.venv/bin/alembic upgrade head          # once, or after a new migration
 .venv/bin/uvicorn server.app:app --port 8399
 ```
 

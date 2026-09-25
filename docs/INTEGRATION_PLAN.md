@@ -78,9 +78,20 @@ db   Postgres 16            named volume · healthcheck · api waits for healthy
 
 ## 5. Execution order
 
-1. Retire Next.js: remove `src/`, the Node toolchain files, and relocate `public/demo/*.json`.
-2. Docker Compose (ui / api / db) + Alembic; `orders` off SQLite; `_SEED` removed.
-   ✔ `docker compose up`, `/health`, orders round-trip.
+1. ✅ Retire Next.js: removed `src/`, the Node toolchain files, `public/map/`; relocated
+   `public/demo/*.json` → `backend/demo/`. Verified `/health`, `/compare/summary`, `/orders`.
+2. ✅ Docker Compose (`ui` / `api` / `db`) + Alembic; `orders` off SQLite onto Postgres via
+   SQLAlchemy Core (`backend/server/orders.py`, `backend/server/db.py`); `_SEED` removed —
+   a fresh DB starts with an empty `orders` table. `backend/alembic/versions/0001_orders.py`.
+   `backend/docker-entrypoint.sh` runs `alembic upgrade head` + generates `data/generated/`
+   on every start (idempotent). `ui/nginx.conf` proxies `/api/*` to `api:8000` (incl.
+   WebSocket upgrade) — not yet used by either frontend (that's step 4).
+   Verified: `docker compose up --build`, all 3 healthy; POST/GET `/orders` round-trips
+   through real Postgres; order survives a full `down`/`up` cycle (named volume); `alembic
+   upgrade head` / `downgrade base` both idempotent and clean; both sites + `/api` proxy
+   reachable through nginx on :8080.
+   Known gap: `test_api.py` now needs a reachable, migrated Postgres to even import the app
+   (`create_app()` → `init_orders_db()`) — documented in its docstring and in `README.md`.
 3. Persist episodes / events / deals; local-only seed.
 4. nginx same-origin `/api`; strip customer-site fallbacks (`FALLBACK`, localStorage caches).
 5. Live episode + customer bookings (§6): always-on episode, quote/accept/decline endpoints,
