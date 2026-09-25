@@ -7,6 +7,7 @@ Run from backend/:
 
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -24,7 +25,15 @@ async def _lifespan(app: FastAPI):
     # DB check at startup, not import: importing server.app must not need a
     # live database (tests build theirs first; tooling imports the module).
     init_orders_db()
+    mgr: EpisodeManager = app.state.episodes
+    if os.environ.get("DOCK_LIVE", "1") != "0":
+        # the always-on world both sites read and customers get quotes from
+        mgr.start_live(
+            policy=os.environ.get("DOCK_LIVE_POLICY", "ppo"),
+            scenario=os.environ.get("DOCK_LIVE_SCENARIO", "baseline"),
+            speed_days_per_sec=float(os.environ.get("DOCK_LIVE_SPEED", 1 / 60)))
     yield
+    mgr.stop_live()
 
 
 def create_app() -> FastAPI:

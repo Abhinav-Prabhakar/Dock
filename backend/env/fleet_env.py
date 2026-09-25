@@ -58,11 +58,90 @@ N_REPO = 8
 N_BOOKING_ACTIONS = 12
 N_ACTIONS = N_BOOKING_ACTIONS + 4 * len(SPEED_TIERS) + N_REPO * len(REPO_TIERS)
 
+
+# ---------------------------------------------------------------------------
+# Booking-step action rules, shared by the env and the live API's customer
+# quotes (server/quotes.py) so a customer is offered exactly the actions the
+# policy could take — one definition, no drift.
+# ---------------------------------------------------------------------------
+
+def booking_mask(sim, req) -> np.ndarray:
+    """Feasible booking actions for `req` (reject is always legal)."""
+    mask = np.zeros(N_ACTIONS, dtype=bool)
+    mask[0] = True
+    if req is None:
+        return mask
+    feas = [sim.feasible(req, o) for o in req.options]
+    mask[1] = any(o.within_flex and f for o, f in zip(req.options, feas))
+    mask[2:6] = any((not o.within_flex) and f
+                    for o, f in zip(req.options, feas))
+    mask[6:9] = bool(req.alt_options) and any(
+        sim.feasible(req, o) for o in req.alt_options)
+    if len(req.options) >= 2:
+        a, b = req.options[0], req.options[1]
+        half = max(1, req.teu // 2)
+        mask[9:12] = (sim.feasible(req, a, half)
+                      and sim.feasible(req, b, req.teu - half))
+    return mask
+
+
+def decode_booking(a: int, req) -> BookingDecision:
+    if a == 0 or req is None:
+        return BookingDecision(DecisionKind.REJECT, note="policy")
+    if a == 1:
+        for i, o in enumerate(req.options):
+            if o.within_flex:
+                return BookingDecision(DecisionKind.ACCEPT, option_idx=i)
+        return BookingDecision(DecisionKind.REJECT, note="no_flex_opt")
+    if 2 <= a <= 5:                    # flex window on a later option
+        later = [i for i, o in enumerate(req.options)
+                 if not o.within_flex]
+        idx = later[0] if later else len(req.options) - 1
+        return BookingDecision(DecisionKind.FLEX_WINDOW, option_idx=idx,
+                               discount_pct=FLEX_TIERS[a - 2])
+    if 6 <= a <= 8:
+        return BookingDecision(DecisionKind.ALT_HUB, option_idx=0,
+                               discount_pct=ALT_TIERS[a - 6])
+    frac = SPLIT_TIERS[a - 9]
+    return BookingDecision(DecisionKind.SPLIT, option_idx=0,
+                           second_idx=min(1, len(req.options) - 1),
+                           split_frac=frac)
+
+
 N_PORTS = len(C.PORTS)
 N_ROUTES = len(D.ROUTE_KEYS)
 # obs: request(14) + options(5*4) + market(6) + ports(3*8) + vessels(6*4)
 #      + demand forecast(N_ROUTES) + temporal(4) + decision flag(2)
 OBS_DIM = 14 + 20 + 6 + 3 * N_PORTS + 6 * 4 + N_ROUTES + 4 + 2
+
+
+def obs_labels() -> list[str]:
+    """Human-readable name for each of the OBS_DIM features, in _obs() order
+    (used to label attributions on the operator's decision-engine view)."""
+    ports = [row[0] for row in C.PORTS]
+    names = ["request TEU", "request weight", "cargo dry", "cargo reefer",
+             "cargo hazmat", "segment flexible", "segment standard",
+             "segment urgent", "flex days", "days to departure",
+             "market rate", "# voyage options", "# alt-hub options",
+             "booking flag"]
+    for k in range(4):
+        names += [f"opt{k} days out", f"opt{k} leg capacity",
+                  f"opt{k} within flex", f"opt{k} capacity ok",
+                  f"opt{k} bid price"]
+    names += ["fuel price", "carbon price", "episode progress",
+              "season (start week)", "network pressure", "network value"]
+    for p in ports:
+        names += [f"{p} wait", f"{p} empties", f"{p} closed"]
+    for k in range(4):
+        vid = f"VES{k + 1}"
+        names += [f"{vid} speed", f"{vid} at sea", f"{vid} stowage used",
+                  f"{vid} onboard", f"{vid} empties aboard",
+                  f"{vid} next event"]
+    names += [f"forecast {o}>{d}" for (o, d) in D.ROUTE_KEYS]
+    names += ["weekday sin", "weekday cos", "quarter sin", "quarter cos",
+              "fleet-step flag", "booking-step flag"]
+    assert len(names) == OBS_DIM, (len(names), OBS_DIM)
+    return names
 
 EMPTY_MILE_PENALTY = 2e-6          # per empty TEU-nm sailed per step
 SHAPING_ALPHA = 0.1                # weight of potential-based shaping
@@ -190,26 +269,7 @@ class CargoFleetEnv(gym.Env if gym else object):
     # ------------------------------------------------------------------
 
     def _decode_booking(self, a: int, req: BookingRequest) -> BookingDecision:
-        if a == 0 or req is None:
-            return BookingDecision(DecisionKind.REJECT, note="policy")
-        if a == 1:
-            for i, o in enumerate(req.options):
-                if o.within_flex:
-                    return BookingDecision(DecisionKind.ACCEPT, option_idx=i)
-            return BookingDecision(DecisionKind.REJECT, note="no_flex_opt")
-        if 2 <= a <= 5:                    # flex window on a later option
-            later = [i for i, o in enumerate(req.options)
-                     if not o.within_flex]
-            idx = later[0] if later else len(req.options) - 1
-            return BookingDecision(DecisionKind.FLEX_WINDOW, option_idx=idx,
-                                   discount_pct=FLEX_TIERS[a - 2])
-        if 6 <= a <= 8:
-            return BookingDecision(DecisionKind.ALT_HUB, option_idx=0,
-                                   discount_pct=ALT_TIERS[a - 6])
-        frac = SPLIT_TIERS[a - 9]
-        return BookingDecision(DecisionKind.SPLIT, option_idx=0,
-                               second_idx=min(1, len(req.options) - 1),
-                               split_frac=frac)
+        return decode_booking(a, req)
 
     def _decode_fleet(self, a: int) -> list[FleetAction]:
         acts: list[FleetAction] = []
@@ -261,23 +321,7 @@ class CargoFleetEnv(gym.Env if gym else object):
                         self.sim.can_reposition(src, dst, REPO_TIERS[k])
             return mask
 
-        req = self._req
-        mask[0] = True                               # reject always legal
-        if req is None:
-            return mask
-        feas = [self.sim.feasible(req, o) for o in req.options]
-        mask[1] = any(o.within_flex and f
-                      for o, f in zip(req.options, feas))
-        mask[2:6] = any((not o.within_flex) and f
-                        for o, f in zip(req.options, feas))
-        mask[6:9] = bool(req.alt_options) and any(
-            self.sim.feasible(req, o) for o in req.alt_options)
-        if len(req.options) >= 2:
-            a, b = req.options[0], req.options[1]
-            half = max(1, req.teu // 2)
-            mask[9:12] = (self.sim.feasible(req, a, half)
-                          and self.sim.feasible(req, b, req.teu - half))
-        return mask
+        return booking_mask(self.sim, self._req)
 
     # ------------------------------------------------------------------
     # Observation

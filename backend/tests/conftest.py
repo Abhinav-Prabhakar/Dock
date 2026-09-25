@@ -27,6 +27,8 @@ os.environ["DATABASE_URL"] = urlunsplit(_DB._replace(path=f"/{_TEST_DB}"))
 # Episode ledgers go to a throwaway dir — backend/runs/ledger is tracked in git.
 import tempfile  # noqa: E402
 os.environ["DOCK_LEDGER_DIR"] = tempfile.mkdtemp(prefix="dock-ledger-")
+# No always-on live episode by default (tests that need one start it).
+os.environ.setdefault("DOCK_LIVE", "0")
 
 
 @pytest.fixture(scope="session")
