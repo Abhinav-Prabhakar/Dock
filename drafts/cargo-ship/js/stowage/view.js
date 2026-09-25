@@ -6,6 +6,7 @@ import { fmt } from '../cargo.js';
 import { buildPlan, stateAt, describeMove, CRANE } from './plan.js';
 import { makeView, drawProfile, ghostTops, drawRowPicker } from './profile.js';
 import { drawCrane } from './crane.js';
+import { planLayout, buildCells, hitPlan, drawPlan, drawPlanCrane } from './planview.js';
 import { CraneAudio } from './audio.js';
 
 const { L, T } = SHIP;
@@ -25,6 +26,8 @@ const ICON = {
   rev: '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M16 5L5 12l11 7z" fill="currentColor"/></svg>',
   sound: '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   mute: '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  side: '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M2.5 15h19l-2.6 4H5.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 15v-4h4v4M10 15V8h4v7M14 15v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+  top: '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M2.5 7.5h15.5l3.5 4.5-3.5 4.5H2.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M5.5 10h4v4h-4zM11 10h4v4h-4z" fill="currentColor"/></svg>',
   follow: '<svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="3.2" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor" stroke-width="1.6"/></svg>',
 };
 
@@ -40,6 +43,8 @@ export class StowageView {
     this.row = null;
     this.prevRow = null;
     this.hoverId = null;
+    this.viewMode = 'profile';          // 'profile' (side elevation) | 'plan' (top view)
+    this.modeMix = 0;                   // 0 = profile, 1 = plan; eased through a paper wipe
     this.buildDOM();
     this.paper = this.makePaper();
     window.addEventListener('resize', () => this.active && this.resize());
@@ -52,9 +57,9 @@ export class StowageView {
       <canvas class="stow-canvas"></canvas>
       <div class="stow-ui">
         <header class="stow-hud">
-          <div class="brand"><span class="dot"></span>DOCK <em>Stowage profile</em></div>
+          <div class="brand"><span class="dot"></span>DOCK <em data-k="viewName">Stowage profile</em></div>
           <h1><span data-k="rowTitle">Row 01</span> <small data-k="rowSide">starboard</small></h1>
-          <div class="sub">Side elevation, bow to the right · hull shown transparent</div>
+          <div class="sub" data-k="viewSub">Side elevation, bow to the right · hull shown transparent</div>
           <div class="stow-stats">
             <div><label>Loaded</label><span data-k="loaded">0</span><small data-k="loadedOf">/ 0</small></div>
             <div><label>Weight</label><span data-k="tonnes">0</span><small>t</small></div>
@@ -64,6 +69,7 @@ export class StowageView {
           </div>
         </header>
         <aside class="lpanel stow-legend">
+          <div class="seg light view-seg" data-k="views"><button data-v="profile" title="Side elevation (V)">${ICON.side}Side</button><button data-v="plan" title="Plan from above (V)">${ICON.top}Top</button></div>
           <div class="seg light" data-k="modes"></div>
           <div class="legend light" data-k="legend"></div>
         </aside>
@@ -111,7 +117,9 @@ export class StowageView {
     this.k.speeds.querySelectorAll('button').forEach((b) => (b.onclick = () => this.setSpeed(+b.dataset.i)));
     this.k.modes.innerHTML = Object.entries(COLOR_MODES).map(([k, v]) => `<button data-m="${k}">${v.label}</button>`).join('');
     this.k.modes.querySelectorAll('button').forEach((b) => (b.onclick = () => this.onColorMode(b.dataset.m)));
+    this.k.views.querySelectorAll('button').forEach((b) => (b.onclick = () => this.setView(b.dataset.v)));
     this.setSpeed(this.speedIdx);
+    this.syncView();
 
     // canvas interaction: hover, pan, zoom
     const c = this.canvas;
@@ -126,7 +134,14 @@ export class StowageView {
         this.hover(null);
       } else this.hover(e);
     });
-    c.addEventListener('pointerup', () => (drag = null));
+    c.addEventListener('pointerup', (e) => {
+      const click = drag && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5;
+      drag = null;
+      if (!click || this.modeMix < 0.5 || !this.view) return;
+      const [wx, wy] = this.view.toWorld(e.clientX, e.clientY);
+      const hit = hitPlan(this.planCells, wx, wy, (q, list) => this.visibleIn(q, list));
+      if (hit && hit.cell.row !== this.row) { this.audio.wake(); this.setRow(hit.cell.row); this.hover(e); }
+    });
     c.addEventListener('pointerleave', () => this.hover(null));
     c.addEventListener('wheel', (e) => {
       e.preventDefault();
@@ -168,6 +183,7 @@ export class StowageView {
       else if (k === 'End') this.action('end');
       else if (k === 'f' || k === 'F') this.action('follow');
       else if (k === 's' || k === 'S') this.action('sound');
+      else if (k === 'v' || k === 'V') this.setView(this.viewMode === 'plan' ? 'profile' : 'plan');
       else if (k === 'Escape') this.onExit?.();
     });
   }
@@ -190,7 +206,8 @@ export class StowageView {
     this.w = window.innerWidth; this.h = window.innerHeight;
     this.canvas.width = this.w * dpr; this.canvas.height = this.h * dpr;
     this.dpr = dpr;
-    this.base = this.finalLayout();
+    this.bases = { profile: this.finalLayout(), plan: planLayout(this.w, this.h) };
+    this.base = this.bases[this.modeMix < 0.5 ? 'profile' : 'plan'];
   }
 
   // Layout matching the broadside 3D frame at the moment of the cross-fade.
@@ -207,6 +224,27 @@ export class StowageView {
     return { ppm, cx: -8, cy: yMid - (h / 2 - areaMid) / ppm };
   }
 
+  /* ---------------------------------------------------------------- side / top view */
+  setView(mode) {
+    if (mode === this.viewMode || this.anim.running) return;
+    this.viewMode = mode;
+    this.user = { zoom: 1, panX: 0, panY: 0 };
+    this.hover(null);
+    this.syncView();
+  }
+
+  syncView() {
+    const plan = this.viewMode === 'plan';
+    this.k.views.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.v === this.viewMode));
+    this.k.viewName.textContent = plan ? 'Stowage plan' : 'Stowage profile';
+    this.k.viewSub.textContent = plan
+      ? 'Plan from above, bow to the right · port side alongside · top tier per cell, ×n = stack height'
+      : 'Side elevation, bow to the right · hull shown transparent';
+  }
+
+  // Which boxes of a cell are on board right now: the selected row follows the crane timeline.
+  visibleIn(cell, list) { return cell.row === this.row ? list.filter((p) => this.placedIds?.has(p.box.id)) : list; }
+
   /* ---------------------------------------------------------------- data */
   setRow(row, { instant = false } = {}) {
     if (row === this.row) return;
@@ -222,6 +260,7 @@ export class StowageView {
       for (const p of s.deck) this.rowBoxes.push({ ...p, deck: true, bayIndex: bi });
     });
     this.ghost = ghostTops(this.cargo, row);
+    if (!this.planCells) this.planCells = buildCells(this.cargo);
     this.rowAlpha = instant ? 1 : 0;
     this.placedCount = -1;
     this.lastEventT = this.t;
@@ -229,6 +268,7 @@ export class StowageView {
     this.k.rowTitle.textContent = `Row ${fmt(row)}`;
     this.k.rowBadge.textContent = fmt(row);
     this.k.rowSide.textContent = row === 0 ? 'centreline' : rz.z > 0 ? 'starboard' : 'port';
+    this.rowZ = rz.z;
     this.k.loadedOf.textContent = `/ ${this.plan.moves.filter((m) => m.kind === 'box').length}`;
     this.rowCounts = new Map();
     for (const b of this.cargo.boxes.values()) {
@@ -240,7 +280,7 @@ export class StowageView {
 
   refresh() {
     // cargo changed while away: rebuild everything for the current row
-    const r = this.row; this.row = null; this.setRow(r ?? this.cargo.allRows()[0].row, { instant: true });
+    const r = this.row; this.row = null; this.planCells = null; this.setRow(r ?? this.cargo.allRows()[0].row, { instant: true });
   }
 
   updatePlaced() {
@@ -334,6 +374,8 @@ export class StowageView {
     this.refresh();
     this.t = this.plan.duration;
     this.user = { zoom: 1, panX: 0, panY: 0 };
+    this.viewMode = 'profile'; this.modeMix = 0; this.syncView();
+    this.base = this.bases.profile;
     this.syncMode();
     this.audio.wake();
     return this.animate(0, 1, 2600, (k) => { if (k >= 0.3 && onCovered) { onCovered(); onCovered = null; } });
@@ -342,9 +384,12 @@ export class StowageView {
   exit({ onUncover } = {}) {
     this.playing = false; this.syncButtons();
     this.audio.sleep();
-    this.from = this.startLayout(this.w, this.h);
-    return this.animate(1, 0, 1900, (k) => { if (k <= 0.34 && onUncover) { onUncover(); onUncover = null; } })
-      .then(() => { this.active = false; this.root.classList.remove('active'); });
+    // from the top view, first wipe back to the side elevation that the 3D camera will un-flatten from
+    const back = this.modeMix > 0.001 ? (this.setView('profile'), new Promise((r) => setTimeout(r, 720))) : Promise.resolve();
+    return back.then(() => {
+      this.from = this.startLayout(this.w, this.h);
+      return this.animate(1, 0, 1900, (k) => { if (k <= 0.34 && onUncover) { onUncover(); onUncover = null; } });
+    }).then(() => { this.active = false; this.root.classList.remove('active'); });
   }
 
   // Park the drawing while a DOM page covers it, and bring it straight back (no 3D cross-fade).
@@ -422,11 +467,19 @@ export class StowageView {
     if (this.prevSnap) { this.prevSnap.alpha -= dt * 4; if (this.prevSnap.alpha <= 0) this.prevSnap = null; }
     this.rowAlpha = Math.min(1, (this.rowAlpha ?? 1) + dt * 4);
 
+    // side <-> top: the drawing swaps at the midpoint of the wipe, when the paper fully covers it
+    const target = this.viewMode === 'plan' ? 1 : 0;
+    this.modeMix = target > this.modeMix ? Math.min(1, this.modeMix + dt / 0.7) : Math.max(0, this.modeMix - dt / 0.7);
+    const planDrawn = this.modeMix >= 0.5;
+    this.base = this.bases[planDrawn ? 'plan' : 'profile'];
+
     // camera: blend 3D-matching start layout -> final, then user pan/zoom and crane follow
     const mix = ease(smoothstep(0.25, 0.78, k));
     const b = this.base, f = this.from || this.startLayout();
     if (this.follow) {
-      const tz = 2.6, tx = this.state.crane.x - b.cx, ty = (this.state.crane.spreaderY + 20) / 2 - b.cy;
+      const c = this.state.crane;
+      const zt = lerp(this.rowZ ?? 0, -(SHIP.B / 2 + 25), c.depth);
+      const [tz, tx, ty] = planDrawn ? [2.2, c.x - b.cx, -zt - b.cy] : [2.6, c.x - b.cx, (c.spreaderY + 20) / 2 - b.cy];
       const a = 1 - Math.exp(-dt * 3);
       this.user.zoom = lerp(this.user.zoom, tz, a);
       this.user.panX = lerp(this.user.panX, tx, a);
@@ -491,6 +544,38 @@ export class StowageView {
 
     const livery = this.ship.liveries[this.ship.liveryKey];
     const mode = this.getColorMode();
+    const mm = ease(this.modeMix), wipe = mm < 0.5 ? mm * 2 : (1 - mm) * 2;
+    if (wipe > 0.001) {
+      // a slight fold toward/away from the viewer sells the change of viewpoint
+      const s = 1 - 0.05 * wipe;
+      g.translate(this.w / 2, this.h * 0.45); g.scale(1, s * (mm < 0.5 ? 1 : 1 + 0.08 * wipe)); g.translate(-this.w / 2, -this.h * 0.45);
+    }
+    if (mm >= 0.5) this.drawPlanView(g, v, livery, mode, k);
+    else this.drawProfileView(g, v, livery, mode, k);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.globalAlpha = 1;
+    if (wipe > 0.001) {
+      g.globalAlpha = wipe;
+      g.fillStyle = BG; g.fillRect(0, 0, this.w, this.h);
+      g.fillStyle = this.paper; g.fillRect(0, 0, this.w, this.h);
+      g.globalAlpha = 1;
+    }
+  }
+
+  drawPlanView(g, v, livery, mode, k) {
+    const time = performance.now() / 1000;
+    drawPlan(g, v, {
+      ship: this.ship, cargo: this.cargo, livery, cells: this.planCells, row: this.row, rowZ: this.rowZ ?? 0,
+      visible: (c, list) => this.visibleIn(c, list), hatches: this.hatches, colorMode: mode, hoverId: this.hoverId,
+      time, rows: this.cargo.allRows(),
+    });
+    const st = this.state, m = st.move;
+    const carry = m && st.crane.carrying ? (m.kind === 'hatch' ? { len: m.len, hatchColor: livery.hatch } : { len: m.len, color: boxColor(m.box, mode) }) : null;
+    drawPlanCrane(g, v, st, { rowZ: this.rowZ ?? 0, carry, appear: smoothstep(0.5, 0.92, k), time });
+    g.globalAlpha = 1;
+  }
+
+  drawProfileView(g, v, livery, mode, k) {
     const hullMorph = smoothstep(0.28, 0.66, k);
     drawProfile(g, v, {
       ship: this.ship, cargo: this.cargo, livery, hullMorph,
@@ -584,8 +669,11 @@ export class StowageView {
 
   hover(e) {
     const tip = document.getElementById('tooltip');
-    if (!e || !this.view || this.anim.running) { this.hoverId = null; tip.classList.remove('show', 'light'); return; }
+    if (!e || !this.view || this.anim.running) { this.hoverId = null; this.planHit = null; tip.classList.remove('show', 'light'); return; }
     const [wx, wy] = this.view.toWorld(e.clientX, e.clientY);
+    if (this.modeMix >= 0.5) { this.hoverPlan(e, tip, wx, wy); return; }
+    this.planHit = null;
+    this.canvas.style.cursor = '';
     const hit = this.rowBoxes.find((p) => this.placedIds?.has(p.box.id) && Math.abs(wx - p.x) <= p.len / 2 && wy >= p.y && wy <= p.y + p.h);
     this.hoverId = hit?.box.id ?? null;
     if (!hit) { tip.classList.remove('show'); return; }
@@ -593,6 +681,22 @@ export class StowageView {
     tip.innerHTML = `<b>${d.slot.slice(0, 2)} · ${d.slot.slice(2, 4)} · ${d.slot.slice(4)}</b> <span class="mut">bay·row·tier</span><br>
       <span class="sw" style="background:${boxColor(d, this.getColorMode())}"></span>${d.id} · ${CONTAINER_TYPES[d.type].label} · ${d.weight.toFixed(1)} t<br>
       <span class="mut">${d.pod} · ${d.category}${hit.deck ? ' · on deck' : ' · in hold'}</span>`;
+    tip.style.left = `${e.clientX}px`; tip.style.top = `${e.clientY}px`;
+    tip.classList.add('show', 'light');
+  }
+
+  hoverPlan(e, tip, wx, wy) {
+    const h = this.planHit = hitPlan(this.planCells, wx, wy, (c, list) => this.visibleIn(c, list));
+    this.hoverId = h?.top?.box.id ?? null;
+    this.canvas.style.cursor = h && h.cell.row !== this.row ? 'pointer' : '';
+    if (!h) { tip.classList.remove('show'); return; }
+    const { cell, top, deck, hold } = h;
+    const tonnes = [...deck, ...hold].reduce((a, p) => a + p.box.weight, 0);
+    const head = `<b>Bay ${fmt(cell.b.bay)} · Row ${fmt(cell.row)}</b> <span class="mut">${cell.row === this.row ? 'selected row' : 'click to select row'}</span><br>`;
+    const body = top
+      ? (() => { const d = this.cargo.describe(top.box); return `<span class="sw" style="background:${boxColor(d, this.getColorMode())}"></span>${d.id} · ${CONTAINER_TYPES[d.type].label} · ${d.weight.toFixed(1)} t · tier ${d.slot.slice(4)}<br>`; })()
+      : `<span class="mut">No deck stow${this.hatches?.has(cell.bi) || cell.row !== this.row ? '' : ' · hatch open'}</span><br>`;
+    tip.innerHTML = `${head}${body}<span class="mut">${deck.length} on deck · ${hold.length} in hold · ${Math.round(tonnes)} t in stack</span>`;
     tip.style.left = `${e.clientX}px`; tip.style.top = `${e.clientY}px`;
     tip.classList.add('show', 'light');
   }
