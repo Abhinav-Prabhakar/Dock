@@ -859,6 +859,8 @@ class EpisodeManager:
             view = policy_view.evaluate(model, obs, mask)
             a = view["action"]
             repo = env._repo_pairs() if fleet_step else None
+            view["pricing"] = (None if fleet_step or req is None
+                               else self._decision_pricing(sim, req, a))
         else:
             a, _ = model.predict(obs, action_masks=mask)
             view = None
@@ -884,6 +886,36 @@ class EpisodeManager:
         return obs, term, advanced, last_day
 
     @staticmethod
+    def _decision_pricing(sim, req, action: int) -> dict | None:
+        """The bid-price engine's view of the option this booking action
+        prices (read before the step books it): quote, opportunity-cost
+        floor, market rate, reason code — what the Model page's pricing card
+        shows. None for reject, or when the sim has no pricer."""
+        from env.fleet_env import decode_booking
+        from simulator.types import DecisionKind
+        dec = decode_booking(action, req)
+        if dec.kind is DecisionKind.REJECT or getattr(sim, "pricer", None) is None:
+            return None
+        opts = req.alt_options if dec.kind is DecisionKind.ALT_HUB else req.options
+        if not opts:
+            return None
+        opt = opts[min(dec.option_idx, len(opts) - 1)]
+        try:
+            q = sim.pricer.quote(req, opt)
+        except Exception:
+            return None
+        return {"kind": dec.kind.value, "discount_pct": dec.discount_pct,
+                "list_price": q.price,
+                "price": round(q.price * (1 - dec.discount_pct), 2),
+                "bid_price": q.bid_price, "market_rate": q.market_rate,
+                "reason": q.reason, "vessel_id": opt.vessel_id,
+                "board_day": round(opt.board_day, 2),
+                "eta_day": round(opt.discharge_day_est, 2),
+                "legs": [{"leg": l.leg_idx, "pressure": round(l.pressure, 3),
+                          "remaining_teu": round(l.remaining_teu, 1),
+                          "bid_price": round(l.bid_price, 2)} for l in q.legs]}
+
+    @staticmethod
     def _record_trace(ep: Episode, view: dict, req, fleet_step: bool,
                       repo_pairs) -> None:
         """Keep the network's view of one live decision (not ledgered — it's
@@ -894,7 +926,8 @@ class EpisodeManager:
                 if (ev.get("type") == "booking.decision"
                         and ev.get("request_id") == req.request_id):
                     outcome = {k: ev.get(k) for k in
-                               ("outcome", "kind", "price", "reason")}
+                               ("outcome", "kind", "price", "reason",
+                                "seq", "hash", "prev_hash")}
                     break
         ep.trace.append({
             "n": (ep.trace[-1]["n"] + 1) if ep.trace else 1,

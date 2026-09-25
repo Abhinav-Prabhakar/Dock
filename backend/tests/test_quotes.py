@@ -133,6 +133,13 @@ def test_live_snapshot_policy_and_stowage(live):
     assert len(d["obs"]) == 112 and len(d["probs"]) == 44 and len(d["mask"]) == 44
     assert d["mask"][d["action"]]                       # chosen action was legal
     assert len(d["h1"]) == len(d["h2"]) == 28
+    priced = [x for x in pol["decisions"] if x.get("pricing")]
+    if priced:                                    # booking steps with an offer
+        pr = priced[-1]["pricing"]
+        assert pr["bid_price"] >= 0 and pr["price"] > 0 and pr["reason"]
+    booked = [x for x in pol["decisions"] if x.get("outcome")]
+    if booked:                                    # tied to its ledger entry
+        assert booked[-1]["outcome"]["hash"] and booked[-1]["outcome"]["seq"]
 
     net = c.get("/live/policy/network").json()
     assert net["layers"] == [112, 256, 256, 44]
