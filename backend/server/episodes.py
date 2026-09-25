@@ -29,6 +29,7 @@ through the same ingest path.
 from __future__ import annotations
 
 import json
+import os
 import queue
 import threading
 import time
@@ -42,7 +43,9 @@ from simulator.fleet import SEA
 BACKEND = Path(__file__).resolve().parent.parent
 REPO_ROOT = BACKEND.parent
 RUNS_DIR = BACKEND / "runs"
-DEFAULT_LEDGER_DIR = RUNS_DIR / "ledger"
+# DOCK_LEDGER_DIR: tests point this at a temp dir (runs/ledger is tracked);
+# compose points it at a volume so ledgers survive container rebuilds.
+DEFAULT_LEDGER_DIR = Path(os.environ.get("DOCK_LEDGER_DIR") or RUNS_DIR / "ledger")
 
 TERMINAL = {"done", "stopped", "error"}
 ACTIVE = {"running", "paused"}

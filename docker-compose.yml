@@ -16,7 +16,7 @@ services:
     volumes:
       - dock_pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"           # host access for local pytest/alembic (see tests/test_api.py)
+      - "${DB_PORT:-5432}:5432"   # host access for local pytest/alembic; set DB_PORT if 5432 is taken
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dock} -d ${POSTGRES_DB:-dock}"]
       interval: 5s
@@ -30,6 +30,9 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-dock}:${POSTGRES_PASSWORD:-dockpw}@db:5432/${POSTGRES_DB:-dock}
       DOCK_SEED: ${DOCK_SEED:-0}
       DOCK_PPO_MODEL: ${DOCK_PPO_MODEL:-}
+      DOCK_LEDGER_DIR: /data/ledger
+    volumes:
+      - dock_ledger:/data/ledger     # hash-chained event ledgers survive rebuilds
     depends_on:
       db:
         condition: service_healthy
@@ -54,3 +57,4 @@ services:
 
 volumes:
   dock_pgdata:
+  dock_ledger:

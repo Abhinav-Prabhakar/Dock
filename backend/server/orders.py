@@ -114,11 +114,10 @@ def get_order(order_id: str) -> dict | None:
 
 
 def _next_id(cx) -> str:
-    """BK-####-TC sequence continuing above the seeded range."""
-    n = cx.execute(text(
-        "SELECT MAX(CAST(REPLACE(REPLACE(id, 'BK-', ''), '-TC', '') "
-        "AS INTEGER)) FROM orders")).scalar() or 2400
-    return f"BK-{n + 1}-TC"
+    """BK-####-TC from a Postgres sequence (migration 0002) — atomic, so
+    concurrent POSTs can't pick the same number."""
+    n = cx.execute(text("SELECT nextval('order_number_seq')")).scalar_one()
+    return f"BK-{n}-TC"
 
 
 def create_order(body: OrderIn, sim_day: float = 0.0) -> dict:

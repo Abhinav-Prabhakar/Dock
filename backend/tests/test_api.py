@@ -4,14 +4,10 @@ Runs a real episode on a daemon thread via TestClient — static policy +
 small horizon + speed_days_per_sec=0 (flat out) keeps it fast and needs
 no model artifacts.
 
-Needs a reachable, migrated Postgres (create_app() -> init_orders_db()
-checks the `orders` table exists on startup, even though nothing here
-exercises /orders):
-    docker compose up -d db        # from the repo root
-    cd backend && .venv/bin/alembic upgrade head
-    .venv/bin/pytest -q
-(server/db.py's DATABASE_URL default already matches the compose db's
-exposed port/user/db, so no env var is needed unless you changed .env.)
+Needs Postgres (create_app() checks the `orders` table on startup). The
+`migrated_db` fixture (conftest.py) builds a separate `<name>_test` database
+from the migrations, so these never touch your dev data:
+    docker compose up -d db && .venv/bin/pytest -q
 """
 
 from __future__ import annotations
@@ -28,7 +24,7 @@ from server.app import create_app  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def client():
+def client(migrated_db):
     app = create_app()
     with TestClient(app) as c:
         yield c

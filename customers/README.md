@@ -14,23 +14,20 @@ This folder used to live at `drafts/customers/` (before that,
 ## Quick start
 
 ```bash
-# 1. the backend — serves the API AND this site, same origin
-cd backend
-.venv/bin/uvicorn server.app:app --port 8399
-
-# 2. open the site
-open http://localhost:8399/customers/
+# from the repo root — db + api + nginx (serves this site at /customers/)
+docker compose up --build
+open http://localhost:8080/customers/
 ```
-
-That's it. `backend/server/app.py` mounts this directory at `/customers`
-(StaticFiles, `html=True`), so page URLs look like:
 
 | URL | What |
 |---|---|
-| `http://localhost:8399/customers/` | Booking intake (or redirect to the dashboard when orders exist) |
-| `http://localhost:8399/customers/?new` | Booking intake, forced (gate bypassed) |
-| `http://localhost:8399/customers/dashboard/` | Fleet dashboard |
-| `http://localhost:8399/customers/intake-{a,b,c,d}/` | Exploratory intake UI variants |
+| `http://localhost:8080/customers/` | Booking intake (or redirect to the dashboard when orders exist) |
+| `http://localhost:8080/customers/?new` | Booking intake, forced (gate bypassed) |
+| `http://localhost:8080/customers/dashboard/` | Fleet dashboard |
+| `http://localhost:8080/customers/intake-{a,b,c,d}/` | Exploratory intake UI variants |
+
+Without Docker, the backend still mounts this directory itself at
+`http://localhost:8399/customers/` (`backend/server/app.py`, StaticFiles).
 
 The site also works from any plain static server (`python -m http.server`
 etc.): every `fetch` targets `http://localhost:8399` unless the page is
