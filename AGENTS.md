@@ -1,9 +1,10 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# Dock
 
-# This is NOT the Next.js you know
+Dynamic revenue management for a container-shipping fleet: a live FastAPI
+simulator/backend (`backend/`), a customer booking site (`customers/`), and
+a port-operator console (`drafts/cargo-ship/`). See `README.md` for the
+quick start and `docs/INTEGRATION_PLAN.md` for the current integration work.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+There is no Next.js app in this repo anymore — it was retired in favor of
+the two static sites above, both served by the backend at `/customers` and
+(soon) `/`.

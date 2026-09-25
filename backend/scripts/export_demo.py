@@ -5,7 +5,7 @@ Runs every policy on the HOLDOUT demand scenarios with identical simulator
 seeds across policies — the same seed-pinning scheme as rl/evaluate.py
 (``ep_seed = seed*1000 + ep*101``) so every policy faces the same demand
 realization — and writes pre-aggregated, pre-rounded JSON artifacts to
-``--out`` (default ``../public/demo/``):
+``--out`` (default ``../demo/``):
 
     summary.json    per-policy mean +/- std of the plan.md §7 headline
                     metrics, per-segment booked counts ("shipper
@@ -30,7 +30,7 @@ No HTTP server (technical.md §4 Decision A): the Next.js app reads these
 files statically.
 
 Usage (from backend/):
-    .venv/bin/python -m scripts.export_demo --out ../public/demo \
+    .venv/bin/python -m scripts.export_demo --out ../demo \
         --horizon 90 --episodes 5 --seed 42 [--model none] [--policies a,b,c]
 """
 
@@ -446,7 +446,7 @@ def _run_shock(configs, first_scen, policies, model, lead, seed,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--out", type=str, default="../public/demo",
+    ap.add_argument("--out", type=str, default="../demo",
                     help="output directory for the JSON artifacts")
     ap.add_argument("--horizon", type=int, default=90)
     ap.add_argument("--episodes", type=int, default=5,

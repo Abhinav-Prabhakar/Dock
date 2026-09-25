@@ -23,10 +23,10 @@ simulator       →  per-episode world: demand stream, fleet, stowage,
 policies        →  static | greedy | heuristic | heuristic_bid | ppo
                       │
 rl.evaluate     →  eval_results.json (holdout-only, identical seeds)
-export_demo     →  public/demo/{summary,timeline,offers,shock,meta}.json
+export_demo     →  backend/demo/{summary,timeline,offers,shock,meta}.json
                       │
                       ▼   the only thing src/ ever reads
-                   public/demo/*.json
+                   backend/demo/*.json
 ```
 
 Policies are ranked on an **ablation ladder**: each rung adds one layer
@@ -34,7 +34,7 @@ Policies are ranked on an **ablation ladder**: each rung adds one layer
 learned sequencing via PPO). `static` is "how the industry works today";
 `ppo` is Dock.
 
-## What the frontend reads: `public/demo/`
+## What the frontend reads: `backend/demo/`
 
 Written by `cd backend && .venv/bin/python -m scripts.export_demo`
 (`--model <path>` adds the `ppo` policy). All files UTF-8 JSON, floats
@@ -272,13 +272,13 @@ cd backend
 .venv/bin/python -m scripts.run_episode --episodes 3 --horizon 60
 .venv/bin/python -m rl.evaluate --model none --episodes 3 --horizon 60
 .venv/bin/python -m rl.evaluate --model runs/ppo_c5/model.zip --episodes 5 --horizon 90
-.venv/bin/python -m scripts.export_demo --out ../public/demo --model runs/ppo_c5/model.zip
+.venv/bin/python -m scripts.export_demo --out ../demo --model runs/ppo_c5/model.zip
 ```
 
 ## Gotchas
 
 - **No live simulation on stage.** Regenerate artifacts offline; the
-  frontend only reads `public/demo/*.json`.
+  frontend only reads `backend/demo/*.json`.
 - **Holdout hygiene**: `depressed-demand` + `volatile-shocks` are eval-only.
   Nothing trains on them — report that to judges if asked.
 - **Units**: artifact TEU values are real TEU; demand-model internals use
