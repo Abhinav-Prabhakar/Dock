@@ -30,7 +30,7 @@ name returns an explicit error.
   episode — real tx hashes, real contract address). The backend is the oracle
   writing departure/delivery confirmations.
 - **Compare artifacts** — the precomputed 5-policy export
-  (`public/demo/*.json`) is served read-only; generating it takes minutes, so
+  (`backend/demo/*.json`) is served read-only; generating it takes minutes, so
   it is batch-produced by `scripts/export_demo.py`, not computed on demand.
 
 ## REST endpoints
@@ -99,7 +99,7 @@ Errors: `400` unknown policy/scenario · `409` an episode is already running ·
 ### Comparison artifacts (precomputed)
 
 `GET /compare/{name}` — `name ∈ {summary, timeline, offers, shock, meta}`;
-serves `public/demo/{name}.json` verbatim (schemas in `backend.md` §Artifacts).
+serves `backend/demo/{name}.json` verbatim (schemas in `backend.md` §Artifacts).
 `404` if the export hasn't been run.
 
 ### WebSocket

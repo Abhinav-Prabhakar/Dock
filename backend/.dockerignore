@@ -1,0 +1,9 @@
+.venv/
+.venv-smoke/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+data/generated/
+data/dock.db
+eval_results.json

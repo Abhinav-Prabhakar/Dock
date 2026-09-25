@@ -15,6 +15,8 @@ booking tomorrow.
 > `plan.md` is the source of truth. Every feature and claim traces back to it.
 > `backend.md` documents the backend contract for frontend work; `frontend.md`
 > specifies the UI layout. `CONTEXT.md` is the agent handoff / working state.
+> `docs/INTEGRATION_PLAN.md` tracks the current work wiring both sites to the
+> live backend and containerising the stack.
 
 ## What it does
 
@@ -91,12 +93,12 @@ backend/                 Python backend (this is the core system)
   scripts/               run_episode, export_demo, run_curriculum
   tests/                 83 pytest tests
   runs/                  Trained checkpoints (ppo_c1..c5) + eval_results.json
-public/demo/             Exported demo artifacts (summary/timeline/offers/
+  demo/                  Exported demo artifacts (summary/timeline/offers/
                          shock/meta JSON) — served via GET /compare/*
-public/map/              Fully-local vector basemap for the fleet map
-                         (Protomaps/OSM tiles z0-6 + fonts + sprites)
-src/                     Next.js dashboard (App Router, TypeScript, Tailwind)
-docs/                    FRONTEND.md (architecture) + TESTING.md (vitest suite)
+customers/               Customer booking site (static; served at /customers)
+drafts/cargo-ship/       Port-operator console (static; procedural 3D vessel,
+                         stowage, statistics, decision-engine views)
+docs/                    INTEGRATION_PLAN.md (current work)
 plan.md                  Product source of truth
 backend.md               Backend contract: inputs, wiring, models, outputs
 frontend.md              UI layout spec (two screens + money HUD)
@@ -106,7 +108,25 @@ CONTEXT.md               Agent handoff / working state
 
 ## Quickstart
 
-### Backend
+### Docker (whole stack)
+
+```bash
+cp .env.example .env      # optional — defaults work as-is
+docker compose up --build
+```
+
+- **http://localhost:8080** — port-operator console
+- **http://localhost:8080/customers/** — customer booking site
+- **http://localhost:8399** — backend API directly (temporary; see
+  `docker-compose.yml`'s header comment)
+
+First run pulls/builds everything (Postgres, then the backend image with
+its RL/settlement deps, then nginx) — a few minutes. The `api` container
+runs migrations and generates the reference datasets on every start; the
+database itself persists in the `dock_pgdata` volume across restarts.
+`docker compose down -v` wipes it back to empty.
+
+### Backend (without Docker)
 
 ```bash
 cd backend
@@ -119,7 +139,8 @@ python -m data.generate --seed 42 --scale 1.0 --out data/generated
 # 2. Train the supervised models (required — pricing and RL error without them)
 python -m models.train --data data/generated --out models/artifacts
 
-# 3. Tests
+# 3. Tests (test_api.py needs a reachable, migrated Postgres — see its
+#    docstring; `docker compose up -d db && alembic upgrade head` first)
 python -m pytest -q                                    # 83 tests
 
 # 4. Run a head-to-head episode (baselines only)
@@ -130,7 +151,7 @@ python -m rl.evaluate --model none --episodes 5 --horizon 90
 python -m rl.evaluate --model runs/ppo_c5/model.zip --episodes 5 --horizon 90
 
 # 6. Export the demo artifacts the frontend reads
-python -m scripts.export_demo --out ../public/demo \
+python -m scripts.export_demo --out ../demo \
     --horizon 90 --episodes 3 --model runs/ppo_c5/model.zip
 ```
 
@@ -150,10 +171,12 @@ Curriculum: 14d/1-vessel → 30d/2-vessel → +reward shaping → 90d/full-fleet
 +adversarial scenarios. Checkpoints land in `runs/ppo_cN/` with `config.json`
 (git SHA + obs semantics) and TensorBoard logs.
 
-### Live API server
+### Live API server (without Docker)
 
 ```bash
+docker compose up -d db                # just the database
 cd backend
+.venv/bin/alembic upgrade head          # once, or after a new migration
 .venv/bin/uvicorn server.app:app --port 8399
 ```
 
@@ -165,29 +188,26 @@ local EVM, and every event lands in a hash-chained ledger
 
 ### Frontend
 
+Two static sites, no build step, both served same-origin by the backend:
+
 ```bash
-npm install
-npm run dev              # next dev → http://localhost:3000
-npm test                 # vitest run → 90 tests
+cd backend
+.venv/bin/uvicorn server.app:app --port 8399
+open http://localhost:8399/customers/       # customer booking site
+open http://localhost:8399/                 # port-operator console (once mounted — see below)
 ```
 
-Backend API on **:8399** (`uvicorn server.app:app --port 8399` from
-`backend/`); frontend on **:3000** — `localhost:3000` is pre-allowed by
-CORS. Point elsewhere with `NEXT_PUBLIC_DOCK_API`.
+- **`customers/`** — the customer booking site: file a cargo booking, see
+  the model's priced offers (accept / flex-window / alt-hub / split
+  counter-offers) and its recommendation, and track orders on the fleet
+  dashboard. Every `fetch` targets the backend same-origin.
+- **`drafts/cargo-ship/`** — the port-operator console: a real-time 3D
+  vessel view, a stowage screen (side elevation + 2D top/plan view), a
+  nautical-chart statistics page, and a "decision engine" page that
+  visualizes the live PPO policy's inputs, network and outputs.
 
-- **`/customers`** — the live booking desk: an animated offer counter
-  driven by real `booking.decision` events, an on-chain deals rail with
-  ledger verify, and a "why" drawer backed by `/compare/offers` explains.
-- **`/fleet`** — the ops floor: live vessel positions on a fully-local
-  MapLibre map (`public/map/`, no API keys), vessel spec cards, empties
-  ticker, decision log, shock replay (canned A/B or run-it-live), and the
-  credibility panel.
-- **Money HUD** — persistent live cumulative profit; click it for the
-  5-policy comparison dialog (`GET /compare/*` → `public/demo/*.json`).
-- `/` stays the original stowage-ops mock; `/booking-desk` redirects to
-  `/customers`.
-
-Architecture: `docs/FRONTEND.md`. Layout spec: `frontend.md`.
+Wiring both sites to the live API (replacing their current mock/demo data)
+is tracked in `docs/INTEGRATION_PLAN.md`.
 
 ## The demo
 
@@ -245,6 +265,6 @@ models, full 5-phase PPO curriculum trained (~1.8M steps, `runs/ppo_c5`),
 holdout evaluation, live API + ledger + on-chain settlement, and artifact
 export all landed — ~130 pytest tests green.
 
-Frontend complete per `frontend.md`: the live Customers booking desk and Fleet
-ops floor consume the real API (`api.md`) — 90 vitest tests green, `next build`
-fully static. `/` retains the original ops mock for reference.
+Frontend: two static sites (`customers/`, `drafts/cargo-ship/`) — wiring them
+to the live API and removing their mock/demo data is in progress, tracked in
+`docs/INTEGRATION_PLAN.md`.
