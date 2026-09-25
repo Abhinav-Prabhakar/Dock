@@ -21,11 +21,17 @@ settle on a real in-process EVM (`settlement/` — py-evm + committed
 reference; `scripts/verify_ledger.py` verifies chains. `public/demo/*.json`
 still backs the 5-policy comparison (served via `GET /compare/*`).
 
-**Remaining:** the frontend build per `frontend.md` — two screens
-(Customers + Fleet), a persistent money HUD that opens the comparison
-dialog, decision log rail + disaster replay + credibility panel on Fleet.
-`src/` stays mock until that build starts; live surfaces read the API,
-comparison reads `/compare/*`.
+**Frontend landed** — the full `frontend.md` build is done:
+`/customers` (live booking desk — imperative animated scene driven by real
+`booking.decision` events, on-chain deals rail, why-drawer with
+`/compare/offers` explain) and `/fleet` (ops floor — fully-local MapLibre
+dark map under `public/map/`, vessel cards, empties ticker, decision log,
+shock replay with live A/B, credibility panel), all under a shared
+`(dock)` chrome: `EpisodeProvider` (WS + snapshot/deals polling + 409
+adoption), `EpisodeControls`, `MoneyHUD` → `ComparisonDialog`. `/` stays
+the original ops mock. `docs/FRONTEND.md` is the architecture doc (screen
+map, provider lifecycle, design system, map pipeline);
+`docs/TESTING.md` covers the vitest suite (13 files, 90 tests, green).
 
 **Product direction (explicit):** RL is the decision engine — no classic-ML
 fallback anywhere. Missing artifacts raise `RuntimeError`, never degrade
@@ -37,7 +43,7 @@ they do not replace it.
 - Root: `/Users/abhinav/Projects/Dock`
 - `plan.md` — full product spec. Obey its P0 scope; no P1–P3 creep.
 - `README.md` — already rewritten for the hackathon pitch.
-- Frontend: Next.js 16 / React 19, currently a Dock Operations UI. `AGENTS.md` says: read `node_modules/next/dist/docs/` before touching Next code (breaking changes).
+- Frontend: Next.js 16 / React 19 / Tailwind v4 / MapLibre — feature-complete live dashboard in `src/` (`docs/FRONTEND.md`); `/` is the original ops mock, `/(dock)` route group is the live product. `AGENTS.md` says: read `node_modules/next/dist/docs/` before touching Next code (breaking changes).
 - Backend: Python under `backend/` + a live FastAPI server (`backend/server/`, see `api.md`).
 
 ## Backend layout (all implemented, all tested)
@@ -117,8 +123,44 @@ backend/
                       #   py-evm/pycryptodome/py-solc-x
 ```
 
+## Frontend layout (all landed — docs/FRONTEND.md)
+
+```
+src/app/
+  layout.tsx · globals.css      # Inter+Outfit fonts, @theme tokens, panel/chip
+  page.tsx                      # "/" legacy ops mock (static, src/lib/data.ts)
+  booking-desk/                 # redirect → /customers
+  api/chat/route.ts             # SSE proxy for the mock's AI chat
+  (dock)/                       # route group — the live product
+    layout.tsx                  # EpisodeProvider + DockNav + EpisodeControls + MoneyHUD
+    customers/                  # live booking desk screen
+    fleet/                      # ops floor screen
+src/lib/
+  api.ts                        # typed client: API_BASE (NEXT_PUBLIC_DOCK_API),
+                                #   ApiError, wsUrl(); all endpoints typed
+  offers.ts                     # stampFor/outcomeTone/format helpers
+src/components/
+  dock/                         # EpisodeProvider (WS+poll+409 adoption),
+                                #   EpisodeControls, MoneyHUD, ComparisonDialog,
+                                #   ui.tsx primitives
+  customers/                    # BookingDesk (imperative scene), DealsRail,
+                                #   WhyDrawer, booking-desk.css
+  fleet/                        # PortMap (maplibre, public/map/**), VesselCards,
+                                #   EmptiesTicker, DecisionLogRail, ShockReplay,
+                                #   CredibilityPanel
+public/
+  demo/                         # precomputed 5-policy export → GET /compare/*
+  map/                          # fully-local basemap: 1314 mvt tiles z0-6
+                                #   (bbox -140,-10,165,68), 3 Noto fontstacks,
+                                #   dark sprites, hand-authored style.json
+```
+
 ## Verified state
 
+- Frontend: `tsc --noEmit` clean · `eslint .` clean · `vitest run` →
+  **90/90 green** (13 files) · `next build` all routes static (except
+  `/api/chat`, dynamic by design) · dev-server curls 200 on /customers,
+  /fleet, /map/style.json, /icon.svg, /manifest.webmanifest.
 - `cd backend && .venv/bin/python -m pytest` → **~130 passed** (incl. API,
   ledger, settlement, sim-event suites)
 - Live API E2E: `uvicorn server.app:app` → `POST /episodes` (heuristic,
@@ -209,11 +251,12 @@ backend/
 
 ## What's NOT built yet
 
-- The frontend surfaces in `frontend.md` — `src/` still 100% mock data by
-  explicit instruction. The API (`api.md`) + `public/demo/` artifacts are
-  ready to drive it.
 - Old `runs/ppo_phase1_*` checkpoint was trained on oracle obs — stale,
   kept for history only; `ppo_c5` is the real artifact.
+- Known frontend gaps (docs/TESTING.md): `BookingDesk`'s imperative scene
+  is only import-smoke-tested; snapshot/deals polling intervals untested;
+  no WS-reconnect logic (snapshot polling keeps metrics fresh if the
+  socket drops, but the event stream stops until next attach).
 
 ## Working agreement
 

@@ -92,8 +92,11 @@ backend/                 Python backend (this is the core system)
   tests/                 83 pytest tests
   runs/                  Trained checkpoints (ppo_c1..c5) + eval_results.json
 public/demo/             Exported demo artifacts (summary/timeline/offers/
-                         shock/meta JSON) — the frontend reads these
+                         shock/meta JSON) — served via GET /compare/*
+public/map/              Fully-local vector basemap for the fleet map
+                         (Protomaps/OSM tiles z0-6 + fonts + sprites)
 src/                     Next.js dashboard (App Router, TypeScript, Tailwind)
+docs/                    FRONTEND.md (architecture) + TESTING.md (vitest suite)
 plan.md                  Product source of truth
 backend.md               Backend contract: inputs, wiring, models, outputs
 frontend.md              UI layout spec (two screens + money HUD)
@@ -164,12 +167,27 @@ local EVM, and every event lands in a hash-chained ledger
 
 ```bash
 npm install
-npm run dev
+npm run dev              # next dev → http://localhost:3000
+npm test                 # vitest run → 90 tests
 ```
 
-The dashboard consumes the live API (`api.md`) for episodes/deals/ledger
-and `GET /compare/*` (serving `public/demo/*.json`) for the 5-policy
-comparison. Layout spec: `frontend.md`.
+Backend API on **:8399** (`uvicorn server.app:app --port 8399` from
+`backend/`); frontend on **:3000** — `localhost:3000` is pre-allowed by
+CORS. Point elsewhere with `NEXT_PUBLIC_DOCK_API`.
+
+- **`/customers`** — the live booking desk: an animated offer counter
+  driven by real `booking.decision` events, an on-chain deals rail with
+  ledger verify, and a "why" drawer backed by `/compare/offers` explains.
+- **`/fleet`** — the ops floor: live vessel positions on a fully-local
+  MapLibre map (`public/map/`, no API keys), vessel spec cards, empties
+  ticker, decision log, shock replay (canned A/B or run-it-live), and the
+  credibility panel.
+- **Money HUD** — persistent live cumulative profit; click it for the
+  5-policy comparison dialog (`GET /compare/*` → `public/demo/*.json`).
+- `/` stays the original stowage-ops mock; `/booking-desk` redirects to
+  `/customers`.
+
+Architecture: `docs/FRONTEND.md`. Layout spec: `frontend.md`.
 
 ## The demo
 
@@ -224,6 +242,9 @@ component.
 
 Backend complete: simulator, stowage constraints, bid-price engine, supervised
 models, full 5-phase PPO curriculum trained (~1.8M steps, `runs/ppo_c5`),
-holdout evaluation, and artifact export all landed — 83 tests green. Frontend
-build per `frontend.md` is the remaining piece (`src/` currently renders the
-stowage/ops screen on mock data by design).
+holdout evaluation, live API + ledger + on-chain settlement, and artifact
+export all landed — ~130 pytest tests green.
+
+Frontend complete per `frontend.md`: the live Customers booking desk and Fleet
+ops floor consume the real API (`api.md`) — 90 vitest tests green, `next build`
+fully static. `/` retains the original ops mock for reference.
