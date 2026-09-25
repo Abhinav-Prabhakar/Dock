@@ -136,18 +136,19 @@ avoid — those features are supposed to be *supervised forecaster outputs*.
 Building `DemandForecaster` is therefore not an optional nicety; it is what
 makes the headline number defensible. It is also already P0.
 
-### 0.5 The pivot
+### 0.5 The pivot — resolved
 
-1. **Freeze RL scope.** Run the curriculum **once**, end to end, and take
-   whatever it gives. Do not tune hyperparameters, do not add phases, do
-   not chase a better reward. If PPO beats `heuristic_bid`, we show it as
-   the headline; if not, `heuristic_bid` is the headline and RL is framed
-   as ongoing research, exactly as `plan.md` §3.8 prescribes. **The $22.7M
-   bid-price result already makes the pitch work without RL.** This is the
-   fallback the plan told us to keep, and it is now in hand.
-2. **Close the oracle leak** with one real forecaster (§3).
-3. **Ship the demo** (§4) — this is the priority above everything else,
-   including any further RL work.
+*Postscript: product direction changed after this was written — RL became
+the committed decision engine (no fallback framing), and it paid off: the
+trained PPO is the top holdout policy (+164% vs static aggregate; wins
+volatile-shocks outright). Items 2 and 3 below landed as written; item 1's
+"freeze and take what it gives" was honored — one full curriculum run, no
+tuning.*
+
+1. ~~**Freeze RL scope.**~~ Curriculum ran once, end to end — §5.
+2. **Close the oracle leak** with one real forecaster (§3). [done]
+3. **Ship the demo** (§4) — backend artifacts done; frontend per
+   `frontend.md`.
 
 ---
 
@@ -412,7 +413,7 @@ extends to…".
 
 ---
 
-## 4. The demo — backend half done, frontend deferred [wip]
+## 4. The demo — backend done, frontend per frontend.md [wip]
 
 `plan.md` §7 is the deliverable: three policies, identical demand, live
 metrics, plus a shock-injection moment. Two decisions up front.
@@ -427,13 +428,14 @@ the demo becomes reproducible and diffable. Everything in §7 of the plan is
 a *replay* of a completed episode — there is no interactive requirement
 that needs a server.
 
-### Decision B — a new route, not a rebuild of the existing screen
+### Decision B — superseded by frontend.md
 
 `src/app/page.tsx` (the vessel stowage/load-plan screen) stays as is — it
-is good-looking context and it is already built. Build the head-to-head
-comparison as a **new route `/compare`**, reusing the existing Tailwind
-design language and components where they fit. Do not try to retrofit
-`src/lib/data.ts`'s mock shapes.
+is good-looking context and it is already built. The comparison surface
+was re-scoped: per `frontend.md` it is a **persistent money HUD + dialog**
+on a two-screen app (Customers + Fleet), not a `/compare` route. Same
+rule applies: reuse the existing Tailwind design language; do not try to
+retrofit `src/lib/data.ts`'s mock shapes.
 
 ### 4.1 Backend: `scripts/export_demo.py` [done]
 
@@ -477,7 +479,7 @@ reimplement it), and writes:
 Keep every numeric field pre-rounded and pre-aggregated. Frontend does
 presentation only.
 
-### 4.2 Frontend: `/compare` [todo]
+### 4.2 Frontend: two screens + money HUD — see `frontend.md` [todo]
 
 Next.js 16 / React 19 / Tailwind 4. **Read
 `node_modules/next/dist/docs/` before writing any Next code** — per
@@ -507,7 +509,7 @@ policy is missing from `summary.json` (e.g. no `ppo` yet), the UI must
 degrade gracefully rather than break — we will not know until late whether
 RL makes it in.
 
-### 4.3 Shock injection [todo]
+### 4.3 Shock injection — backend done (`shock.json`), frontend per frontend.md [wip]
 
 `plan.md` §7's "wow moment", reduced to its honest minimum: a **precomputed
 A/B replay**, not live injection.
@@ -526,12 +528,16 @@ cutting anything in §4.2.
 
 ---
 
-## 5. RL — the decision engine [in progress — full curriculum]
+## 5. RL — the decision engine [done — trained & evaluated]
 
-PPO is the product, not a stretch rung. The full curriculum runs on the
-GPU box after §1.2 + §3.1 (both landed — the forecaster swap changes obs
-semantics, so the earlier 12k-timestep phase-1 checkpoint is stale and the
-run below starts fresh at phase 1).
+PPO is the product, not a stretch rung. The full curriculum ran on the
+GPU box on forecaster-based obs (the earlier 12k-timestep phase-1
+checkpoint used oracle features — stale, kept for history only).
+Result (`runs/ppo_c5/eval_results.json`, 5 eps × 90d, holdout only):
+**volatile-shocks $25.9M — best of all policies** (+52% vs static,
++11.6% vs heuristic, +5% vs heuristic_bid); depressed-demand $8.3M
+(2nd, −7.2% vs heuristic). Aggregate across the demo export: **ppo top
+at $17.97M, +164% vs static**. Checkpoints `runs/ppo_c1..c5` committed.
 
 | Phase | Horizon | Vessels | Fleet acts | Shaping | Pool | Steps |
 |:--|:--|:--|:--|:--|:--|:--|
@@ -570,9 +576,9 @@ Keep these in the deck; do not let a reviewer discover them for us.
    4-vessel fleet on disjoint loops gives 23–68 day OD gaps versus a real
    weekly string. Reframed as partner-carrier demand (§1.4). [cut, by
    decision]
-2. **Demand oracle** — until §3.1 lands, both the pricer and the RL obs see
-   ground-truth `lam`. **No external number may be quoted while this is
-   true.**
+2. ~~**Demand oracle**~~ — **resolved.** Both consumers run on the bound
+   `DemandForecaster`; `lam` is only read inside `DemandStream` itself.
+   Missing artifacts raise `RuntimeError`.
 3. **E estimation** — `_n_deps` approximates a sliding 49-day draw window
    with a single midpoint count. Multiple board calls per OD per vessel are
    handled. Demand that would really go to partners is not discounted, but
@@ -593,7 +599,7 @@ Keep these in the deck; do not let a reviewer discover them for us.
    policy, not `DynamicHeuristicPolicy`, so PPO throughput is untouched.
    Re-time if `export_demo.py` gets slow; the obvious lever is caching
    `sim.quote` per (request, option) within a decision.
-8. **`OBS_DIM` 113** — pre-bid-feature checkpoints are incompatible, and
+8. **`OBS_DIM` 112** — pre-bid-feature checkpoints are incompatible, and
    §3.1 changes feature semantics without changing the dimension. Record
    the git SHA with every checkpoint.
 9. **Split-consignment books ~zero, and it is structural** — not a policy
@@ -629,9 +635,10 @@ Strictly sequential; each step gates the next.
 5. §4.1 — `export_demo.py`, run with `heuristic_bid` as the lead policy.
    **At this point we have a complete, demoable project with no RL.** This
    is the milestone that de-risks everything.
-6. §4.2 — `/compare` panels 1 → 5, in order.
-7. §5 — the single RL curriculum run, in parallel with step 6 once step 4
-   has landed. Re-export §4.1 with `--model` if it wins.
+6. §4.2 — the `frontend.md` surfaces (money-HUD dialog first, then offer
+   cards, log rail, shock replay, credibility panel).
+7. §5 — the single RL curriculum run. **Done** — `runs/ppo_c5` is the Dock
+   tier; §4.1 re-exported with `--model`.
 8. §4.3 — shock panel, if time remains.
 
 ---
@@ -640,12 +647,15 @@ Strictly sequential; each step gates the next.
 
 ```bash
 cd backend
-.venv/bin/python -m pytest                       # must stay green
+.venv/bin/python -m pytest                       # must stay green (83 tests)
 .venv/bin/python -m data.generate --seed 42 --scale 1.0 --out data/generated
-.venv/bin/python -m scripts.run_episode --episodes 3 --horizon 60
-# head-to-head incl. bid_price (the §0.2 table):
-.venv/bin/python -m rl.evaluate --model none --episodes 3 --horizon 60
 .venv/bin/python -m models.train --data data/generated --out models/artifacts
-.venv/bin/python -m scripts.export_demo --out ../public/demo --seed 42
-npm run dev                                      # then open /compare
+.venv/bin/python -m scripts.run_episode --episodes 3 --horizon 60
+# head-to-head, baselines only / with the trained PPO:
+.venv/bin/python -m rl.evaluate --model none --episodes 3 --horizon 60
+.venv/bin/python -m rl.evaluate --model runs/ppo_c5/model.zip \
+    --episodes 5 --horizon 90
+.venv/bin/python -m scripts.export_demo --out ../public/demo --seed 42 \
+    --model runs/ppo_c5/model.zip
+npm run dev                                      # Customers + Fleet screens
 ```
