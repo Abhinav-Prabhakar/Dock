@@ -595,9 +595,9 @@ function containerArt(seed) {
   s += '<rect x="105.7" y="12.4" width="2.7" height="3.5" rx=".3" fill="rgba(238,234,218,.85)" stroke="rgba(15,10,5,.4)" stroke-width=".3"/>';
 
   /* stencil markings on the corrugated wall */
-  s += '<text x="12.4" y="16.6" font-size="3.7" letter-spacing=".7" class="cc-mark">MLSU 2481 034</text>' +
-       '<text x="12.4" y="20.8" font-size="2.8" letter-spacing=".4" class="cc-mark2">MAX GROSS 30 480 KG · 22G1</text>' +
-       '<text x="99.6" y="16.6" font-size="3.0" text-anchor="end" letter-spacing=".4" class="cc-mark2">20′ GP</text>';
+  s += '<text x="12.4" y="16.6" font-size="3.3" letter-spacing=".7" class="cc-mark">MLSU 2481 034</text>' +
+       '<text x="12.4" y="20.6" font-size="2.4" letter-spacing=".4" class="cc-mark2">MAX GROSS 30 480 KG · 22G1</text>' +
+       '<text x="99.6" y="16.6" font-size="2.6" text-anchor="end" letter-spacing=".4" class="cc-mark2">20′ GP</text>';
 
   /* weathering — scuffs, scratches, rust weep off the top rail, dents */
   for (let i = 0; i < 6; i++) {
