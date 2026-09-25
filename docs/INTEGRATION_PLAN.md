@@ -1,6 +1,7 @@
 # Integration & containerisation plan
 
-Status: **in progress** · checkpoint 2026-09-25 · branch `integration/live-backend` (PR #2 already merged to `main`)
+Status: **steps 1–9 done** · checkpoint 2026-09-26 · PR #3 (`integration/live-backend`) merged to `main`;
+PR #4 (`integration/operator-console`, steps 8–9) open against `main`
 
 Goal: connect both sites to the real backend. Customers get **live quotes and counter-offers
 from the model** when they submit a booking, and the operator site shows **every booking in real
@@ -114,11 +115,35 @@ Done. **The original UI and `drafts/cargo-ship/design.md` are retained**; only d
   curve, the same request under the baseline policies, measured stage timings, on-chain deal.
 - Tests: `drafts/cargo-ship/tests/*.mjs` (adapters vs the live API), `scripts/check_imports.py`; both in CI.
 
-### Next — step 9
+### Step 9 — docs refresh + end-to-end run (branch `integration/operator-console`)
 
-Refresh `api.md` (new endpoints above, `/orders` contract: `req_dep_day` is days-from-now, response
-is `{order, offers, recommendation}`), `plan.md` §2.9, `frontend.md`, `technical.md`; final
-end-to-end run: customer books → operator sees it live → deal settles.
+Done.
+- **Docs:** `frontend.md` rewritten as the architecture + data contract of the two static sites
+  (per-screen endpoint map, unavailable/edge behaviour, tests). `plan.md` §2.2/§2.9/§7 (v2.4),
+  `technical.md`, README, `backend.md` and `customers/README.md` no longer describe the retired
+  Next.js app. The two `design.md` files are untouched.
+- **Settlement in the Live bookings panel:** the poller's filter adds `settlement.deal_registered`,
+  `…departure_recorded`, `…delivery_recorded`, `…settled`. Those events carry `request_id` only,
+  so `js/live.js` keeps a customer `request_id → order_id` map. It is seeded from `/orders` and
+  learned from `order.quoted` + customer `booking.decision`. Simulated deals show nothing.
+- **Fix:** `accept()` registered the order with the tracker only after `sim._book`, which emits
+  `settlement.deal_registered` synchronously, so an accepted counter-offer never got its
+  `deal_id`. Now it registers first; there's a regression test in `test_quotes.py`.
+- **Found while testing:** `/live/events` is a live tail (latest `limit` matches; `next_seq` jumps
+  to the newest), not a pager — documented in `api.md`. It's the reason the panel seeds from
+  `/orders`, and it now polls with `limit=1000`.
+- **Pace:** `DOCK_LIVE_SPEED` is now passed through `docker-compose.yml` (default unchanged, 1/60).
+- **E2E (`scripts/e2e.sh`), run 2026-09-26 at `DOCK_LIVE_SPEED=0.5`:**
+  1. `BK-2420-TC`, SGSIN→NLRTM, 4 TEU, was offered a split and the customer accepted it
+     (counter-offers only; a plain accept has no deal).
+  2. The order went CONFIRMED → LOADING → IN TRANSIT → DELIVERED.
+  3. The deal settled `settled_full` with an on-chain settle tx.
+  4. The panel replay through `js/live.js` showed: quoted · deal registered (×2, one per split
+     leg) · accepted · departed · delivered · settled.
+
+  The order keeps one `deal_id` (one leg's deal).
+
+Current numbers: 145 backend tests · 24 operator node tests · e2e green.
 
 ## 6. Customer bookings: quote → counter-offer → accept (as built)
 
@@ -143,6 +168,10 @@ end-to-end run: customer books → operator sees it live → deal settles.
 
 Resolved: AI chat dropped with Next.js · the Next.js docs deleted · the four intake variants are kept
 and made swappable via `customers/shared/` (the offer slip is design-independent).
+- **Offer slip placement:** it stays the shared overlay (`customers/shared/offers.js`), not a step inside
+  the booking deck. `customers/design.md` defines the deck as exactly two columns (CARGO, ROUTE), with
+  confirmation re-inking the badge. The same slip also serves all four intake variants and the
+  dashboard's Review quote. Moving it into the deck would be a screen redesign.
 
 Open:
 - **Which intake is the front door?** `customers/` (badge design) is canonical today. Switching

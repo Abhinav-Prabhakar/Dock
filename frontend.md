@@ -1,168 +1,143 @@
-# Dock frontend — layout & data contract
+# Dock frontend — architecture & data contract
 
-Two screens plus one piece of persistent chrome. **Data source: the live
-backend API** (`api.md` — `uvicorn server.app:app` on :8399). Episodes are
-started with `POST /episodes` and stream events over
-`WS /episodes/{id}/stream`; REST provides snapshots, deals, and the ledger.
-The only precomputed data is the **5-policy comparison**, served read-only
-via `GET /compare/*` (backed by `public/demo/*.json` — a multi-minute batch
-export, schemas in `backend.md`). No mock shapes from `src/lib/data.ts`;
-comparison numbers arrive pre-aggregated and pre-rounded.
-`src/app/page.tsx` stays as-is; this doc describes where each backend
-surface lands in the UI.
+Two static sites, no build step, both on the live backend API. This file says
+**where every screen gets its data** and how it behaves when data is missing.
+What things *look* like is specified elsewhere and is not repeated here:
 
-## App shell
+- `customers/design.md` — the customer booking site (MERIDIAN LINE)
+- `drafts/cargo-ship/design.md` — the port-operator console
+
+Both design files are the contract for visuals; connecting data never changes
+a screen's layout. The full endpoint reference is `api.md`; the integration
+history is `docs/INTEGRATION_PLAN.md`.
+
+## Serving
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  [Dock]        Customers | Fleet                    $ 21.5M ▸ │ ← money HUD
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│                      (active screen)                          │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+ui   nginx :8080   /            → drafts/cargo-ship/   (operator console)
+                   /customers/  → customers/           (customer site)
+                   /api/*       → api:8000             (FastAPI, incl. WebSocket upgrade)
+api  FastAPI       always-on live PPO world · Postgres orders/offers · /compare/* artifacts
+db   Postgres 16   orders + offers (Alembic migrations 0001–0003)
 ```
 
-- **Money HUD (top-right, always visible):** live cumulative profit of the
-  running episode — `day.summary.cum_profit` events (or
-  `GET /episodes/{id} → metrics.cum_profit` on poll). No episode running →
-  fall back to the export headline `GET /compare/summary →
-  policies.ppo.profit_usd.mean`. A tiny sparkline of the live
-  `cum_profit` series works too.
-- **Clicking it opens the comparison dialog** — overlays either screen.
-- **Episode control bar** (either screen): policy selector (`GET
-  /policies`), scenario selector (`GET /scenarios` — render
-  `description`), seed, speed slider (`speed_days_per_sec`, 0 = flat out),
-  start/pause/resume/stop (`POST /episodes`, `POST /episodes/{id}/control`).
-  One live episode at a time — a second start returns 409.
+`cp .env.example .env && docker compose up --build`, then
+http://localhost:8080 (operator), http://localhost:8080/customers/ (customers).
+Everything is **same-origin**: pages call `/api/...`, never a host or port.
+Without Docker, uvicorn also mounts `customers/` itself at `/customers/` and
+the customer client then calls the root (`location.port === '8399'`).
 
-## The comparison dialog (opened from the money HUD)
+### The live world
 
-The ablation ladder — all precomputed via `GET /compare/summary` +
-`GET /compare/timeline` + `GET /compare/meta`:
+The API starts one live episode on startup (`ppo`, `baseline`, 90-day horizon,
+restarted at the end) paced by `DOCK_LIVE_SPEED` (default 1 sim-day per
+minute). Customer quotes are priced against it and both sites' live views read
+it. A restart ends open quotes (`EXPIRED`) and starts a fresh event feed.
 
-- **Policy ladder row** — `static → greedy → heuristic → heuristic_bid →
-  ppo`. Each rung a card: profit (`profit_usd.mean`), `lift_vs_static`
-  deltas (`profit_usd_pct`, `revenue_per_teu_pct`, `utilization_pp`).
-  Keep `mean ± std` visible — honest dispersion is a feature.
-- **Racing-lines chart** — `cum_profit` (and/or `cum_revenue`) vs `day`
-  per policy. The chart that carries the demo.
-- **Secondary metric chips** — `utilization`, `co2_per_teu`,
-  `empty_teu_nm`, `counter_win_rate`, `reject_to_counter_conv`.
-- **Segment strip** — `policies.*.segments`: requests vs booked for
-  `urgent` / `standard` / `flexible`.
-- `policies_present` in `compare/meta` includes `ppo` — highlight it as
-  the lead rung.
+## Rules both sites follow
 
-## Screen 1 — Customers
+- **No mock, seeded, cached or invented data.** No embedded port tables,
+  vessel names, voyage codes or prices — ports and lanes come from
+  `/ports` + `/routes`.
+- **API down → explicit "unavailable" state** with the API's own message,
+  never stale data and never a fallback.
+- **No real data for an element → relabel minimally** (em-dash, `TBC`,
+  `— AWAITING VESSEL`, disabled control) rather than invent a value.
 
-The booking desk, **live**: offer cards appear on a ticker as the running
-episode emits them — pace is the episode's `speed_days_per_sec`.
+## API clients
 
-**Offer card** (one `booking.decision` event — fields in `api.md`):
-
-- Header: `{origin} → {dest}` route chip, `{teu} TEU`, segment chip
-  (`urgent`/`standard`/`flexible`), cargo-type chip (`dry`/`reefer`/
-  `hazmat` — reefer/hazmat get their own iconography; they carry the hard
-  constraints).
-- Body: quoted `{price}` $/TEU vs `{market_rate}` for comparison,
-  requested departure `{req_dep_day}` + `{flex_days}`, `{n_options}`
-  voyage options seen, `{weight_t}` tonnes.
-- Footer: outcome chip from `{outcome}` + `{reason}` — `booked:*` green,
-  `price_reject`/`declined`/`counter_declined:*` amber, `rejected:*`
-  grey/red. `{decision}` vs `{kind}` distinguishes what the policy chose
-  from how it resolved.
-- Where a deeper explain payload is wanted, `GET /compare/offers` records
-  carry the full `explain` block (per-leg bid decomposition, reason codes)
-  — use it for the demo "why" drawer; the live stream's
-  `reason`/`market_rate`/`price` fields cover the card itself.
-
-**Deals rail (new — the settlement story):** conditional bookings
-(`kind ∈ {flex_window, alt_hub, split}`) become contracts. Each deal card:
-`{origin}→{dest}, {teu} TEU @ {price_usd}`, status pill
-(`registered → departed → delivered → settled`, or `pending` past
-horizon), the terms (`window_lo/hi`, `delivery_deadline`, `penalty_bps`),
-and the on-chain refs — `contract` address + `tx.{register, departure,
-delivery, settle}` hashes. Settlement result chip: `settled_outcome`
-(`settled_full` / `settled_penalty` / `refunded`) + `settled_amount_usd`.
-Source: `GET /episodes/{id}/deals` (poll) or the `settlement.*` events on
-the same WS stream. A "verify" affordance calling
-`GET /episodes/{id}/ledger/verify` → `{ok:true}` is a strong trust beat.
-
-## Screen 2 — Fleet
-
-The ops floor. Four regions:
-
-1. **Map** — 8 ports from `GET /ports` (real `lat`/`lon` — draw a real
-   map). Vessel positions from `GET /episodes/{id} → vessels[]`:
-   `mode:"PORT"` → at `port`; `mode:"SEA"` → interpolate `from_port →
-   to_port` along `progress` (leg fraction). Poll the snapshot every
-   ~1s, or derive day-by-day from `day.summary` ticks. Loops/rotations
-   per vessel are in `backend.md` §Fleet; spec data in `GET /vessels`.
-2. **Vessel cards / stowage** — spec sheet per ship from `GET /vessels`
-   (capacity, reefer plugs, speed range incl. service speed, age, draft,
-   `fuel_a/b_tpd`); live `onboard_teu`, `speed_kt`, `port` from the
-   snapshot. Container placement view = the existing stowage visual.
-   Bookable own-lift ≈ `capacity × 0.45 × 0.88`.
-3. **Decision log rail** — the same live `booking.decision` /
-   `departure.confirmed` / `delivery.confirmed` / `settlement.*` stream,
-   framed as an ops log: day, event type, route, outcome, one line each,
-   filterable by type. Ops sees *what the policy did*; customers see
-   *what they were offered*. Same stream, different lens.
-4. **Disaster replay** — two options: (a) live — start an episode on a
-   shock scenario (`GET /scenarios` → ones with `port_closures` /
-   `demand_spike_events` populated, e.g. `volatile-shocks`), run `static`
-   then `ppo` at high speed and show the `day.summary.cum_profit`
-   divergence; (b) precomputed — `GET /compare/shock` has the fixed
-   NLRTM-closure A/B (`event.day_lo`–`day_hi`, `runs.static` vs
-   `runs.ppo` daily + summary deltas). (a) is more alive, (b) is
-   deterministic on stage. Either way: two columns, same event window.
-5. **Credibility panel** — "measured, not guessed": `GET /models/report`
-   → recovered elasticities (flexible 1.80 / standard 1.10 / urgent
-   0.55 vs true), WTP multipliers (1.00 / 1.08 / 1.38), demand MAPE.
-   Plus a chain-integrity line: `GET /episodes/{id}/ledger/verify` →
-   `{ok, n_events, detail}` — "N events, hash chain intact."
-
-## Data-source map
-
-| UI element | Source | Fields |
+| Site | Client | Shape |
 |:--|:--|:--|
-| Money HUD | WS `day.summary` / `GET /episodes/{id}` | `cum_profit` |
-| Episode controls | `GET /policies`, `GET /scenarios`, `POST /episodes`, `/control` | descriptor + status |
-| Ladder cards | `GET /compare/summary` | `policies.<name>.*.{mean,std}`, `lift_vs_static` |
-| Racing lines | `GET /compare/timeline` | `policies.<name>[].{day,cum_profit,cum_revenue,utilization,teu_booked,empty_teu_nm,mean_bid_pressure}` |
-| Segment strip | `GET /compare/summary` | `policies.*.segments.<seg>.{requests,booked}` |
-| Offer cards + log rail | WS `booking.decision` (+`cargo.booked`,`departure/delivery.confirmed`,`settlement.*`) | per `api.md` event table |
-| "Why" drawer (deep) | `GET /compare/offers` | `explain.{quote_per_teu,bid_price_per_teu,market_rate_per_teu,reason,legs[],text}` |
-| Deals rail | `GET /episodes/{id}/deals` + WS `settlement.*` | `deal_id, kind, terms, status, settled_*, contract, tx.*` |
-| Map | `GET /ports` + `GET /episodes/{id}` | `lat,lon`; `vessels[].{mode,port,from_port,to_port,progress}` |
-| Vessel specs | `GET /vessels` | spec sheet + `loop` |
-| Empties ticker | `GET /episodes/{id}` | `empties.<port>` |
-| Credibility | `GET /models/report` | `models.{demand.mape,elasticity.per_segment,wtp.per_segment}` |
-| Chain integrity | `GET /episodes/{id}/ledger/verify` | `ok, n_events, detail` |
-| Provenance footer | `GET /compare/meta` | `git_sha, generated_at, seed, episodes, scenarios, policies_present` |
+| customers | `customers/shared/api.js` → `window.DockAPI` (classic script) | `ports, routes, network, orders, order, quote, accept, decline, live` |
+| operator | `drafts/cargo-ship/js/api.js` → `API` (ES module, DOM-free) | `live, liveEvents, livePolicy, policyNetwork, stowage, vessels, ports, routes, orders, compare(name)` |
 
-## Null / edge behavior
+Both reject with the API's `detail` text (`status` 0 = unreachable), which the
+page shows verbatim in its unavailable state.
 
-- `mean_bid_pressure` is `null` for `static`/`greedy` — render "n/a".
-- `lift_vs_static.<policy>` is `null` if the static profit mean ≤ 0 (the
-  depressed-demand holdout makes static negative — the honest demo point
-  is that static loses money there; render the raw values).
-- Deals end `pending` when the horizon cuts inside their delivery
-  deadline — that's the honest state, not a bug.
-- `split` outcomes are rare **by construction** (both halves must
-  independently fit) — don't promise a split card; if one appears it's
-  real.
-- `GET /episodes/{id}/deals` is empty for `static`/`greedy` (they never
-  counter) — render an empty-state, not an error.
-- 409 on a second episode start — surface "episode already running" with
-  a link to it, don't retry-loop.
-- No episode running → live surfaces show an idle/empty state with the
-  episode control bar prominent.
+## Customer site (`customers/`)
 
-## Regeneration (comparison artifacts only)
+| Screen | Source | Notes |
+|:--|:--|:--|
+| Gate (`/`) | `GET /orders` | non-empty → redirect to `dashboard/`; `?new` forces the form |
+| Booking intake (`/`, `intake-a…d/`) | `GET /ports` + `GET /routes` (`DockAPI.network()`) | port stamps cycle only servable lanes; if unreachable the deck shows `BOOKING SERVICE UNAVAILABLE — …` and CONFIRM stays disabled |
+| Submit | `POST /orders` per cargo kind | body `{origin, dest, teu, weight_t, cargo_type, segment, req_dep_day, flex_days}`; `req_dep_day` = **days from now** (window midpoint), `flex_days` = half the window; `→ {order, offers[], recommendation}` |
+| Offer slip (`shared/offers.js`) | the `POST /orders` results, then `POST /orders/{id}/accept {offer_id}` / `…/decline` | one block per order; offers labelled *As requested / Flexible sailing / Alternate port / Split shipment*, price/TEU, total, pricing reason, the model's pick; stamps CONFIRMED / DECLINED / EXPIRED (409) / NO OFFER |
+| Badge re-ink | the slip's final orders | status row + band: `QUOTED`, `CONFIRMED`, `CLOSED`, `NOT PRICED` |
+| Dashboard (`dashboard/`) | `GET /ports` + `GET /orders` | register, credential wall, tracking chart, fleet counters; `QUOTED` orders get **Review quote** → `GET /orders/{id}` → the same slip with its open offers |
 
-```bash
-cd backend && .venv/bin/python -m scripts.export_demo --out ../public/demo \
-    --model runs/ppo_c5/model.zip
-```
+**Offer slip placement (decided):** the slip stays a shared overlay rather than
+a step inside the booking deck. The deck is exactly two columns (CARGO, ROUTE)
+in `customers/design.md`, and the same slip serves the canonical intake, all
+four variants and the dashboard's Review quote.
+
+**Order lifecycle:** `QUOTED → CONFIRMED → LOADING → IN TRANSIT → AT PORT →
+DELIVERED`, plus `NO OFFER` (nothing clears the bid-price floor), `DECLINED`,
+`EXPIRED` (15 min or a world restart). Vessel, voyage, price, ETA (`D+n`) and
+progress exist only after an accept; `LOADING`, `AT PORT`, progress and ETA
+are derived on read from the live clock.
+
+**Deals:** only counter-offers (flexible sailing, alternate port, split)
+register an on-chain settlement contract; the order carries its `deal_id`.
+A plain "as requested" booking has no deal.
+
+## Operator console (`drafts/cargo-ship/`)
+
+| Screen / panel | Source | Notes |
+|:--|:--|:--|
+| Vessel — 3D ship + cargo | `GET /live/vessels/{id}/stowage` | `js/stowage/fromLive.js` maps the real bays × tiers onto the Dock Pioneer hull proportionally; Vessel select from `GET /live → vessels[]`; ship speed from the vessel (`speed_kt`, 0 in port) |
+| Vessel — profit | `GET /live → metrics.cum_profit`, `GET /compare/summary → lift_vs_static.ppo.profit_usd_pct` | `—` when absent |
+| Vessel — Live bookings panel | `GET /live/events` (see below) + `GET /orders` | customer quotes / accepts / declines, booking decisions, and every settlement step of customer deals |
+| Stowage — elevation + plan | same stowage endpoint | Bay select and Load/Discharge/Restow/Clear stay visible but disabled (they used to invent cargo) |
+| Statistics | `GET /compare/{summary,timeline,meta,shock}`, `/ports`, `/vessels`, `/live`, `/live/events?types=booking.decision,delivery.confirmed` | holdout 5-policy ladder, shock replay, live world; `js/pages/statsLive.js` |
+| Model ("inside the helm") | `GET /live/policy`, `GET /live/policy/network`, `/vessels` | the real MaskablePPO forward pass per decision (obs 112, mask 44, π, V(s), attributions) + decision context; `js/pages/liveDecision.js` |
+
+### Live bookings panel (`js/live.js`)
+
+- Polls `GET /live` every 3 s and `GET /live/events?after_seq=…&limit=1000&types=…`
+  every 2 s. The type filter is `CUSTOMER_EVENT_TYPES`:
+  `booking.decision, order.quoted, order.accepted, order.declined,
+  settlement.deal_registered, settlement.departure_recorded,
+  settlement.delivery_recorded, settlement.settled`.
+- Settlement events carry `request_id`, not `order_id`, and the live world
+  settles simulated deals too. The panel keeps a `request_id → order_id` map:
+  seeded from `GET /orders` (rows for the live `episode_id`) on its first poll
+  of an episode, then learned from `order.quoted` and customer
+  `booking.decision` events (`trackCustomer`). `order.quoted` matters — a
+  counter-offer's `settlement.deal_registered` is emitted *before* the
+  customer's `booking.decision`.
+- `describeEvent(ev, reqs)` turns an event into a row; settlement events for
+  non-customer requests return `null` and are skipped. Rows look like
+  `BK-2420-TC deal registered · split`, `… departed`, `… delivered`,
+  `… settled · settled_full · $1,636`.
+- `/live/events` returns the **latest** `limit` matches after `after_seq` and
+  `next_seq` jumps to the newest event — it is a live tail, not a pager. That
+  is why customer requests are seeded from `/orders` rather than replayed.
+- A new live episode id resets the cursor and the map.
+
+## Null / edge behaviour
+
+- No live world yet (API startup): `/live*` returns 503 → the panels say
+  "Live simulation unavailable — …" until it's up.
+- Between worlds, `/live` keeps serving the finished episode at its horizon
+  until the next one starts (building PPO + the settlement contract can take
+  a couple of minutes); the new episode id then resets the panel.
+- `POST /orders` with no viable offer → `NO OFFER`, recorded as a customer
+  `booking.decision` (rejected) so the operator sees the turned-away demand.
+- Accept after the sailing left, the space was taken, 15 min passed or the
+  world restarted → 409 with a readable reason; the slip stamps EXPIRED.
+- Split bookings register one deal per leg; the order keeps one `deal_id`.
+- `lift_vs_static.*` is `null` when the static mean profit ≤ 0 — render the
+  raw values, not a percentage.
+- `/live/policy/network` is 404 if the live policy isn't a neural net.
+
+## Tests
+
+| Check | What it proves |
+|:--|:--|
+| `scripts/smoke.sh` | both sites + every customer page load the shared modules; API, live world, quote → accept, ledger verify — all through nginx |
+| `node --test drafts/cargo-ship/tests/*.mjs` | operator adapters (stowage, statistics, model, bookings panel) against the live API |
+| `python3 scripts/check_imports.py` | every operator ES-module import resolves |
+| `scripts/e2e.sh` | a customer accepts a counter-offer → the panel's own `js/live.js` logic shows quoted / deal registered / accepted / departed / delivered / settled → the on-chain deal is `settled` with a tx hash (run the stack with `DOCK_LIVE_SPEED=0.5`) |
+
+CI (`.github/workflows/ci.yml`) runs the backend tests with Postgres, the
+frontend checks and the full Docker stack + smoke on every push and PR.

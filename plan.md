@@ -107,7 +107,9 @@ The key insight: **these four capabilities are tightly coupled and must be one s
 │  SERVING & AUDIT LAYER  (as built — §2.9)                           │
 │  FastAPI + WebSocket live episodes · hash-chained event ledger      │
 │  (Keccak-256 JSONL) · conditional deals settle on a local EVM       │
-│  (DockSettlement.sol — real tx hashes) · Next.js dashboard          │
+│  (DockSettlement.sol — real tx hashes)                              │
+│  · customer booking site + operator console (static, nginx)         │
+│  · Postgres orders                                                  │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -216,12 +218,13 @@ Every response ships with a **reason code** derived from the bid price and const
 
 | Component | Implementation (as built) |
 |:---|:---|
-| **Live episode server** | FastAPI (`backend/server/`, `uvicorn server.app:app` on :8399). `POST /episodes` runs a real simulator instance day-by-day under any policy — including the trained PPO — on a server thread with pause/resume/stop/speed control. One live episode at a time (409 on conflict). |
+| **Live episode server** | FastAPI (`backend/server/`), served behind nginx at `/api` (single uvicorn worker). `POST /episodes` runs a real simulator instance day-by-day under any policy — including the trained PPO — on a server thread with pause/resume/stop/speed control. One live episode at a time (409 on conflict). An always-on live PPO episode runs from startup (90-day baseline horizon, restarted at end; pace `DOCK_LIVE_SPEED`, default 1 sim-day/min) — customer quotes (`POST /orders`) and live operator views are priced against it. |
 | **Event stream** | Every sim event (`booking.decision`, `cargo.booked`, `departure.confirmed`, `delivery.confirmed`, `day.summary`, `settlement.*`, `episode.end`) is pushed to WebSocket subscribers at `WS /episodes/{id}/stream` (replay + live fanout) and appended to a ledger. |
 | **Hash-chained ledger** | Each event carries `seq`, `prev_hash`, `hash` (Keccak-256) into `runs/ledger/<id>.jsonl` — a tamper-evident decision audit log (Section 4.5 made literal). Verifiable via `GET /episodes/{id}/ledger/verify` and `scripts/verify_ledger.py`. |
 | **On-chain settlement** | Conditional deals (flex-window / alt-hub / split counters) become contracts on a **real in-process EVM** (py-evm via eth-tester): `DockSettlement.sol` deploys per episode — real contract address, real tx hashes. Terms: depart within board_day ±2d, deliver by board+45d, 1000bps late penalty — `settle()` is a pure function of oracle-recorded timings (`settled_full` / `settled_penalty` / `refunded`). |
-| **Comparison artifacts** | `scripts/export_demo.py` writes the precomputed 5-policy export to `public/demo/*.json`, served read-only via `GET /compare/*` — batch-produced, since generating it takes minutes. |
-| **Dashboard** | Next.js 16 / React 19 / Tailwind v4 (`src/`): `/customers` live booking desk + `/fleet` ops floor + persistent MoneyHUD opening the 5-policy comparison dialog. Fully-local MapLibre basemap under `public/map/` — no API keys, nothing leaves localhost. |
+| **Comparison artifacts** | `scripts/export_demo.py` writes the precomputed 5-policy export to `backend/demo/*.json`, served read-only via `GET /compare/*` — batch-produced, since generating it takes minutes. |
+| **Frontends** | Two static sites, no build step. `customers/` — customer booking site (Meridian Line): booking intake (`customers/index.html`), live offer slip (`customers/shared/offers.js`; accept / flex-window / alt-hub / split counter-offers + PPO recommendation), and a fleet dashboard tracking orders through delivery. `drafts/cargo-ship/` — port-operator console: Vessel (3D ship, live stowage, Live bookings panel showing customer quotes/accepts/declines and their deal settlement), Stowage (side elevation + plan), Statistics (`/compare/*` 5-policy holdout comparison + shock replay), Model (live PPO network, per-decision observation/mask/probabilities/value). Both served by nginx at `:8080`. |
+| **Customer orders** | Postgres 16 via Alembic migrations (0001–0003); customer submits a booking → `POST /orders` prices it live against the running simulation and returns counter-offers (never below the bid-price floor); customer accepts one offer or declines. Order status: QUOTED → CONFIRMED → LOADING → IN TRANSIT → AT PORT → DELIVERED (+ NO OFFER, DECLINED, EXPIRED). Accepted conditional counter-offers settle on-chain like simulated cargo. |
 
 ---
 
@@ -578,10 +581,8 @@ The replay is exported ahead of time as `shock.json`; scrubbing through it looks
 
 ### The Shipped Demo Surfaces
 
-- **`/customers` — the live booking desk.** An animated counter scene driven by real `booking.decision` events: customers walk up, offer cards are dealt, and a verdict stamp lands on each (BOOKED / DEAL·kind / PASSED / NO DEAL / REJECTED). A "why" drawer shows the deep bid-price explain per offer. Right rail: on-chain settlement deals (registered → departed → delivered → settled, with tx hashes and a ledger-verify button).
-- **`/fleet` — the ops floor.** Live vessel positions on a fully-local MapLibre map, vessel spec cards, per-port empties ticker, filterable decision log (the same event stream in an ops lens), the shock replay, and a credibility panel (`/models/report` parameter-recovery + ledger hash-chain verification).
-- **MoneyHUD → comparison dialog.** Persistent live cumulative profit; clicking it opens the 5-policy ladder — mean ± std, lift vs. static, racing-lines cumulative-profit chart, secondary metric chips, segment strip, provenance footer.
-- **Episode controls.** Policy / scenario / seed / speed selectors — any policy including `ppo` can be run live against any scenario.
+- **Customer booking site (`customers/`).** Booking intake page (canonical two-column deck at `customers/index.html`; four alternative intake designs `intake-a`..`intake-d`). Submitting a booking hits `POST /orders`, which prices it live against the running simulation and returns the offer slip — accept / flex-window / alt-hub / split counter-offers plus the PPO policy's recommendation. The fleet dashboard (`customers/dashboard/`) tracks every order from QUOTED through DELIVERED.
+- **Port-operator console (`drafts/cargo-ship/`).** Four views: Vessel — 3D ship with live stowage of a chosen vessel, live profit, and a Live bookings panel showing customer quotes, accepts and declines, and the settlement steps of their deals; Stowage — side elevation + plan view pulled from `/live/vessels/{id}/stowage`; Statistics — 5-policy holdout comparison from `/compare/*` plus shock replay and live-world stats; Model ("inside the helm") — the live MaskablePPO network, per-decision observation/mask/probabilities/value/attributions from `/live/policy` and `/live/policy/network`.
 
 ### Evaluation Integrity
 
@@ -594,7 +595,9 @@ The replay is exported ahead of time as `shock.json`; scrubbing through it looks
 
 ---
 
-> **Last updated:** v2.3 — As-built reconciliation: all P0/P1 features shipped. §2 reflects the built system (8 ports / 4 vessels / 18 routes, 3 supervised models with measured recovery, isoelastic bid-price engine, trial-place stowage); new §2.9 covers the live API, hash-chained ledger, and on-chain settlement layer added during the build. §3 updated to the shipped RL stack (Discrete(44), OBS_DIM=112, actual reward, MaskablePPO hyperparameters, the 5-phase curriculum as run, and measured holdout results). §5 records the actual generated dataset (10 scenarios, 831k bookings). §7 reflects five policies, the shipped demo surfaces, and the precomputed + live hybrid. Process sections (build plan, risks, open decisions) removed now that the build is complete; history is in git.
+> **Last updated:** v2.4 — Frontend reconciliation: the Next.js dashboard was retired for two static sites (customer booking site + port-operator console) served by nginx with the API same-origin; customer bookings are priced live against an always-on simulation and stored in Postgres; comparison artifacts moved to `backend/demo/`. §2.2, §2.9 and §7 updated.
+>
+> v2.3 — As-built reconciliation: all P0/P1 features shipped. §2 reflects the built system (8 ports / 4 vessels / 18 routes, 3 supervised models with measured recovery, isoelastic bid-price engine, trial-place stowage); new §2.9 covers the live API, hash-chained ledger, and on-chain settlement layer added during the build. §3 updated to the shipped RL stack (Discrete(44), OBS_DIM=112, actual reward, MaskablePPO hyperparameters, the 5-phase curriculum as run, and measured holdout results). §5 records the actual generated dataset (10 scenarios, 831k bookings). §7 reflects five policies, the shipped demo surfaces, and the precomputed + live hybrid. Process sections (build plan, risks, open decisions) removed now that the build is complete; history is in git.
 >
 > v2.2 — Removed the graduated-fallback framing throughout: RL is the committed decision engine, baselines are the ablation ladder, and the demo replays precomputed artifacts rather than running a live API. §7 policy table now reflects the actual comparison set (static / dynamic heuristic / heuristic+bid-price / PPO).
 >

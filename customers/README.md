@@ -210,8 +210,9 @@ reefer. Everything procedural — no image/font/audio assets anywhere.
 - **Intake variants** (`intake-a…d`) are parallel designs on the same
   shared modules; any of them can become the front door by pointing
   nginx's `/customers/` at it.
-- **cargo-ship** (`drafts/cargo-ship/`, the port-operator site) is being
-  wired to the same live API next (see `docs/INTEGRATION_PLAN.md`).
+- **cargo-ship** (`drafts/cargo-ship/`, the port-operator site) reads the
+  same live API; its Live bookings panel shows these orders in real time,
+  through to the settlement of counter-offer deals.
 
 ## Files NOT to confuse this with
 
