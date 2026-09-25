@@ -58,8 +58,8 @@ public/
 | Route | What it is | Data |
 |---|---|---|
 | `/` | Legacy ops mock (stowage planning demo + AI chat). Static, self-contained — reads `src/lib/data.ts` only. A "Live dashboard" chip links to `/customers`. | none |
-| `/customers` | **The booking desk, live.** `BookingDesk` is an imperative animated scene (warm lamplit shop — CSS + DOM, no React re-render per event): customers wander, walk to the counter when real `booking.decision` events arrive, deal offer cards onto the counter, and a rubber stamp lands on each (`stampFor` → BOOKED / DEAL·KIND / PASSED / NO DEAL / REJECTED). Clicking a card opens `WhyDrawer` (offer fields + the deep `explain` block matched from `/compare/offers` by `request_id`, else nearest lane analog). Right rail: `DealsRail` — on-chain settlement deals with stage track (registered→departed→delivered→settled), terms, tx hashes, and a ledger-verify button. | WS `booking.decision`; `GET /episodes/{id}/deals` (polled); `GET /episodes/{id}/ledger/verify`; `GET /compare/offers` |
-| `/fleet` | **The ops floor.** `PortMap` (port dots, dashed service loops, ship glyphs interpolated along legs, popups) over `EmptiesTicker` over `VesselCards`. Right rail: `DecisionLogRail` (the same event stream, ops lens, filterable), `ShockReplay` (precomputed static-vs-ppo NLRTM closure chart + a "run it live" button that races two real episodes), `CredibilityPanel` (`/models/report` est-vs-true + ledger verify). | `GET /ports` `/vessels` `/episodes/{id}` (polled); WS events; `/compare/shock`; `/models/report` |
+| `/customers` | **The booking desk, live.** `BookingDesk` is an imperative animated scene (lamplit night shop — CSS + DOM, no React re-render per event) mounted in a framed stage card: customers wander, walk to the counter when real `booking.decision` events arrive, deal offer cards onto the counter, and a rubber stamp lands on each (`stampFor` → BOOKED / DEAL·KIND / PASSED / NO DEAL / REJECTED). Clicking a card opens `WhyDrawer` (offer fields + the deep `explain` block matched from `/compare/offers` by `request_id`, else nearest lane analog). Right rail: `DealsRail` — on-chain settlement deals with stage track (registered→departed→delivered→settled), terms, tx hashes, and a ledger-verify button. | WS `booking.decision`; `GET /episodes/{id}/deals` (polled); `GET /episodes/{id}/ledger/verify`; `GET /compare/offers` |
+| `/fleet` | **The ops floor.** `PortMap` (port dots, dashed service loops, ship glyphs interpolated along legs, popups) inside a framed instrument panel (title strip + port/vessel counts) over `EmptiesTicker` over `VesselCards`. Right rail is one continuous surface with hairline-separated sections: `DecisionLogRail` (the same event stream, ops lens, filterable), `ShockReplay` (precomputed static-vs-ppo NLRTM closure chart + a "run it live" button that races two real episodes), `CredibilityPanel` (`/models/report` est-vs-true + ledger verify). | `GET /ports` `/vessels` `/episodes/{id}` (polled); WS events; `/compare/shock`; `/models/report` |
 | Comparison dialog | Modal over either screen, opened from the MoneyHUD. Policy ladder cards (mean ± std + lift vs static), racing-lines cum_profit chart, secondary metric chips, segment strip, provenance footer. | `/compare/summary` `/compare/timeline` `/compare/meta` |
 
 ## Data flow — EpisodeProvider
@@ -111,17 +111,26 @@ starting, error, start, control, dismissError`.
 Tokens live in `src/app/globals.css` `@theme` (Tailwind v4 — utilities like
 `text-hi`, `bg-ink`, `border-edge` are generated from these):
 
-- **Surfaces**: `abyss #060a20` → `ink #0b1130` → `panel #12183c` →
-  `panel-2/-3`; hairlines `edge #262e63` / `edge-soft #1e2650`.
-- **Text ramp**: `hi #eef0ff` → `mid #9aa1c9` → `low #6c739b` → `faint #4b5180`.
-- **Brand**: `accent #6a73ea` (+ `accent-hi`, `accent-deep` for gradients).
-- **Status**: `loaded #3fbdb0` (won/teal) · `reserved #d9b13b` (warn/amber) ·
-  `pending #e0566b` / `critical #f0524f` (rejected/red) · `warn #e5a33c`;
+- **Surfaces**: `abyss #04060e` → `ink #0a0e1e` → `panel #10152b` →
+  `panel-2/-3`; hairlines `edge #232b4f` / `edge-soft #1a2140`.
+- **Text ramp**: `hi #eef1ff` → `mid #a3abd6` → `low #6f77a5` → `faint #4c5380`.
+- **Brand**: `accent #7c87f2` (+ `accent-hi`, `accent-deep` for gradients,
+  `accent-soft #a9b1ff` for accent text on dark).
+- **Brass**: `brass #d9a84e` / `brass-soft #ecc987` — the money/warmth accent
+  that ties the chrome to the booking desk's lamplight (MoneyHUD numeral,
+  desk till).
+- **Status**: `loaded #3fbfb1` (won/teal) · `reserved #d9ae3c` (warn/amber) ·
+  `pending #e0566b` / `critical #f2524f` (rejected/red) · `warn #e5a33c`;
   each with a `*-soft` variant for text on dark.
-- **Utility classes**: `.panel` (gradient card) / `.panel-flat` (flat card) /
-  `.chip` (pill surface) / `.dock-bg` (page backdrop bloom) / `.scroll-thin`.
+- **Utility classes**: `.panel` (sheened card w/ drop shadow) /
+  `.panel-flat` (recessed rail/well) / `.chip` (translucent pill surface) /
+  `.dock-bg` (page backdrop — indigo bloom + faint warm ember) /
+  `.scroll-thin`.
 - **Type**: Inter = `font-sans` body; Outfit = `font-display` for numerals and
   headings; `tabular-nums` on every number.
+- **Chrome**: slim `h-14` header (brand mark + segmented nav + MoneyHUD KPI),
+  then a floating `.panel` instrument bar (`EpisodeControls`) of micro-labeled
+  fields divided by hairlines — day progress + transport on the right.
 
 **"Icons over text" rule**: labels are 9–12px uppercase micro-labels; meaning
 is carried by lucide icons (`strokeWidth 1.75`, 10–15px) + numerals + color.

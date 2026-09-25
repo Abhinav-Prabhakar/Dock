@@ -8,7 +8,7 @@ export default function DockLayout({ children }: { children: React.ReactNode }) 
   return (
     <EpisodeProvider>
       <div className="flex flex-col h-full dock-bg">
-        <header className="panel-flat border-b border-edge flex items-center justify-between px-6 py-3 shrink-0">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-edge bg-ink/55 px-5 backdrop-blur-sm">
           <DockNav />
           <MoneyHUD />
         </header>

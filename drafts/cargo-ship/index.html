@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dock — Vessel View</title>
+<link rel="stylesheet" href="style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="viewport"></div>
+
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-mark">DOCK</div>
+    <div class="loader-bar"><span></span></div>
+    <div class="loader-text">Fairing hull &amp; loading bays…</div>
+  </div>
+</div>
+
+<div id="ui">
+  <header class="hud hud-tl">
+    <div class="brand"><span class="dot"></span>DOCK <em>Vessel View</em></div>
+    <h1 id="vessel-name">DOCK PIONEER</h1>
+    <div class="sub" id="vessel-sub">Container ship · 366 × 51 m · Flag Monrovia</div>
+    <div class="telemetry">
+      <div><label>SOG</label><span id="t-sog">0.0</span><small>kn</small></div>
+      <div><label>HDG</label><span id="t-hdg">090</span><small>°</small></div>
+      <div><label>Heave</label><span id="t-heave">0.00</span><small>m</small></div>
+      <div><label>Pitch</label><span id="t-pitch">0.00</span><small>°</small></div>
+      <div><label>Roll</label><span id="t-roll">0.00</span><small>°</small></div>
+    </div>
+  </header>
+
+  <aside class="hud panel cargo-panel" id="cargo-panel">
+    <div class="panel-head">
+      <span>Stowage</span>
+      <button class="icon-btn" id="collapse-cargo" title="Collapse">–</button>
+    </div>
+    <div class="panel-body">
+      <div class="stats">
+        <div><span id="s-boxes">0</span><label>Boxes</label></div>
+        <div><span id="s-teu">0</span><label>TEU on deck</label></div>
+        <div><span id="s-util">0%</span><label>Deck util.</label></div>
+      </div>
+      <label class="field-label" for="bay-select">Bay</label>
+      <select id="bay-select"></select>
+      <div class="btn-grid">
+        <button id="btn-load-bay">Load bay</button>
+        <button id="btn-discharge-bay">Discharge bay</button>
+        <button id="btn-restow">Restow all</button>
+        <button id="btn-clear">Clear deck</button>
+      </div>
+      <label class="field-label">Colour boxes by</label>
+      <div class="seg" id="color-mode"></div>
+      <div class="legend" id="color-legend"></div>
+      <label class="field-label" for="livery-select">Livery</label>
+      <select id="livery-select"></select>
+      <p class="hint"><kbd>Shift</kbd>+click a box to discharge it (and anything stowed on top) · <kbd>Alt</kbd>+click to stack one on top.</p>
+    </div>
+  </aside>
+
+  <footer class="hud panel controls">
+    <div class="daynight" role="group" aria-label="Time of day">
+      <button id="btn-day" class="active" title="Day (N)">
+        <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>
+        Day
+      </button>
+      <button id="btn-night" title="Night (N)">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor"/></svg>
+        Night
+      </button>
+    </div>
+    <div class="slider">
+      <label>Time <span id="v-time">14:30</span></label>
+      <input type="range" id="r-time" min="0" max="24" step="0.01" value="14.5" />
+    </div>
+    <div class="slider">
+      <label>Speed <span id="v-speed">12 kn</span></label>
+      <input type="range" id="r-speed" min="0" max="22" step="0.5" value="12" />
+    </div>
+    <div class="slider">
+      <label>Sea state <span id="v-sea">Moderate</span></label>
+      <input type="range" id="r-sea" min="0.2" max="2.4" step="0.05" value="1" />
+    </div>
+    <button class="icon-btn wide" id="btn-cam" title="Reset camera (C)">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+    </button>
+  </footer>
+
+  <div class="hint-bar">Drag to orbit · Right-drag to pan · Scroll to zoom · <kbd>N</kbd> day/night · <kbd>M</kbd> metrics · <kbd>H</kbd> hide UI</div>
+
+  <section class="hud metrics open" id="metrics">
+    <button class="drawer-tab" id="metrics-tab"><span class="dot" id="metrics-status"></span>Load metrics <em id="alert-count">OK</em><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+    <div class="kpis" id="kpis"></div>
+    <div class="cards">
+      <div class="card span-4">
+        <div class="card-head"><span>Longitudinal distribution &amp; strength</span>
+          <div class="pills"><button class="pill active" data-curve="bm"><i class="ln"></i>Bending</button><button class="pill active" data-curve="sf"><i class="ln dash"></i>Shear</button></div>
+        </div>
+        <canvas id="c-long"></canvas>
+        <div class="card-foot"><span><i class="sq" style="background:rgba(124,196,255,.8)"></i>Deck t/bay</span><span><i class="sq" style="background:rgba(124,196,255,.25)"></i>Hold t/bay</span><span><i class="ln red"></i>Permissible</span><span><i class="ln blue"></i>Waterline</span></div>
+      </div>
+      <div class="card span-2"><div class="card-head"><span>Transverse balance</span><em>list ×3</em></div><canvas id="c-trans"></canvas></div>
+      <div class="card span-2"><div class="card-head"><span>Stability</span></div><canvas id="c-stab"></canvas></div>
+      <div class="card span-2"><div class="card-head"><span>Cargo mix · POD</span></div><canvas id="c-mix"></canvas></div>
+      <div class="card span-2"><div class="card-head"><span>Loading checks</span></div><ul class="alerts" id="alerts"></ul></div>
+    </div>
+  </section>
+</div>
+
+<nav class="screen-switch" id="screen-switch" role="tablist">
+  <button class="active" data-screen="vessel">
+    <svg viewBox="0 0 24 24" width="15" height="15"><path d="M3 15h18l-2.5 4.5h-13z M6 15V9h5v6 M11 15v-4h6v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    Vessel</button>
+  <button data-screen="stowage">
+    <svg viewBox="0 0 24 24" width="15" height="15"><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M9 5v14M15 5v14" stroke="currentColor" stroke-width="1.4"/></svg>
+    Stowage</button>
+  <i class="glider"></i>
+</nav>
+
+<div id="stowage" class="stowage"></div>
+
+<div id="tooltip" class="tooltip"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

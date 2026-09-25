@@ -33,7 +33,7 @@ export function VesselSideView() {
       <defs>
         <linearGradient id="side-sea" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#161d47" stopOpacity="0.7" />
-          <stop offset="1" stopColor="#060a20" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#04060e" stopOpacity="0.9" />
         </linearGradient>
         <filter id="side-glow" x="-20%" y="-40%" width="140%" height="180%">
           <feGaussianBlur stdDeviation="30" />
@@ -82,7 +82,7 @@ export function VesselSideView() {
         />
       ))}
       {/* funnel band */}
-      <rect x="1088" y="56" width="52" height="10" rx="2" fill="rgba(106,115,234,0.5)" />
+      <rect x="1088" y="56" width="52" height="10" rx="2" fill="rgba(124,135,242,0.5)" />
 
       {/* deck line */}
       <line x1="60" y1="240" x2="1185" y2="240" stroke="rgba(178,188,240,0.4)" strokeWidth={1.5} />
@@ -97,7 +97,7 @@ export function VesselSideView() {
             const y = DECK_Y - (t + 1) * (TIER_H + TIER_GAP);
             const fill = lit
               ? statusFill[status as Exclude<CellStatus, "empty">]
-              : "rgba(148,158,220,0.16)";
+              : "rgba(152,162,226,0.16)";
             return (
               <g key={t}>
                 <rect
@@ -111,7 +111,7 @@ export function VesselSideView() {
                   stroke={
                     lit
                       ? statusFill[status as Exclude<CellStatus, "empty">]
-                      : "rgba(148,158,220,0.25)"
+                      : "rgba(152,162,226,0.25)"
                   }
                   strokeOpacity={lit ? 0.7 : 1}
                 />
@@ -147,7 +147,7 @@ export function VesselSideView() {
       ))}
 
       {/* waterline + wave ticks */}
-      <line x1="0" y1="370" x2="1240" y2="370" stroke="rgba(148,158,220,0.3)" />
+      <line x1="0" y1="370" x2="1240" y2="370" stroke="rgba(152,162,226,0.3)" />
       {Array.from({ length: 40 }, (_, i) => (
         <line
           key={i}
@@ -155,7 +155,7 @@ export function VesselSideView() {
           y1={376}
           x2={28 + i * 31}
           y2={376}
-          stroke="rgba(148,158,220,0.22)"
+          stroke="rgba(152,162,226,0.22)"
           strokeWidth={1.5}
           strokeLinecap="round"
         />
@@ -163,8 +163,8 @@ export function VesselSideView() {
       <line x1="0" y1="370" x2="1240" y2="370" stroke="url(#side-sea)" strokeWidth={2} />
 
       {/* bow/stern labels */}
-      <text x="60" y="398" fontSize={9} letterSpacing={2} fill="#6c739b">BOW</text>
-      <text x="1160" y="398" fontSize={9} letterSpacing={2} fill="#6c739b" textAnchor="end">STERN</text>
+      <text x="60" y="398" fontSize={9} letterSpacing={2} fill="#6f77a5">BOW</text>
+      <text x="1160" y="398" fontSize={9} letterSpacing={2} fill="#6f77a5" textAnchor="end">STERN</text>
     </svg>
   );
 }

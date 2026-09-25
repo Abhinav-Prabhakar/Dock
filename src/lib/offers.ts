@@ -15,7 +15,7 @@ export const CARGO_ICON: Record<string, string> = {
 
 export const SEGMENT_COLORS: Record<string, string> = {
   urgent: "#f0899a",
-  standard: "#a8b8d8",
+  standard: "#aab4da",
   flexible: "#7fd9d0",
 };
 

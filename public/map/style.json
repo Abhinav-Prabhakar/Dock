@@ -20,7 +20,7 @@
     {
       "id": "background",
       "type": "background",
-      "paint": { "background-color": "#060a20" }
+      "paint": { "background-color": "#04060e" }
     },
     {
       "id": "earth",
@@ -28,14 +28,14 @@
       "source": "protomaps",
       "source-layer": "earth",
       "filter": ["==", "$type", "Polygon"],
-      "paint": { "fill-color": "#0b1130" }
+      "paint": { "fill-color": "#0d1230" }
     },
     {
       "id": "landcover",
       "type": "fill",
       "source": "protomaps",
       "source-layer": "landcover",
-      "paint": { "fill-color": "#0e1536", "fill-opacity": 0.6 }
+      "paint": { "fill-color": "#141b3a", "fill-opacity": 0.6 }
     },
     {
       "id": "water",
@@ -43,7 +43,7 @@
       "source": "protomaps",
       "source-layer": "water",
       "filter": ["==", "$type", "Polygon"],
-      "paint": { "fill-color": "#060a20" }
+      "paint": { "fill-color": "#04060e" }
     },
     {
       "id": "boundaries",
@@ -52,7 +52,7 @@
       "source-layer": "boundaries",
       "filter": [">", "kind_detail", 2],
       "paint": {
-        "line-color": "#262e63",
+        "line-color": "#232b4f",
         "line-width": 0.4,
         "line-opacity": 0.35
       }
@@ -64,7 +64,7 @@
       "source-layer": "boundaries",
       "filter": ["<=", "kind_detail", 2],
       "paint": {
-        "line-color": "#262e63",
+        "line-color": "#232b4f",
         "line-width": [
           "interpolate", ["linear"], ["zoom"],
           0, 0.5,
@@ -88,8 +88,8 @@
         "text-max-width": 6
       },
       "paint": {
-        "text-color": "#4b5180",
-        "text-halo-color": "#060a20",
+        "text-color": "#4c5380",
+        "text-halo-color": "#04060e",
         "text-halo-width": 1
       }
     },
@@ -108,8 +108,8 @@
         "text-max-width": 8
       },
       "paint": {
-        "text-color": "#4b5180",
-        "text-halo-color": "#060a20",
+        "text-color": "#4c5380",
+        "text-halo-color": "#04060e",
         "text-halo-width": 1.2
       }
     },
@@ -126,8 +126,8 @@
         "text-letter-spacing": 0.08
       },
       "paint": {
-        "text-color": "#4b5180",
-        "text-halo-color": "#0b1130",
+        "text-color": "#4c5380",
+        "text-halo-color": "#0d1230",
         "text-halo-width": 1
       }
     },
@@ -148,9 +148,9 @@
         "symbol-sort-key": ["get", "min_zoom"]
       },
       "paint": {
-        "text-color": "#6c739b",
+        "text-color": "#6f77a5",
         "text-opacity": 0.8,
-        "text-halo-color": "#0b1130",
+        "text-halo-color": "#0d1230",
         "text-halo-width": 1
       }
     },
@@ -170,8 +170,8 @@
         "symbol-sort-key": ["get", "min_zoom"]
       },
       "paint": {
-        "text-color": "#6c739b",
-        "text-halo-color": "#0b1130",
+        "text-color": "#6f77a5",
+        "text-halo-color": "#0d1230",
         "text-halo-width": 1
       }
     },
@@ -191,8 +191,8 @@
         "symbol-sort-key": ["get", "min_zoom"]
       },
       "paint": {
-        "text-color": "#6c739b",
-        "text-halo-color": "#0b1130",
+        "text-color": "#6f77a5",
+        "text-halo-color": "#0d1230",
         "text-halo-width": 1.2
       }
     }

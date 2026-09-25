@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Opportunity-cost pricing, negotiation and settlement for container shipping",
     start_url: "/",
     display: "standalone",
-    background_color: "#060a20",
-    theme_color: "#060a20",
+    background_color: "#04060e",
+    theme_color: "#04060e",
     icons: [
       {
         src: "/favicon.ico",

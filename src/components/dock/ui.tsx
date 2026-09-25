@@ -24,7 +24,7 @@ export function SectionTitle({
     <div className="flex items-center justify-between px-1 pb-2">
       <div className="flex items-center gap-2">
         <Icon size={12} className="text-accent" strokeWidth={1.75} />
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-faint">
+        <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-faint">
           {children}
         </span>
       </div>
@@ -47,7 +47,7 @@ export function Pill({
     ok: "bg-loaded/12 text-loaded-soft border-loaded/30",
     warn: "bg-reserved/12 text-reserved-soft border-reserved/30",
     bad: "bg-critical/12 text-pending-soft border-critical/30",
-    accent: "bg-accent/15 text-[#aab4ff] border-accent/40",
+    accent: "bg-accent/15 text-accent-soft border-accent/40",
     neutral: "bg-white/5 text-low border-edge",
   } as const;
   return (
@@ -67,7 +67,7 @@ export function StatusDot({
   tone?: "live" | "warn" | "done" | "idle";
 }) {
   const cls = {
-    live: "bg-loaded shadow-[0_0_8px_rgba(63,189,176,0.8)] animate-pulse",
+    live: "bg-loaded shadow-[0_0_8px_rgba(63,191,177,0.8)] animate-pulse",
     warn: "bg-warn",
     done: "bg-accent",
     idle: "bg-faint",
@@ -112,7 +112,7 @@ export function MeterBar({
   const fills = {
     accent: "bg-gradient-to-r from-accent-deep to-accent",
     loaded: "bg-gradient-to-r from-[#2a8a80] to-loaded",
-    warn: "bg-gradient-to-r from-[#9c7f28] to-reserved",
+    warn: "bg-gradient-to-r from-[#9c8229] to-reserved",
     bad: "bg-gradient-to-r from-[#8f3a4e] to-critical",
   } as const;
   return (

@@ -15,7 +15,7 @@ import { useEpisode } from "@/components/dock/EpisodeProvider";
 
 type LngLat = [number, number];
 
-const ACCENT = "#6a73ea";
+const ACCENT = "#7c87f2";
 const LOOPS_SOURCE = "dock-loops";
 const LOOPS_LAYER = "dock-loops-line";
 
@@ -173,7 +173,7 @@ function buildPortEl(p: Port): HTMLDivElement {
   const el = document.createElement("div");
   el.className = "flex cursor-pointer items-center gap-1.5";
   el.innerHTML = `
-    <span class="block h-2 w-2 shrink-0 rounded-full bg-accent shadow-[0_0_7px_rgba(106,115,234,0.9)] ring-[3px] ring-accent/20"></span>
+    <span class="block h-2 w-2 shrink-0 rounded-full bg-accent shadow-[0_0_7px_rgba(124,135,242,0.9)] ring-[3px] ring-accent/20"></span>
     <span class="rounded bg-ink/85 px-1 py-px text-[9px] font-medium uppercase tracking-[0.14em] text-low backdrop-blur-[2px]">${p.port_id}</span>`;
   return el;
 }
@@ -182,10 +182,10 @@ function buildVesselEl(): { root: HTMLDivElement; svg: SVGSVGElement | null } {
   const el = document.createElement("div");
   el.className = "cursor-pointer";
   el.innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 18 18" style="display:block;filter:drop-shadow(0 0 4px rgba(106,115,234,0.75));transition:transform 0.6s linear">
+    <svg width="18" height="18" viewBox="0 0 18 18" style="display:block;filter:drop-shadow(0 0 4px rgba(124,135,242,0.75));transition:transform 0.6s linear">
       <path d="M9 1.8 L12.6 7.2 L12.6 13.4 Q12.6 15.3 10.9 15.3 L7.1 15.3 Q5.4 15.3 5.4 13.4 L5.4 7.2 Z"
-            fill="${ACCENT}" stroke="#aab4ff" stroke-width="0.6" stroke-linejoin="round"/>
-      <rect x="7.7" y="8.4" width="2.6" height="4.4" rx="0.5" fill="#060a20" opacity="0.55"/>
+            fill="${ACCENT}" stroke="#a9b1ff" stroke-width="0.6" stroke-linejoin="round"/>
+      <rect x="7.7" y="8.4" width="2.6" height="4.4" rx="0.5" fill="#04060e" opacity="0.55"/>
     </svg>`;
   return { root: el, svg: el.querySelector("svg") };
 }
@@ -387,7 +387,7 @@ export function PortMap() {
   }, [ready, snapshot, portById]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl border border-edge">
+    <div className="relative h-full w-full overflow-hidden">
       <div ref={containerRef} className="h-full w-full" />
 
       {!episode && (
@@ -411,19 +411,19 @@ export function PortMap() {
       {/* MapLibre popup chrome — restyled into the Dock palette. */}
       <style>{`
         .dock-popup .maplibregl-popup-content {
-          background: rgba(18, 24, 58, 0.96);
-          border: 1px solid rgba(148, 158, 220, 0.14);
+          background: rgba(15, 20, 42, 0.96);
+          border: 1px solid rgba(152, 162, 226, 0.14);
           border-radius: 12px;
-          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
           padding: 10px 12px;
-          color: #eef0ff;
+          color: #eef1ff;
           font-family: var(--font-sans);
           backdrop-filter: blur(6px);
         }
-        .dock-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: rgba(18, 24, 58, 0.96); }
-        .dock-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: rgba(18, 24, 58, 0.96); }
-        .dock-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: rgba(18, 24, 58, 0.96); }
-        .dock-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: rgba(18, 24, 58, 0.96); }
+        .dock-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: rgba(15, 20, 42, 0.96); }
+        .dock-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: rgba(15, 20, 42, 0.96); }
+        .dock-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: rgba(15, 20, 42, 0.96); }
+        .dock-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: rgba(15, 20, 42, 0.96); }
         .maplibregl-ctrl-attrib { background: transparent; }
       `}</style>
     </div>

@@ -41,7 +41,7 @@ function Cell({ cell, x, y }: { cell: BayCell; x: number; y: number }) {
           height={CELL_H}
           rx={8}
           fill="rgba(16,22,56,0.55)"
-          stroke="rgba(148,158,220,0.22)"
+          stroke="rgba(152,162,226,0.22)"
         />
         <circle
           cx={x + CELL_W / 2}
