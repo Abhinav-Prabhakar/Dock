@@ -33,19 +33,45 @@ expect "ports"           200 "$API/ports"
 expect "vessels"         200 "$API/vessels"
 expect "compare/summary" 200 "$API/compare/summary"
 
-echo "orders round-trip (Postgres)"
-id=$(curl -s -X POST "$API/orders" -H 'content-type: application/json' \
-  -d '{"origin":"CNSHA","dest":"NLRTM","teu":2,"weight_t":20,"cargo_type":"dry","segment":"standard","req_dep_day":40,"flex_days":1}' \
-  | json 'd.get("id","")')
-[ -n "$id" ] && ok "POST /orders -> $id" || bad "POST /orders returned no id"
-got=$(curl -s "$API/orders/$id" | json 'd.get("id","")')
-[ "$got" = "$id" ] && ok "GET /orders/$id" || bad "GET /orders/$id"
+echo "live simulation"
+live=""
+for _ in $(seq 1 60); do             # the live world loads PPO on startup
+  live=$(curl -s "$API/live" | json 'd.get("id","")' 2>/dev/null)
+  [ -n "$live" ] && break; sleep 1
+done
+[ -n "$live" ] && ok "GET /live -> episode $live" || bad "live simulation never came up"
+expect "vessel stowage" 200 "$API/live/vessels/VES1/stowage"
+expect "policy network" 200 "$API/live/policy/network"
+n=$(curl -s "$API/live/policy" | json 'len(d["decisions"])')
+[ "${n:-0}" -gt 0 ] && ok "policy trace has $n live decisions" || bad "no live policy decisions"
+
+echo "customer booking (quote -> accept, Postgres)"
+oid=""; offer=""
+for dep in 5 9 14 20 26; do
+  q=$(curl -s -X POST "$API/orders" -H 'content-type: application/json' \
+    -d "{\"origin\":\"CNSHA\",\"dest\":\"NLRTM\",\"teu\":6,\"weight_t\":60,\"cargo_type\":\"dry\",\"segment\":\"standard\",\"req_dep_day\":$dep,\"flex_days\":3}")
+  oid=$(echo "$q" | json 'd["order"]["id"]')
+  offer=$(echo "$q" | json '(d["offers"] or [{}])[0].get("id","")')
+  [ -n "$offer" ] && break
+done
+[ -n "$oid" ] && ok "POST /orders -> $oid" || bad "POST /orders returned no order"
+if [ -n "$offer" ]; then
+  ok "quote has offers (first: $offer)"
+  st=$(curl -s -X POST "$API/orders/$oid/accept" -H 'content-type: application/json' \
+    -d "{\"offer_id\":\"$offer\"}" | json 'd.get("order",{}).get("status","")')
+  case "$st" in CONFIRMED|LOADING) ok "accept -> $st";; *) bad "accept -> '$st'";; esac
+  src=$(curl -s "$API/live/events?types=booking.decision&limit=1000" \
+    | json "next((e.get('source','') for e in d['events'] if e.get('order_id')=='$oid'), '')")
+  [ "$src" = "customer" ] && ok "booking.decision recorded for the customer" || bad "no customer booking.decision"
+else
+  bad "no offers in any window (live world may be saturated)"
+fi
 expect "bad OD pair rejected" 422 -X POST "$API/orders" -H 'content-type: application/json' \
-  -d '{"origin":"NLRTM","dest":"USNYC","teu":1,"weight_t":5,"cargo_type":"dry","segment":"standard","req_dep_day":40,"flex_days":0}'
+  -d '{"origin":"NLRTM","dest":"USNYC","teu":1,"weight_t":5,"cargo_type":"dry","segment":"standard","req_dep_day":10,"flex_days":0}'
 
 echo "episode (simulator + ledger)"
-# a short flat-out static episode; stop anything already running first
-for running in $(curl -s "$API/episodes" | json '" ".join(e["id"] for e in d if e["status"] in ("running","paused"))'); do
+# a short flat-out static episode alongside the live one; stop any other ad-hoc run first
+for running in $(curl -s "$API/episodes" | json '" ".join(e["id"] for e in d if e["status"] in ("running","paused") and not e.get("live"))'); do
   curl -s -o /dev/null -X POST "$API/episodes/$running/control" -H 'content-type: application/json' -d '{"action":"stop"}'
 done
 ep=$(curl -s -X POST "$API/episodes" -H 'content-type: application/json' \

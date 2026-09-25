@@ -1,8 +1,11 @@
-"""Order store + /orders API, against a real (test) Postgres.
+"""Order store + /orders validation, against a real (test) Postgres, with no
+live simulation running (DOCK_LIVE=0 in conftest).
 
-Lean on purpose: the round-trip, the validation contract the customer site
-relies on, and a regression test for the concurrent-id race (order ids used
-to be MAX+1 in app code, so parallel POSTs collided on the primary key).
+Covers the contract the customer site relies on before any pricing happens,
+that there is no fallback when the live simulation is down, and a
+regression test for the concurrent-id race (ids used to be MAX+1 in app
+code, so parallel POSTs collided on the primary key). The quote -> accept
+flow itself is in test_quotes.py.
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ from server import orders as order_store
 from server.app import create_app
 
 GOOD = dict(origin="CNSHA", dest="NLRTM", teu=4, weight_t=40.0,
-            cargo_type="dry", segment="standard", req_dep_day=20.0,
+            cargo_type="dry", segment="standard", req_dep_day=10.0,
             flex_days=2)
 
 
@@ -25,26 +28,6 @@ def client(migrated_db):
     with TestClient(create_app()) as c:
         c.delete("/orders")
         yield c
-
-
-def test_round_trip(client):
-    r = client.post("/orders", json=GOOD)
-    assert r.status_code == 201, r.text
-    created = r.json()
-    assert created["id"].startswith("BK-") and created["id"].endswith("-TC")
-    assert created["status"] == "PENDING REVIEW"
-
-    got = client.get(f"/orders/{created['id']}")
-    assert got.status_code == 200
-    assert got.json()["origin"] == "CNSHA"
-    assert created["id"] in [o["id"] for o in client.get("/orders").json()]
-
-
-def test_list_is_newest_first(client):
-    a = client.post("/orders", json=GOOD).json()["id"]
-    b = client.post("/orders", json=GOOD).json()["id"]
-    ids = [o["id"] for o in client.get("/orders").json()]
-    assert ids.index(b) < ids.index(a)
 
 
 @pytest.mark.parametrize("patch, needle", [
@@ -60,13 +43,18 @@ def test_validation_rejects(client, patch, needle):
     assert needle in r.text
 
 
+def test_no_live_simulation_is_503_not_a_fallback(client):
+    r = client.post("/orders", json=GOOD)
+    assert r.status_code == 503
+    assert client.get("/orders").json() == []      # nothing stored
+
+
 def test_missing_order_is_404(client):
     assert client.get("/orders/BK-0-TC").status_code == 404
 
 
-def test_concurrent_creates_get_unique_ids(migrated_db):
-    body = order_store.OrderIn(**GOOD)
+def test_order_ids_are_unique_under_concurrency(migrated_db):
     with ThreadPoolExecutor(max_workers=16) as pool:
-        recs = list(pool.map(lambda _: order_store.create_order(body), range(32)))
-    ids = [r["id"] for r in recs]
-    assert len(set(ids)) == len(ids) == 32
+        ids = list(pool.map(lambda _: order_store.next_id(), range(64)))
+    assert len(set(ids)) == 64
+    assert all(i.startswith("BK-") and i.endswith("-TC") for i in ids)
