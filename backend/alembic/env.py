@@ -4,11 +4,15 @@ environment (server/db.py's default), same as the running app."""
 
 from __future__ import annotations
 
+from logging.config import fileConfig
+
 from alembic import context
 
 from server.db import DATABASE_URL, engine
 
 config = context.config
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 

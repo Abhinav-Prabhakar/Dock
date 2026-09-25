@@ -29,7 +29,9 @@ through the same ingest path.
 from __future__ import annotations
 
 import json
+import os
 import queue
+from collections import deque
 import threading
 import time
 import uuid
@@ -39,10 +41,14 @@ from data import scenarios as SC
 from simulator import SimConfig, Simulator
 from simulator.fleet import SEA
 
+from .stowage_view import vessel_name
+
 BACKEND = Path(__file__).resolve().parent.parent
 REPO_ROOT = BACKEND.parent
 RUNS_DIR = BACKEND / "runs"
-DEFAULT_LEDGER_DIR = RUNS_DIR / "ledger"
+# DOCK_LEDGER_DIR: tests point this at a temp dir (runs/ledger is tracked);
+# compose points it at a volume so ledgers survive container rebuilds.
+DEFAULT_LEDGER_DIR = Path(os.environ.get("DOCK_LEDGER_DIR") or RUNS_DIR / "ledger")
 
 TERMINAL = {"done", "stopped", "error"}
 ACTIVE = {"running", "paused"}
@@ -104,6 +110,15 @@ class Episode:
         self._reqs: dict[int, object] = {}  # request_id -> BookingRequest
         self._ctx: dict = {}             # prepared driver context
         self._settlement = None          # SettlementProcessor, if available
+        # One lock around every mutation of the sim: the episode thread holds
+        # it per sim-day (per env step for PPO) and customer quote/accept
+        # calls hold it while they read or book, so a quote never sees a
+        # half-advanced day.
+        self.sim_lock = threading.RLock()
+        self.live = False                # the always-on episode the sites use
+        self.trace: deque = deque(maxlen=60)   # recent policy decisions (live)
+        self.quotes: dict[str, dict] = {}      # order_id -> open customer quote
+        self.customer_reqs: dict[int, str] = {}  # booked request_id -> order_id
 
     # ------------------------------------------------------------------
     # Event sink
@@ -346,6 +361,7 @@ class Episode:
             "n_events": len(self.events),
             "n_deals": len(self.deals),
             "created_at": self.created_at,
+            "live": self.live,
         }
 
 
@@ -430,6 +446,69 @@ class EpisodeManager:
         self.ledger_dir.mkdir(parents=True, exist_ok=True)
         self._episodes: dict[str, Episode] = {}
         self._lock = threading.Lock()
+        self._live_id: str | None = None
+        self._live_stop = threading.Event()
+        self._live_thread: threading.Thread | None = None
+        self.live_error: str | None = None
+
+    # ------------------------------------------------------------------
+    # The live episode: always on, restarted when it reaches its horizon.
+    # Customer quotes and both sites' live views read from it.
+    # ------------------------------------------------------------------
+
+    def start_live(self, policy: str = "ppo", scenario: str = "baseline",
+                   speed_days_per_sec: float = 1 / 60,
+                   horizon_days: int = 90) -> None:
+        if self._live_thread is not None:
+            return
+        cfg = dict(policy=policy, scenario=scenario, horizon_days=horizon_days,
+                   speed_days_per_sec=speed_days_per_sec)
+        self._live_thread = threading.Thread(
+            target=self._live_loop, args=(cfg,), name="live-supervisor",
+            daemon=True)
+        self._live_thread.start()
+
+    def _live_loop(self, cfg: dict) -> None:
+        seed = int(time.time()) % 100_000
+        while not self._live_stop.is_set():
+            try:
+                ep = self.start(seed=seed, live=True, **cfg)
+                self.live_error = None
+            except Exception as e:           # surfaced by GET /live (503)
+                self.live_error = f"{type(e).__name__}: {e}"
+                self._live_stop.wait(10.0)
+                continue
+            self._live_id = ep.id
+            while ep.thread.is_alive() and not self._live_stop.is_set():
+                ep.thread.join(0.5)
+            self._retire_live(ep)
+            seed += 1
+            self._live_stop.wait(2.0)
+
+    def _retire_live(self, ep: Episode) -> None:
+        """A finished live episode: its open quotes can't be honoured any
+        more, and older finished live episodes are dropped from memory."""
+        from . import orders as order_store
+        ep.quotes.clear()
+        try:
+            order_store.expire_open(ep.id)
+        except Exception:
+            pass
+        with self._lock:
+            old = [e for e in self._episodes.values()
+                   if e.live and e is not ep and e.status in TERMINAL]
+            for e in old:
+                self._episodes.pop(e.id, None)
+
+    def live(self) -> Episode | None:
+        return self._episodes.get(self._live_id) if self._live_id else None
+
+    def stop_live(self) -> None:
+        self._live_stop.set()
+        ep = self.live()
+        if ep is not None:
+            ep._stop.set()
+            ep._pause.set()
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -437,7 +516,8 @@ class EpisodeManager:
 
     def start(self, policy: str, scenario: str, seed: int = 42,
               horizon_days: int = 90,
-              speed_days_per_sec: float = DEFAULT_SPEED) -> Episode:
+              speed_days_per_sec: float = DEFAULT_SPEED,
+              live: bool = False) -> Episode:
         table = _policy_table()
         if policy not in table:
             raise ValueError(f"unknown policy '{policy}' — "
@@ -447,11 +527,16 @@ class EpisodeManager:
                              f"one of {sorted(SC.SCENARIOS)}")
         with self._lock:
             for ep in self._episodes.values():
-                if ep.status in ACTIVE:
+                if ep.status in ACTIVE and not ep.live and not live:
                     raise EpisodeConflict(
                         f"episode {ep.id} is {ep.status} — stop it first")
             ep = Episode(policy, scenario, seed, horizon_days,
                          speed_days_per_sec)
+            if live:
+                # the live world runs at human pace (below the API's
+                # MIN_SPEED clamp) so a customer has time to read a quote
+                ep.live = True
+                ep.speed_days_per_sec = float(speed_days_per_sec)
             self._episodes[ep.id] = ep
         ep._ledger = self._open_ledger(ep)
         try:
@@ -592,7 +677,7 @@ class EpisodeManager:
                     leg_start = leg_end = progress = None
                 vessels.append({
                     "vessel_id": v.spec.vessel_id,
-                    "name": getattr(v, "name", v.spec.vessel_id),
+                    "name": vessel_name(v.spec.vessel_id),
                     "mode": v.mode.upper(),
                     "port": port,
                     "from_port": from_port,
@@ -659,6 +744,9 @@ class EpisodeManager:
         if ep._subscriber not in bus:
             bus.append(ep._subscriber)
         self._maybe_attach_settlement(ep)
+        if ep.live:
+            from .quotes import order_tracker
+            bus.append(order_tracker(ep))
 
     def _maybe_attach_settlement(self, ep: Episode) -> None:
         """Wire the settlement bridge. Default: a real local EVM
@@ -698,42 +786,46 @@ class EpisodeManager:
             ep._wait_paused()
             if ep._stop.is_set():
                 break
-            reqs = sim.begin_day()
-            for req in reqs:
-                ep._reqs[req.request_id] = req
-                dec = policy.decide_booking(req, sim)
-                res = sim.apply_decision(req, dec)
-                if not ep._native:
-                    ep.emit("booking.decision",
-                            request_id=req.request_id, origin=req.origin,
-                            dest=req.dest, teu=req.teu,
-                            weight_t=round(req.weight_t, 1),
-                            cargo_type=req.cargo_type.value,
-                            segment=req.segment.value,
-                            market_rate=round(req.market_rate, 2),
-                            req_dep_day=req.req_dep_day,
-                            flex_days=req.flex_days,
-                            n_options=len(req.options),
-                            decision=dec.kind.value,
-                            outcome=res.get("outcome"),
-                            kind=res.get("kind"),
-                            price=res.get("price"),
-                            quoted=res.get("quoted"),
-                            reason=res.get("reason"))
-                    self._drain_decision_log(ep, sim)
-            if sim.config.fleet_actions \
-                    and int(sim.day) % sim.config.fleet_every == 0:
-                for act in policy.decide_fleet(sim):
-                    sim.apply_fleet_action(act)
-            sim.end_day()
-            ep.day = float(sim.day)
-            if not ep._native:
-                self._drain_decision_log(ep, sim)
-                self._emit_vessel_transitions(ep, sim)
-                self._emit_day_summary(ep, sim)
-            else:
-                self._emit_day_metrics(ep, sim)
+            with ep.sim_lock:
+                self._policy_day(ep, sim, policy)
             ep._pace()
+
+    def _policy_day(self, ep: Episode, sim, policy) -> None:
+        reqs = sim.begin_day()
+        for req in reqs:
+            ep._reqs[req.request_id] = req
+            dec = policy.decide_booking(req, sim)
+            res = sim.apply_decision(req, dec)
+            if not ep._native:
+                ep.emit("booking.decision",
+                        request_id=req.request_id, origin=req.origin,
+                        dest=req.dest, teu=req.teu,
+                        weight_t=round(req.weight_t, 1),
+                        cargo_type=req.cargo_type.value,
+                        segment=req.segment.value,
+                        market_rate=round(req.market_rate, 2),
+                        req_dep_day=req.req_dep_day,
+                        flex_days=req.flex_days,
+                        n_options=len(req.options),
+                        decision=dec.kind.value,
+                        outcome=res.get("outcome"),
+                        kind=res.get("kind"),
+                        price=res.get("price"),
+                        quoted=res.get("quoted"),
+                        reason=res.get("reason"))
+                self._drain_decision_log(ep, sim)
+        if sim.config.fleet_actions \
+                and int(sim.day) % sim.config.fleet_every == 0:
+            for act in policy.decide_fleet(sim):
+                sim.apply_fleet_action(act)
+        sim.end_day()
+        ep.day = float(sim.day)
+        if not ep._native:
+            self._drain_decision_log(ep, sim)
+            self._emit_vessel_transitions(ep, sim)
+            self._emit_day_summary(ep, sim)
+        else:
+            self._emit_day_metrics(ep, sim)
 
     def _drive_ppo(self, ep: Episode) -> None:
         env = ep._ctx["env"]
@@ -746,30 +838,83 @@ class EpisodeManager:
             ep._wait_paused()
             if ep._stop.is_set():
                 break
-            req = env._req               # booking request under decision
-            outcomes_before = dict(sim.metrics.outcomes)
-            log_before = len(sim.metrics.decision_log)
-            a, _ = model.predict(obs, action_masks=env.action_masks())
-            obs, _r, term, _trunc, _ = env.step(int(a))
-            if req is not None:
-                ep._reqs[req.request_id] = req
-                if not ep._native:
-                    self._emit_ppo_decision(ep, env, sim, req, int(a),
-                                            outcomes_before, log_before)
-            if not ep._native:
-                self._drain_decision_log(ep, sim)
-            advanced = int(sim.day) > last_day
-            while int(sim.day) > last_day:
-                last_day += 1
-                ep.day = float(last_day)
-                if not ep._native:
-                    self._emit_vessel_transitions(ep, sim)
-                    self._emit_day_summary(ep, sim, day=float(last_day))
-                else:
-                    self._emit_day_metrics(ep, sim, day=float(last_day))
+            with ep.sim_lock:
+                obs, term, advanced, last_day = self._ppo_step(
+                    ep, env, model, obs, sim, last_day)
+            ep._ctx["obs"] = obs
             if advanced:
                 ep._pace()               # throttle per sim-day advanced
         ep.day = float(sim.day)
+
+    def _ppo_step(self, ep: Episode, env, model, obs, sim, last_day: int):
+        req = env._req               # booking request under decision
+        fleet_step = bool(env._fleet_step)
+        outcomes_before = dict(sim.metrics.outcomes)
+        log_before = len(sim.metrics.decision_log)
+        mask = env.action_masks()
+        if ep.live:
+            # deterministic (argmax) — the deployed policy — and keep the
+            # network's view of this decision for the operator console
+            from . import policy_view
+            view = policy_view.evaluate(model, obs, mask)
+            a = view["action"]
+            repo = env._repo_pairs() if fleet_step else None
+        else:
+            a, _ = model.predict(obs, action_masks=mask)
+            view = None
+        obs, _r, term, _trunc, _ = env.step(int(a))
+        if req is not None:
+            ep._reqs[req.request_id] = req
+            if not ep._native:
+                self._emit_ppo_decision(ep, env, sim, req, int(a),
+                                        outcomes_before, log_before)
+        if view is not None:
+            self._record_trace(ep, view, req, fleet_step, repo)
+        if not ep._native:
+            self._drain_decision_log(ep, sim)
+        advanced = int(sim.day) > last_day
+        while int(sim.day) > last_day:
+            last_day += 1
+            ep.day = float(last_day)
+            if not ep._native:
+                self._emit_vessel_transitions(ep, sim)
+                self._emit_day_summary(ep, sim, day=float(last_day))
+            else:
+                self._emit_day_metrics(ep, sim, day=float(last_day))
+        return obs, term, advanced, last_day
+
+    @staticmethod
+    def _record_trace(ep: Episode, view: dict, req, fleet_step: bool,
+                      repo_pairs) -> None:
+        """Keep the network's view of one live decision (not ledgered — it's
+        model internals, not an auditable event)."""
+        outcome = None
+        if req is not None:
+            for ev in reversed(ep.events[-12:]):
+                if (ev.get("type") == "booking.decision"
+                        and ev.get("request_id") == req.request_id):
+                    outcome = {k: ev.get(k) for k in
+                               ("outcome", "kind", "price", "reason")}
+                    break
+        ep.trace.append({
+            "n": (ep.trace[-1]["n"] + 1) if ep.trace else 1,
+            "day": round(float(ep.day), 2),
+            "step": "fleet" if fleet_step else "booking",
+            "request": None if req is None else {
+                "request_id": req.request_id, "origin": req.origin,
+                "dest": req.dest, "teu": req.teu,
+                "weight_t": round(req.weight_t, 1),
+                "cargo_type": req.cargo_type.value,
+                "segment": req.segment.value,
+                "flex_days": req.flex_days,
+                "req_dep_day": round(req.req_dep_day, 2),
+                "market_rate": round(req.market_rate, 2),
+                "customer": bool(getattr(req, "customer_order", None)),
+            },
+            "repo_pairs": [list(p) for p in repo_pairs] if repo_pairs else None,
+            "outcome": outcome,
+            **view,
+        })
 
     def _emit_ppo_decision(self, ep: Episode, env, sim, req, action: int,
                            outcomes_before: dict, log_before: int) -> None:

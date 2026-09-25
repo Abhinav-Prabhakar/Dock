@@ -117,8 +117,7 @@ docker compose up --build
 
 - **http://localhost:8080** — port-operator console
 - **http://localhost:8080/customers/** — customer booking site
-- **http://localhost:8399** — backend API directly (temporary; see
-  `docker-compose.yml`'s header comment)
+- **http://localhost:8080/api/** — the backend API (same-origin, via nginx)
 
 First run pulls/builds everything (Postgres, then the backend image with
 its RL/settlement deps, then nginx) — a few minutes. The `api` container
@@ -193,8 +192,8 @@ Two static sites, no build step, both served same-origin by the backend:
 ```bash
 cd backend
 .venv/bin/uvicorn server.app:app --port 8399
-open http://localhost:8399/customers/       # customer booking site
-open http://localhost:8399/                 # port-operator console (once mounted — see below)
+open http://localhost:8399/customers/       # customer booking site (the backend mounts it)
+# the port-operator console is served by the Docker ui service — use the Docker quickstart
 ```
 
 - **`customers/`** — the customer booking site: file a cargo booking, see

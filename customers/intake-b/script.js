@@ -13,8 +13,6 @@
    leather cord — a light pendulum, not a physics engine.
    ============================================================ */
 
-const API = location.port === '8399' ? '' : 'http://localhost:8399';
-const ORDERS_KEY    = 'ml.orders';
 const DASHBOARD_URL = '../dashboard/';
 
 /* ----------------------------- helpers ----------------------------- */
@@ -48,28 +46,12 @@ const confirmBtn = document.getElementById('confirm');
 let vw = window.innerWidth, vh = window.innerHeight;
 
 /* ==================== PORT NETWORK (contract) ==================== */
-const PORT_G = {
-  CNSHA: { n: 'SHANGHAI',     lat:  31.2243, lon:  121.4869 },
-  SGSIN: { n: 'SINGAPORE',    lat:   1.2644, lon:  103.8200 },
-  KRPUS: { n: 'BUSAN',        lat:  35.0951, lon:  129.0398 },
-  NLRTM: { n: 'ROTTERDAM',    lat:  51.9480, lon:    4.1420 },
-  DEHAM: { n: 'HAMBURG',      lat:  53.5403, lon:    9.9852 },
-  BEANR: { n: 'ANTWERP',      lat:  51.2630, lon:    4.4020 },
-  USLAX: { n: 'LOS ANGELES',  lat:  33.7292, lon: -118.1970 },
-  USNYC: { n: 'NEW YORK',     lat:  40.6690, lon:  -74.0100 },
-};
-const SRC = ['SGSIN', 'CNSHA', 'KRPUS', 'NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC'];
+/* ports, coordinates and servable lanes are filled from the backend
+   (DockAPI.network()) before the form paints — nothing embedded */
+const PORT_G = {};
+const SRC = [];
 /* only these OD pairs are servable — dest cycling is filtered by origin */
-const PAIRS = {
-  CNSHA: ['NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC', 'SGSIN'],
-  SGSIN: ['NLRTM', 'BEANR', 'CNSHA'],
-  KRPUS: ['USLAX', 'CNSHA'],
-  NLRTM: ['CNSHA', 'SGSIN', 'BEANR'],
-  DEHAM: ['CNSHA'],
-  BEANR: ['SGSIN'],
-  USLAX: ['CNSHA', 'KRPUS'],
-  USNYC: ['CNSHA'],
-};
+const PAIRS = {};
 const D2R = Math.PI / 180;
 const nmOf = (a, b) => {
   const A = PORT_G[a], B = PORT_G[b];
@@ -79,19 +61,15 @@ const nmOf = (a, b) => {
   return Math.round(3440.065 * 2 * Math.asin(Math.sqrt(h)));
 };
 
-/* live port names — merge real /ports names into the stamps (fallback = embedded) */
-(async () => {
-  try {
-    const r = await fetch(`${API}/ports`);
-    if (!r.ok) return;
-    const list = await r.json();
-    for (const p of list) {
-      if (PORT_G[p.port_id] && p.name)
-        PORT_G[p.port_id].n = String(p.name).split('/')[0].trim().toUpperCase();
-    }
-    applyPort(0); applyPort(1);
-  } catch (e) { /* offline — embedded names stand */ }
-})();
+async function loadNetwork() {
+  const net = await DockAPI.network();
+  for (const p of net.ports) {
+    PORT_G[p.port_id] = { n: String(p.name).split('/')[0].trim().toUpperCase(),
+                          lat: p.lat, lon: p.lon };
+  }
+  SRC.push(...net.ports.map(p => p.port_id).filter(id => net.servable[id]));
+  Object.assign(PAIRS, net.servable);
+}
 
 /* ============================ FORM STATE =========================== */
 const TYPE_COLORS = [                       // slip edge stripe, per kind
@@ -847,75 +825,50 @@ confirmBtn.addEventListener('click', async () => {
   confirmBtn.disabled = true;
   confirmBtn.innerHTML = 'STAMPING&nbsp;…';
 
+  /* price each kind live, then the rate-quotation slip */
+  let results;
   try {
-    const created = await Promise.all(bodies.map(b =>
-      fetch(`${API}/orders`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(b),
-      }).then(r => {
-        if (!r.ok) return r.json().then(j => Promise.reject({ status: r.status, detail: j.detail }));
-        return r.json();
-      })));
-
-    try {
-      const cache = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(created.concat(cache)));
-    } catch (e) {}
-
-    /* the credential re-inks itself with the real booking number */
-    state.filed = true;
-    if (created[0] && created[0].id) {
-      bkId.textContent = created[0].id; bkId.dataset.t = created[0].id;
-      lgTag.textContent = created[0].id;
-    }
-    setBand(`ORDER${created.length > 1 ? 'S' : ''} FILED&nbsp;&nbsp;—&nbsp;&nbsp;CONFIRMED`, 'ready filed');
-    confirmBtn.classList.add('filed');
-    confirmBtn.innerHTML = `✓ ${created.length > 1 ? created.length + ' ORDERS' : 'ORDER'} FILED`;
-    kick(1.2);
-    setTimeout(() => { location.href = DASHBOARD_URL; }, 1400);
-
+    results = await Promise.all(bodies.map(DockAPI.quote));
   } catch (err) {
-    if (err && err.status) {
-      /* API declined — stamp the detail onto the ledger, stay on the form */
-      confirmBtn.disabled = false;
-      confirmBtn.innerHTML = 'CONFIRM&nbsp;<span class="arr">→</span>';
-      const det = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
-      note(`DECLINED ${err.status} — ${det || 'THE LINE REFUSED THIS MANIFEST.'}`);
-      kick(0.9);
-    } else {
-      /* offline — mirror the orders into the local cache, still hand off */
-      try {
-        const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-        bodies.forEach((b, i) => orders.unshift({
-          id: 'BK-' + (2487 + orders.length + i) + '-TC',
-          status: 'PENDING REVIEW',
-          ...b,
-          vessel: null, voyage: null, eta: null,
-          progress: 0, price_usd: null,
-          created: Date.now() / 1000,
-        }));
-        localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-      } catch (e2) {}
-      state.filed = true;
-      setBand('FILED OFFLINE&nbsp;&nbsp;—&nbsp;&nbsp;CACHED', 'ready filed');
-      confirmBtn.classList.add('filed');
-      confirmBtn.innerHTML = '✓ CACHED — OFFLINE';
-      setTimeout(() => { location.href = DASHBOARD_URL; }, 1100);
-    }
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = 'CONFIRM&nbsp;<span class="arr">→</span>';
+    note(`DECLINED${err.status ? ' ' + err.status : ''} — ${err.message}`);
+    kick(0.9);
+    return;
   }
+  /* the credential re-inks itself with the real booking number */
+  const first = results[0].order;
+  bkId.textContent = first.id; bkId.dataset.t = first.id;
+  lgTag.textContent = first.id;
+  const final = await DockOffers.review(results);
+  const booked = final.some(o => ['CONFIRMED', 'LOADING'].includes(o.status));
+  state.filed = true;
+  setBand(`ORDER${final.length > 1 ? 'S' : ''} ${booked ? 'BOOKED' : 'QUOTED'}&nbsp;&nbsp;—&nbsp;&nbsp;${booked ? 'CONFIRMED' : 'CLOSED'}`, 'ready filed');
+  confirmBtn.classList.add('filed');
+  confirmBtn.innerHTML = booked ? '✓ BOOKED' : 'QUOTE CLOSED';
+  kick(1.2);
+  setTimeout(() => { location.href = DASHBOARD_URL; }, 1000);
 });
 
 /* ============================ BOOT & LOOP =========================== */
-applyPort(0); applyPort(1);
-distLedger();
-placeShip(0.55);
-applyCargo();
-paintSteps();
-renderSlips();
-paintDep(false);
-paintFlex();
-touch();
+(async () => {
+  try {
+    await loadNetwork();
+  } catch (e) {
+    note(`BOOKING SERVICE UNAVAILABLE — ${String(e.message).toUpperCase()}`);
+    confirmBtn.disabled = true;
+    return;
+  }
+  applyPort(0); applyPort(1);
+  distLedger();
+  placeShip(0.55);
+  applyCargo();
+  paintSteps();
+  renderSlips();
+  paintDep(false);
+  paintFlex();
+  touch();
+})();
 
 function resize() {
   vw = window.innerWidth; vh = window.innerHeight;

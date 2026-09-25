@@ -2,14 +2,66 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 import numpy as np
 import pytest
 
 BACKEND = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND))
+
+# --- Postgres for API tests -------------------------------------------------
+# Tests never touch the dev database: they use '<name>_test' on the same
+# server, rebuilt from the migrations every run. Set before anything imports
+# server.db (which builds its engine from DATABASE_URL at import time).
+_DB = urlsplit(os.environ.get(
+    "DATABASE_URL", "postgresql+psycopg://dock:dockpw@localhost:5432/dock"))
+_TEST_DB = _DB.path.lstrip("/")
+if not _TEST_DB.endswith("_test"):
+    _TEST_DB += "_test"
+os.environ["DATABASE_URL"] = urlunsplit(_DB._replace(path=f"/{_TEST_DB}"))
+
+# Episode ledgers go to a throwaway dir — backend/runs/ledger is tracked in git.
+import tempfile  # noqa: E402
+os.environ["DOCK_LEDGER_DIR"] = tempfile.mkdtemp(prefix="dock-ledger-")
+# No always-on live episode by default (tests that need one start it).
+os.environ.setdefault("DOCK_LIVE", "0")
+
+
+@pytest.fixture(scope="session")
+def migrated_db():
+    """A fresh `<name>_test` database at `alembic head`. Walks the migrations
+    down to base and back up each run, so a broken downgrade/upgrade fails
+    here, not on someone's machine. No Postgres -> skip with instructions,
+    unless DOCK_REQUIRE_DB=1 (CI), where it's a hard failure."""
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.exc import OperationalError
+
+    admin = create_engine(urlunsplit(_DB._replace(path="/postgres")),
+                          isolation_level="AUTOCOMMIT")
+    try:
+        with admin.connect() as cx:
+            if not cx.execute(text("SELECT 1 FROM pg_database WHERE datname = :n"),
+                              {"n": _TEST_DB}).scalar():
+                cx.execute(text(f'CREATE DATABASE "{_TEST_DB}"'))
+    except OperationalError as e:
+        if os.environ.get("DOCK_REQUIRE_DB") == "1":
+            raise
+        pytest.skip(f"Postgres not reachable ({type(e).__name__}) — "
+                    "start it with `docker compose up -d db`")
+    finally:
+        admin.dispose()
+
+    cfg = Config(str(BACKEND / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BACKEND / "alembic"))
+    command.downgrade(cfg, "base")
+    command.upgrade(cfg, "head")
+    yield
 
 from data.calibration import ALT_HUB  # noqa: E402
 from simulator import SimConfig, Simulator  # noqa: E402
