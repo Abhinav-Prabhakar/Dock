@@ -194,7 +194,28 @@ identical `requests` counts and identical `sim.demand.lam`.
 This is a correctness gate on every number we report. Do it before the
 training run, not after.
 
-### 1.3 Revive the negotiation layer — it is effectively dead [todo]
+### 1.3 Revive the negotiation layer [done]
+
+**Resolved.** Result after the fix described below, 3×60d, `baseline`,
+seeds 7/108/209:
+
+| pricing | countered | counter win rate | reject→counter conv | profit | rev/TEU |
+|:--|--:|--:|--:|--:|--:|
+| `dynamic` | 78 | 0.273 (was ~0.03) | 0.0047 | $22.37M | $1,473 |
+| `bid_price` | 292 | 0.194 (was ~0.02) | 0.0127 | $22.75M | $1,534 |
+
+A **19–27% counter win rate** supports `plan.md` §1's 15–20% conversion
+benchmark, and profit is flat-to-slightly-up — the EV gate only counters
+accepts that would probably have been declined anyway, so there is no
+give-back. `booked:flex_window` now runs 13–71 per episode against ~1,500
+accepts, with alt-hub in single digits.
+
+Two follow-ups this created, both recorded in §6: `booked:split` remains
+structurally ~zero (§6.9), and `bid_price` sim throughput halved to ~11
+sim-days/s because the proactive check quotes every candidate option
+(§6.7). Neither blocks anything.
+
+*Original problem statement and design, retained for context:*
 
 Landing §1.1 exposed a second problem. Measured after the fix, 3 seeds ×
 60d, `baseline`:
@@ -550,12 +571,32 @@ Keep these in the deck; do not let a reviewer discover them for us.
    rebuilds per subprocess; `_cache_day` starts at −1 so the first refresh
    always rebuilds, and capacity is read live. No known staleness, but
    re-check if episodes start behaving differently across workers.
-7. **Sim speed** — ~24 sim-days/s under `bid_price` versus 60–90 under
-   `dynamic` (refresh + per-request quote optimization). Fine for PPO on
-   the box; re-time if a phase balloons.
+7. **Sim speed** — ~11 sim-days/s under `bid_price` versus ~20 under
+   `dynamic`, since §1.3's proactive check quotes every candidate option.
+   This affects **baseline evaluation only** — `CargoFleetEnv` runs the RL
+   policy, not `DynamicHeuristicPolicy`, so PPO throughput is untouched.
+   Re-time if `export_demo.py` gets slow; the obvious lever is caching
+   `sim.quote` per (request, option) within a decision.
 8. **`OBS_DIM` 113** — pre-bid-feature checkpoints are incompatible, and
    §3.1 changes feature semantics without changing the dimension. Record
    the git SHA with every checkpoint.
+9. **Split-consignment books ~zero, and it is structural** — not a policy
+   miss. Instrumented over 8 seeds: 213 split offers → both halves
+   physically fit in only 14 → price cleared `wtp` in 3 → 0 survived the
+   `counter_prob` draw. A split is only reachable when capacity is the
+   blocker, and **a split cannot create capacity**: when a consignment does
+   not fit whole, the halves fit ~7% of the time. `plan.md` lists
+   split-consignment as P0 and it is implemented and masked correctly, but
+   it will not appear in results. Either say so plainly, or demo it as a
+   *mechanism* on a hand-picked request rather than claiming volume from
+   it. Do not tune the sim to manufacture split wins.
+10. **Alt-hub discounts are rarely bid-justified** — `ALT_HUB` covers only
+   NLRTM/DEHAM→BEANR, and the alternate voyage typically *extends* the
+   same vessel's journey, so its bid is not lower (`counter_discount`
+   returned 0 for all 125 feasible alt options on seed 7). Alt-hub
+   counters therefore win on absolute price, not on a differential. The
+   `plan.md` §2.8 framing ("discount = bid-price differential") holds for
+   flex-window but not for alt-hub on this network.
 
 ---
 
@@ -566,7 +607,7 @@ Strictly sequential; each step gates the next.
 1. §1.1 — land the jitter fix + all three regression tests. Suite green.
 2. §1.2 — evaluation seed fairness + its test. **Gate: no reported number
    is trustworthy before this.**
-3. §1.3 — revive the negotiation layer. Gates §4.1's offer feed.
+3. ~~§1.3 — revive the negotiation layer.~~ **Done.**
 4. §3.1 — `DemandForecaster`, wired into both `demand_fn` and `_obs()`.
    §3.2 alongside (cheap, and the parameter-recovery test is a real check).
 5. §4.1 — `export_demo.py`, run with `heuristic_bid` as the lead policy.

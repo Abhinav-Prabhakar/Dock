@@ -8,7 +8,7 @@ import pytest
 pytest.importorskip("gymnasium")
 
 from env import N_ACTIONS, OBS_DIM, CargoFleetEnv
-from simulator import SimConfig
+from simulator import SimConfig, Simulator
 
 
 @pytest.fixture
@@ -87,6 +87,32 @@ class TestDeterminism:
         o1, _ = e1.reset(seed=42)
         o2, _ = e2.reset(seed=42)
         np.testing.assert_array_equal(o1, o2)
+
+    def test_pinned_reset_reproduces_baseline_realization(self):
+        """rl/evaluate.py fairness: options={"sim_seed", "scenario"} must
+        pin the simulator to the identical demand realization a baseline
+        SimConfig(seed=seed) produces. Fails if the pinning is removed."""
+        seed, scen, h = 1234, "baseline", 25
+        ref = Simulator(SimConfig(scenario=scen, horizon_days=h, seed=seed,
+                                  pricing="bid_price"))
+        ref.reset()
+        env = CargoFleetEnv(
+            SimConfig(horizon_days=h, pricing="bid_price"),
+            scenario_pool=["boom-market", "port-strike-season"])
+        env.reset(seed=999,
+                  options={"sim_seed": seed, "scenario": scen})
+        assert env.sim.config.seed == seed
+        assert env.sim.scenario_name == scen
+        assert env.sim.start_week == ref.start_week
+        np.testing.assert_array_equal(env.sim.demand.lam, ref.demand.lam)
+
+    def test_unpinned_reset_still_randomizes(self):
+        """Absent the options keys, training behaviour is unchanged: the
+        sim seed is drawn, not the env seed."""
+        env = CargoFleetEnv(SimConfig(horizon_days=20),
+                            scenario_pool=["baseline"])
+        env.reset(seed=5)
+        assert env.sim.config.seed != 5
 
 
 class TestActionDecode:

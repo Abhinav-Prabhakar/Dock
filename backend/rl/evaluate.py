@@ -52,7 +52,10 @@ def run_ppo(model, scenario: str, seed: int, horizon: int) -> dict:
     cfg = SimConfig(scenario=scenario, horizon_days=horizon,
                     pricing="bid_price")
     env = CargoFleetEnv(cfg, scenario_pool=[scenario])
-    obs, _ = env.reset(seed=seed)
+    # pin the simulator to the same seed+scenario the baselines get for
+    # this episode — same demand realization, apples-to-apples
+    obs, _ = env.reset(seed=seed,
+                       options={"sim_seed": seed, "scenario": scenario})
     while True:
         a, _ = model.predict(obs, action_masks=env.action_masks(),
                              deterministic=True)
