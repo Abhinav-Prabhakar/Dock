@@ -13,6 +13,7 @@ from data import calibration as C
 
 from .episodes import (BACKEND, REPO_ROOT, EpisodeConflict, EpisodeManager,
                        list_policies)
+from . import orders as order_store
 
 GENERATED = BACKEND / "data" / "generated"
 SCENARIO_DIR = GENERATED / "scenarios"
@@ -191,6 +192,52 @@ def episode_deal(ep_id: str, deal_id: str, request: Request):
     if d is None:
         raise HTTPException(404, f"deal '{deal_id}' not found")
     return d
+
+
+# ---------------------------------------------------------------------------
+# Customer booking orders — shared store between the customer site
+# (customers/) and the operator site (cargo-ship). No auth by design: one
+# portal per customer company, one ledger on the operator side.
+# ---------------------------------------------------------------------------
+
+def _sim_day(request: Request) -> float:
+    """Current sim clock for req_dep_day validation — the latest running
+    episode's day, else 0 (no episode running)."""
+    day = 0.0
+    try:
+        for ep in _mgr(request).list():
+            d = ep.descriptor()
+            if d.get("status") == "running":
+                day = max(day, d.get("day") or 0.0)
+    except Exception:
+        pass
+    return day
+
+
+@router.get("/orders")
+def list_orders():
+    return order_store.list_orders()
+
+
+@router.get("/orders/{order_id}")
+def get_order(order_id: str):
+    o = order_store.get_order(order_id)
+    if o is None:
+        raise HTTPException(404, f"order '{order_id}' not found")
+    return o
+
+
+@router.post("/orders", status_code=201)
+def create_order(body: order_store.OrderIn, request: Request):
+    try:
+        return order_store.create_order(body, sim_day=_sim_day(request))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@router.delete("/orders", status_code=204)
+def reset_orders():
+    order_store.clear_orders()
 
 
 @router.get("/compare/{name}")

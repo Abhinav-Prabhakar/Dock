@@ -43,6 +43,7 @@ next-env.d.ts
 # backend
 backend/.venv/
 backend/data/generated/
+backend/data/dock.db
 __pycache__/
 *.pyc
 backend/eval_results.json

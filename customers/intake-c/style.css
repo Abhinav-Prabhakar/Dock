@@ -1,0 +1,765 @@
+/* ============================================================
+   MERIDIAN LINE — intake-c · "A DESK OF PAPER SLIPS"
+   warm cream plaster desk, sage + terracotta inks, paper slips
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --wall: #f4f0e4;
+  --ink: #1d1a14;
+  --ink2: #45423a;
+  --faint: #908d81;
+  --hair: #d9d3c1;
+  --accent: #3a5a44;          /* deep sage */
+  --terra: #b96f4b;           /* terracotta */
+  --amber: #c98f1f;           /* hazmat */
+  --ice: #4a7f9e;             /* reefer  */
+  --paper: #faf6ea;
+  --paper2: #f1ecdb;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --serif: Georgia, "Times New Roman", serif;
+}
+
+html { height: 100%; }
+
+body {
+  min-height: 100%;
+  background-color: var(--wall);
+  /* plaster grain + warm light pooling on the desk */
+  background-image:
+    radial-gradient(62% 40% at 50% 22%, rgba(255,252,236,.6), rgba(255,252,236,0) 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0.35 0.35 0 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  font-family: "Helvetica Neue", Helvetica, -apple-system, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* soft room vignette */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(130% 105% at 50% 20%, rgba(255,255,255,.26) 0%, rgba(255,255,255,0) 38%),
+    radial-gradient(120% 110% at 50% 45%, rgba(0,0,0,0) 56%, rgba(112,98,72,.18) 100%);
+  pointer-events: none;
+  z-index: 60;
+}
+
+/* letterpress hairline — always paired with a white highlight */
+.rule {
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+/* ============================================================
+   PRINT MISREGISTRATION GHOSTS — any dynamic serif numeral
+   carries data-t; ::before/::after are the offset-litho ghosts
+   ============================================================ */
+.gnum { position: relative; display: inline-block; }
+.gnum::before, .gnum::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.gnum::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.gnum::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.desk-head {
+  display: flex; align-items: center; gap: 12px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 26px 0;
+}
+.mark { width: 20px; height: 20px; flex: none; }
+.org {
+  font-size: 13px; font-weight: 700; letter-spacing: .08em;
+  color: var(--ink); line-height: 1.15;
+}
+.org span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 6.6px; font-weight: 600;
+  letter-spacing: .3em;
+  color: var(--faint);
+  margin-top: 2px;
+}
+.head-eyebrow {
+  margin-left: 8px;
+  font-family: var(--mono);
+  font-size: 7.6px; font-weight: 600;
+  letter-spacing: .24em;
+  color: var(--faint);
+}
+.dash-chip {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 8.4px; font-weight: 700;
+  letter-spacing: .22em;
+  text-decoration: none;
+  color: var(--ink2);
+  padding: 7px 12px 6px;
+  border: .8px solid rgba(28,24,16,.3);
+  border-radius: 2px;
+  background: rgba(255,252,240,.4);
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.5), 0 1px 2px rgba(60,50,30,.12);
+  transition: color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.dash-chip:hover { color: var(--terra); border-color: rgba(185,111,75,.55); transform: translateY(-1px); }
+
+/* ============================================================
+   DESK
+   ============================================================ */
+.desk {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 26px 40px;
+}
+
+/* ============================================================
+   MASTER WAYBILL STRIP
+   ============================================================ */
+.waybill {
+  position: relative;
+  background:
+    linear-gradient(178deg, rgba(255,253,244,.75), rgba(244,238,222,.55)),
+    var(--paper);
+  border: .8px solid var(--hair);
+  border-radius: 3px;
+  padding: 14px 22px 16px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.65) inset,
+    0 10px 22px -10px rgba(60,50,32,.30),
+    0 2px 5px rgba(60,50,32,.14);
+}
+.waybill::after {              /* paper grain, multiply ink noise */
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.3 0.3 0.3 0 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: .5;
+  pointer-events: none;
+}
+
+/* brass pins holding the strip to the desk */
+.wb-pin, .wb-pin-r {
+  position: absolute; top: -7px;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #f0dda4, #c9a55c 46%, #96712f 78%, #7a5a24);
+  box-shadow: 0 2px 3px rgba(52,36,10,.45), inset 0 -1px 1px rgba(48,32,8,.5);
+}
+.wb-pin { left: 34px; }
+.wb-pin-r { right: 34px; }
+
+.wb-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.wb-eyebrow {
+  font-family: var(--mono);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--ink);
+}
+.wb-form {
+  font-family: var(--mono);
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .18em;
+  color: var(--faint);
+}
+.waybill .rule { margin-bottom: 14px; }
+
+.wb-row {
+  display: flex; align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.wb-lbl {
+  font-family: var(--mono);
+  font-size: 6.8px; font-weight: 700;
+  letter-spacing: .24em;
+  color: var(--faint);
+  margin-bottom: 5px;
+}
+.wb-sep {
+  align-self: stretch;
+  width: 1px;
+  background: var(--hair);
+  box-shadow: 1px 0 0 rgba(255,255,255,.7);
+}
+
+/* ---------------- port datestamps ---------------- */
+.port-block { position: relative; }
+.port-stamp {
+  display: block;
+  width: 88px; height: 88px;
+  padding: 0;
+  background: none; border: none; cursor: pointer;
+  border-radius: 50%;
+  transition: transform .18s ease;
+}
+.port-stamp:hover { transform: rotate(-2deg) scale(1.03); }
+.port-stamp:active { transform: scale(.94); }
+.port-stamp:focus-visible { outline: .9px solid rgba(58,90,68,.55); outline-offset: 3px; }
+.port-stamp svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* stamp slam when a port changes */
+.port-stamp.slam { animation: slam .3s cubic-bezier(.2,1.6,.4,1); }
+@keyframes slam {
+  0%   { transform: scale(1.7); opacity: .1; }
+  55%  { transform: scale(.93); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* stamp ink colours — origin sage, destination terracotta */
+.ps-a { color: var(--accent); }
+.ps-b { color: var(--terra); }
+.st-out  { fill: none; stroke: currentColor; stroke-width: 2.6; }
+.st-in   { fill: none; stroke: currentColor; stroke-width: 1; }
+.st-sep  { fill: currentColor; }
+.st-ghost { fill: none; stroke-width: 1; opacity: .28; }
+.ps-a .st-ghost { stroke: var(--terra); }
+.ps-b .st-ghost { stroke: var(--accent); }
+.st-city { font-family: var(--mono); font-size: 6.6px; font-weight: 700; letter-spacing: .16em; fill: currentColor; }
+.st-role { font-family: var(--mono); font-size: 5.4px; font-weight: 700; letter-spacing: .3em;  fill: currentColor; opacity: .8; }
+.st-code { font-family: var(--serif); font-size: 11.5px; font-weight: 700; fill: currentColor; opacity: .94; letter-spacing: .02em; }
+.st-sub  { font-family: var(--mono); font-size: 4.6px; font-weight: 600; letter-spacing: .14em; fill: currentColor; opacity: .75; }
+
+/* little ship riding the waybill route */
+.wb-route { width: 96px; height: 46px; flex: none; margin-top: 16px; }
+.wb-ship { animation: bob 2.8s ease-in-out infinite alternate; }
+@keyframes bob {
+  from { transform: translate(41px, 25px) rotate(-2deg); }
+  to   { transform: translate(49px, 22px) rotate(2.5deg); }
+}
+
+/* ---------------- port option menus ---------------- */
+.port-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) rotate(-.6deg);
+  min-width: 176px;
+  background:
+    linear-gradient(178deg, rgba(255,253,244,.8), rgba(243,237,220,.6)),
+    var(--paper);
+  border: .8px solid var(--hair);
+  border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 12px 26px -8px rgba(60,50,32,.4), 0 2px 5px rgba(60,50,32,.16);
+  padding: 5px;
+  z-index: 40;
+}
+.port-menu::before {
+  content: "";
+  position: absolute; top: -6px; left: 50%;
+  width: 10px; height: 10px;
+  margin-left: -5px;
+  background: var(--paper);
+  border-left: .8px solid var(--hair);
+  border-top: .8px solid var(--hair);
+  transform: rotate(45deg);
+}
+.pm-row {
+  display: flex; align-items: baseline; gap: 8px;
+  width: 100%;
+  padding: 6px 9px 5px;
+  background: none; border: none; cursor: pointer;
+  text-align: left;
+  border-radius: 2px;
+}
+.pm-row:hover, .pm-row:focus-visible { background: rgba(58,90,68,.09); }
+.pm-row.cur { background: rgba(58,90,68,.13); }
+.pm-code {
+  font-family: var(--serif);
+  font-size: 12.5px; font-weight: 700;
+  color: var(--ink);
+  min-width: 5ch;
+}
+.pm-name {
+  font-family: var(--mono);
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .18em;
+  color: var(--faint);
+}
+
+/* ---------------- segment chips ---------------- */
+.seg-block { min-width: 128px; }
+.seg-chips { display: flex; gap: 6px; }
+.seg-chip {
+  font-family: var(--mono);
+  font-size: 7.4px; font-weight: 700;
+  letter-spacing: .16em;
+  padding: 7px 9px 6px;
+  background: none;
+  color: var(--ink2);
+  border: .8px solid rgba(28,24,16,.28);
+  border-radius: 2px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.5);
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.seg-chip:hover { color: var(--terra); border-color: rgba(185,111,75,.55); }
+.seg-chip.on {
+  background: var(--accent);
+  color: #f4f1e4;
+  border-color: rgba(20,30,24,.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 1px 3px rgba(38,58,44,.3);
+}
+.seg-chip.on[data-seg="urgent"] { background: var(--terra); border-color: rgba(120,50,20,.4); }
+.seg-chip:focus-visible { outline: .9px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.seg-cap {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 6.2px; font-weight: 600;
+  letter-spacing: .16em;
+  color: #a19d90;
+}
+
+/* ---------------- departure stamped tiles ---------------- */
+.dep-tiles { display: flex; gap: 10px; }
+.dep-tile {
+  display: flex; align-items: center; gap: 2px;
+  padding: 5px 7px;
+  background: rgba(255,253,244,.5);
+  border: 1.4px solid var(--ink2);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 2.5px var(--paper),
+    inset 0 0 0 3.5px rgba(69,66,58,.5);
+}
+.dt-in { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+.dt-in i {
+  font-family: var(--mono); font-style: normal;
+  font-size: 6px; font-weight: 700;
+  letter-spacing: .22em;
+  color: var(--faint);
+}
+.dt-in .sval {
+  font-family: var(--serif);
+  font-variant-numeric: tabular-nums;
+  font-size: 21px; font-weight: 700;
+  color: var(--ink); opacity: .94;
+  line-height: 1.05;
+  cursor: ns-resize;
+  touch-action: none;          /* vertical drag adjusts the value */
+}
+.dt-in .sval:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.dep-tile.err { border-color: var(--terra); animation: wob .4s ease; }
+
+/* small horizontal chevrons flanking numerals */
+.hbtn {
+  width: 16px; height: 22px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: #96907e;
+  transition: color .15s ease, transform .15s ease;
+}
+.hbtn:hover { color: var(--terra); }
+.hbtn:active { transform: scale(.82); }
+.hbtn svg { width: 6px; height: 10px; display: block; }
+.hbtn svg path {
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.hbtn:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 1px; }
+
+/* ---------------- waybill barcode dressing ---------------- */
+.wb-bar { margin-left: auto; text-align: center; align-self: flex-end; }
+.wb-bar-cap {
+  font-family: var(--mono);
+  font-size: 5.8px; font-weight: 600;
+  letter-spacing: .3em;
+  color: var(--faint);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   THE SLIP STACK — small paper slips fanned on the desk
+   ============================================================ */
+.slipzone-wrap { margin-top: 30px; }
+.sz-eyebrow {
+  font-family: var(--mono);
+  font-size: 7.4px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--faint);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sz-eyebrow::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.6);
+}
+
+.slipzone {
+  display: flex; flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+  min-height: 240px;
+}
+
+/* ---------------- one paper slip ---------------- */
+.slip {
+  position: relative;
+  width: 196px;
+  background:
+    linear-gradient(174deg, rgba(255,253,244,.85), rgba(242,236,218,.6)),
+    var(--paper);
+  border: .8px solid var(--hair);
+  border-radius: 2.5px;
+  padding: 10px 14px 12px;
+  margin: 0 -4px;
+  transform: rotate(var(--rot, 0deg)) translateY(var(--dy, 0px));
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 9px 18px -7px rgba(60,50,32,.34),
+    0 2px 4px rgba(60,50,32,.15);
+  transition: transform .25s ease, box-shadow .25s ease, opacity .35s ease;
+}
+.slip:hover {
+  transform: rotate(0deg) translateY(-6px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 16px 26px -8px rgba(60,50,32,.4),
+    0 3px 6px rgba(60,50,32,.18);
+  z-index: 8;
+}
+.slip::after {                 /* paper grain */
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.3 0.3 0.3 0 0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* slip enter / leave choreography */
+.slip.in  { animation: slipIn .55s cubic-bezier(.22,1,.36,1) backwards; }
+@keyframes slipIn {
+  from { transform: translateY(34px) rotate(var(--rot, 0deg)) scale(.94); opacity: 0; }
+  to   { transform: translateY(var(--dy, 0px)) rotate(var(--rot, 0deg)) scale(1); opacity: 1; }
+}
+.slip.out {
+  transform: translateY(-46px) rotate(calc(var(--rot, 0deg) - 9deg)) !important;
+  opacity: 0;
+  pointer-events: none;
+}
+.slip.away {
+  transform: translate(90px, -150px) rotate(9deg) !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* top row — slip number + remove */
+.slip-top {
+  display: flex; align-items: baseline;
+  padding-bottom: 6px;
+  border-bottom: .8px dashed var(--hair);
+}
+.slip-no {
+  font-family: var(--mono);
+  font-size: 7.4px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--faint);
+}
+.slip-x {
+  margin-left: auto;
+  width: 16px; height: 16px; padding: 0;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px; line-height: 1;
+  color: #b2ab98;
+  transition: color .15s ease, transform .15s ease;
+}
+.slip-x:hover { color: var(--terra); transform: scale(1.15); }
+.slip-x:focus-visible { outline: .8px solid rgba(185,111,75,.6); outline-offset: 1px; }
+
+/* cargo-kind stamp — tap cycles DRY → REEFER → HAZMAT */
+.kind-stamp {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+  margin-top: 11px;
+  padding: 9px 6px 8px;
+  background: none;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 0 0 2.5px var(--paper),
+    inset 0 0 0 3.4px currentColor;
+  cursor: pointer;
+  color: var(--kink, var(--ink2));
+  filter: url(#mildInk);
+  transition: color .2s ease;
+}
+.kind-stamp:focus-visible { outline: .9px solid rgba(58,90,68,.55); outline-offset: 3px; }
+.kind-stamp .kg { width: 17px; height: 17px; display: block; }
+.kind-stamp .kg svg { display: block; width: 100%; height: 100%; }
+.kind-name {
+  font-family: var(--mono);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .3em;
+}
+.kind-stamp.pop .kg { animation: cgPop .3s cubic-bezier(.2,1.8,.5,1); }
+@keyframes cgPop {
+  from { transform: scale(.3) rotate(-30deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+.slip[data-kind="dry"]    { --kink: #4f4a3c; }
+.slip[data-kind="reefer"] { --kink: var(--ice); }
+.slip[data-kind="hazmat"] { --kink: var(--amber); }
+
+/* slip fields — TEU + WEIGHT·T */
+.slip-fields {
+  display: flex; gap: 8px;
+  margin-top: 12px;
+}
+.fld { flex: 1; text-align: center; }
+.f-lbl {
+  font-family: var(--mono);
+  font-size: 6.2px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--faint);
+  margin-bottom: 3px;
+}
+.num-wrap {
+  display: flex; align-items: center; justify-content: center;
+}
+.num-wrap .sval {
+  font-family: var(--serif);
+  font-variant-numeric: tabular-nums;
+  font-size: 19px; font-weight: 700;
+  color: var(--ink); opacity: .94;
+  line-height: 1.1;
+  min-width: 3.4ch;
+  text-align: center;
+  cursor: ns-resize;
+  touch-action: none;          /* vertical drag adjusts the value */
+}
+.num-wrap .sval:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.f-hint {
+  font-family: var(--mono);
+  font-size: 5.6px; font-weight: 600;
+  letter-spacing: .12em;
+  color: #b2ab98;
+  margin-top: 3px;
+}
+.fld.err .f-lbl { color: var(--terra); }
+.fld.err .sval { color: var(--terra); }
+
+/* seeded barcode foot of each slip */
+.slip-bar { margin-top: 11px; display: flex; align-items: center; gap: 7px; }
+.slip-bar canvas { display: block; opacity: .85; }
+.slip-bar-cap {
+  font-family: var(--mono);
+  font-size: 5.4px; font-weight: 600;
+  letter-spacing: .14em;
+  color: #b2ab98;
+  overflow: hidden; white-space: nowrap;
+}
+
+/* terracotta CHECK stamp — validation failure */
+.slip-check, .slip-filed {
+  position: absolute;
+  right: 8px; bottom: 46px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .22em;
+  border: 2.2px solid var(--terra);
+  border-radius: 2px;
+  color: var(--terra);
+  padding: 4px 8px 3px;
+  font-size: 9px;
+  transform: rotate(-14deg) scale(2.4);
+  opacity: 0;
+  pointer-events: none;
+  filter: url(#mildInk);
+  background: rgba(255,250,238,.35);
+}
+.slip.err .slip-check {
+  opacity: 1;
+  transform: rotate(-14deg) scale(1);
+  transition: transform .22s cubic-bezier(.2,1.6,.4,1), opacity .12s ease;
+}
+.slip.err { animation: wob .4s ease; }
+@keyframes wob {
+  0%,100% { translate: 0 0; }
+  25% { translate: -4px 0; }
+  55% { translate: 4px 0; }
+  80% { translate: -2px 0; }
+}
+
+/* sage FILED stamp — slams on in sequence at confirm */
+.slip-filed {
+  right: 10px; bottom: 44px;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-size: 8.6px;
+  padding: 5px 9px 4px;
+  transform: rotate(-9deg) scale(2.4);
+  letter-spacing: .14em;
+  text-align: center;
+}
+.slip.stamped .slip-filed {
+  opacity: 1;
+  transform: rotate(-9deg) scale(1);
+  transition: transform .26s cubic-bezier(.2,1.7,.4,1), opacity .1s ease;
+}
+
+/* ---------------- + ADD SLIP ---------------- */
+.add-slip {
+  display: block;
+  margin: 22px auto 0;
+  padding: 9px 18px 8px;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--mono);
+  font-size: 8.6px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--accent);
+  border-bottom: .8px solid rgba(58,90,68,.45);
+  transition: color .15s ease, border-color .15s ease;
+}
+.add-slip:hover:not([disabled]) { color: var(--terra); border-bottom-color: rgba(185,111,75,.55); }
+.add-slip[disabled] { color: #b2ab98; border-bottom-color: transparent; cursor: default; }
+.add-slip:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 3px; }
+
+/* ============================================================
+   RUNNING TOTAL + CONFIRM STAMP
+   ============================================================ */
+.totalbar {
+  margin-top: 34px;
+  display: flex; align-items: center; gap: 22px;
+  background:
+    linear-gradient(178deg, rgba(255,253,244,.7), rgba(243,237,220,.55)),
+    var(--paper);
+  border: .8px solid var(--hair);
+  border-radius: 3px;
+  padding: 16px 24px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 10px 22px -10px rgba(60,50,32,.3),
+    0 2px 5px rgba(60,50,32,.13);
+}
+.tot-line { flex: 1; min-width: 0; }
+.tot-cap {
+  display: block;
+  font-family: var(--mono);
+  font-size: 6.8px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+.tot-nums {
+  font-family: var(--serif);
+  font-size: 27px; font-weight: 700;
+  color: var(--ink); opacity: .94;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tot-nums .gnum { min-width: 1ch; }
+.tot-u {
+  font-family: var(--mono); font-style: normal;
+  font-size: 8px; font-weight: 700;
+  letter-spacing: .18em;
+  color: #a49e8d;
+}
+
+/* the sage CONFIRM stamp — a round stamp you slam on the strip */
+.stamp-go {
+  width: 112px; height: 112px;
+  flex: none;
+  padding: 0;
+  background: none; border: none; cursor: pointer;
+  border-radius: 50%;
+  transition: transform .15s ease;
+}
+.stamp-go svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.stamp-go:hover { transform: rotate(-4deg) scale(1.04); }
+.stamp-go:active { transform: scale(.9); }
+.stamp-go:focus-visible { outline: .9px solid rgba(58,90,68,.55); outline-offset: 4px; }
+.stamp-go[disabled] { opacity: .45; cursor: default; transform: none; }
+.stamp-go.slam { animation: slam .32s cubic-bezier(.2,1.6,.4,1); }
+.go-t1 {
+  font-family: var(--mono);
+  font-size: 13.5px; font-weight: 700;
+  letter-spacing: .26em;
+  fill: var(--accent);
+}
+.go-t2 {
+  font-family: var(--mono);
+  font-size: 6px; font-weight: 700;
+  letter-spacing: .22em;
+  fill: var(--accent);
+  opacity: .85;
+}
+
+/* stamped note — validation / 422 detail */
+.note {
+  margin-top: 16px;
+  display: flex; align-items: center; gap: 14px;
+  max-width: 640px;
+  padding: 11px 16px;
+  background:
+    linear-gradient(178deg, rgba(255,253,244,.8), rgba(243,237,220,.6)),
+    var(--paper);
+  border: .8px solid rgba(185,111,75,.5);
+  border-radius: 2px;
+  box-shadow: 0 6px 14px -6px rgba(60,50,32,.3);
+  transform: rotate(-.5deg);
+}
+.note[hidden] { display: none; }
+.note-stamp {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 8px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--terra);
+  border: 1.8px solid var(--terra);
+  border-radius: 2px;
+  padding: 3px 6px 2.5px;
+  transform: rotate(-7deg);
+  filter: url(#mildInk);
+}
+.note-txt {
+  font-family: var(--mono);
+  font-size: 8px; font-weight: 600;
+  letter-spacing: .12em;
+  color: var(--ink2);
+  line-height: 1.7;
+}
+
+/* footer hint */
+.hint {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .26em;
+  color: #b2ab98;
+  padding: 6px 16px 26px;
+}
+
+/* ============================================================
+   RESPONSIVE — slips stack vertically under ~720px
+   ============================================================ */
+@media (max-width: 720px) {
+  .desk-head { padding: 16px 16px 0; flex-wrap: wrap; }
+  .head-eyebrow { display: none; }
+  .desk { padding: 14px 14px 30px; }
+  .waybill { padding: 12px 14px 14px; }
+  .wb-row { gap: 12px; }
+  .wb-route { display: none; }
+  .wb-bar { display: none; }
+  .wb-sep { display: none; }
+  .slipzone { flex-direction: column; gap: 14px; min-height: 0; }
+  .slip { width: 100%; margin: 0; }
+  .totalbar { flex-direction: column; gap: 14px; padding: 14px; }
+  .tot-nums { font-size: 22px; }
+  .stamp-go { width: 96px; height: 96px; }
+}

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MERIDIAN LINE — Customers</title>
+<link rel="stylesheet" href="style.css?v=7" />
+</head>
+<body>
+
+<div class="scene" id="scene">
+
+  <!-- brass cup hook screwed into the wall -->
+  <div class="mount" aria-hidden="true">
+    <svg viewBox="0 0 64 60" width="64" height="60">
+      <defs>
+        <radialGradient id="hkPlate" cx=".38" cy=".32" r=".9">
+          <stop offset="0"   stop-color="#f0dda4"/>
+          <stop offset=".45" stop-color="#c9a55c"/>
+          <stop offset=".8"  stop-color="#96712f"/>
+          <stop offset="1"   stop-color="#7a5a24"/>
+        </radialGradient>
+        <linearGradient id="hkBrass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0"   stop-color="#e8d29a"/>
+          <stop offset=".3"  stop-color="#b28c46"/>
+          <stop offset=".55" stop-color="#e2c684"/>
+          <stop offset=".8"  stop-color="#8f6c2e"/>
+          <stop offset="1"   stop-color="#6f5220"/>
+        </linearGradient>
+        <linearGradient id="hkBrassV" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0"  stop-color="#8a682c"/>
+          <stop offset=".4" stop-color="#e0c487"/>
+          <stop offset=".7" stop-color="#a37e3a"/>
+          <stop offset="1"  stop-color="#75581f"/>
+        </linearGradient>
+      </defs>
+      <!-- round wall plate -->
+      <circle cx="32" cy="13" r="11" fill="url(#hkPlate)"/>
+      <circle cx="32" cy="13" r="11" fill="none" stroke="rgba(52,36,10,.38)" stroke-width=".7"/>
+      <circle cx="32" cy="13" r="7.6" fill="none" stroke="rgba(255,246,214,.30)" stroke-width=".7"/>
+      <!-- screw head + slot -->
+      <circle cx="32" cy="13" r="2.8" fill="#7a5a24"/>
+      <circle cx="32" cy="13" r="2.8" fill="none" stroke="rgba(255,246,214,.4)" stroke-width=".5"/>
+      <rect x="30.4" y="12.4" width="3.2" height="1.1" rx=".5" fill="#3c2c10" transform="rotate(-24 32 13)"/>
+      <!-- threaded stem -->
+      <rect x="29.4" y="23" width="5.2" height="9" rx="1" fill="url(#hkBrassV)"/>
+      <path d="M29.4 25.4h5.2M29.4 28h5.2M29.4 30.6h5.2" stroke="rgba(52,36,10,.35)" stroke-width=".7"/>
+      <!-- J hook the cord loops over -->
+      <path d="M32 30 C32 39 29.5 44.5 23.8 44.5 C18.6 44.5 15.6 40.8 15.6 36"
+            fill="none" stroke="url(#hkBrass)" stroke-width="5.6" stroke-linecap="round"/>
+      <path d="M32 30 C32 39 29.5 44.5 23.8 44.5 C18.6 44.5 15.6 40.8 15.6 36"
+            fill="none" stroke="rgba(255,240,200,.45)" stroke-width="1.4" stroke-linecap="round"
+            transform="translate(-.9 -.9)"/>
+      <!-- ball tip -->
+      <circle cx="15.4" cy="34.6" r="3" fill="url(#hkPlate)" stroke="rgba(52,36,10,.35)" stroke-width=".6"/>
+      <circle cx="14.5" cy="33.6" r=".9" fill="rgba(255,248,220,.7)"/>
+    </svg>
+  </div>
+
+  <!-- soft contact shadow the badge throws on the wall -->
+  <div id="cardShadow" aria-hidden="true"></div>
+
+  <!-- braided leather cord, drawn on canvas -->
+  <canvas id="strap" aria-hidden="true"></canvas>
+
+  <!-- ==================== THE BADGE ==================== -->
+  <div id="card" aria-label="Cargo booking request credential — drag it, fling it">
+    <!-- laminate slab edge (visible on tilt) -->
+    <div class="edge" aria-hidden="true"></div>
+
+    <div class="face">
+      <!-- punched round hole with brass grommet -->
+      <svg class="grommet" viewBox="0 0 26 26" width="26" height="26" aria-hidden="true">
+        <defs>
+          <linearGradient id="gmBrass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0"   stop-color="#eed9a0"/>
+            <stop offset=".35" stop-color="#b28c46"/>
+            <stop offset=".6"  stop-color="#e4c988"/>
+            <stop offset="1"   stop-color="#84652a"/>
+          </linearGradient>
+          <radialGradient id="gmHole" cx=".5" cy=".42" r=".75">
+            <stop offset="0"   stop-color="#8f8672"/>
+            <stop offset=".55" stop-color="#b7ae9a"/>
+            <stop offset="1"   stop-color="#7d7560"/>
+          </radialGradient>
+        </defs>
+        <!-- metal washer -->
+        <circle cx="13" cy="13" r="11" fill="url(#gmBrass)"/>
+        <circle cx="13" cy="13" r="11" fill="none" stroke="rgba(48,32,8,.42)" stroke-width=".7"/>
+        <circle cx="13" cy="13" r="9.2" fill="none" stroke="rgba(255,248,220,.4)" stroke-width=".7"/>
+        <!-- the punched hole — wall tone shows through -->
+        <circle cx="13" cy="13" r="7.1" fill="url(#gmHole)"/>
+        <circle cx="13" cy="13" r="7.1" fill="none" stroke="rgba(20,12,4,.5)" stroke-width="1.3"/>
+        <path d="M8 17.5 A7.1 7.1 0 0 0 18 17.5" fill="none" stroke="rgba(255,255,255,.4)" stroke-width=".8"/>
+      </svg>
+
+      <!-- security print — clean ellipse fan -->
+      <svg class="guilloche" viewBox="0 0 320 200" aria-hidden="true">
+        <g fill="none" stroke="#7f9a82" stroke-width="0.45" opacity="0.55">
+          <ellipse cx="160" cy="100" rx="158" ry="55"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(15 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(30 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(45 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(60 160 100)"/>
+          <ellipse cx="160" cy="100" rx="158" ry="55" transform="rotate(75 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(8 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(30 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(52 160 100)"/>
+          <ellipse cx="160" cy="100" rx="136" ry="76" transform="rotate(74 160 100)"/>
+        </g>
+      </svg>
+      <!-- faint fern watermark -->
+      <svg class="uv" viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="none" stroke="#3a5a44" stroke-linecap="round">
+          <path d="M50 93 C46 62 48 32 55 9" stroke-width="2.4"/>
+          <path d="M49.4 82 q-12 -1 -19 -10 M49.9 82 q12 -3 18 -11" stroke-width="1.5"/>
+          <path d="M48.8 72 q-11 -1 -17 -9  M49.7 72 q11 -3 16 -10" stroke-width="1.5"/>
+          <path d="M48.4 62 q-10 -1 -15 -8  M49.6 62 q10 -3 14 -9"  stroke-width="1.4"/>
+          <path d="M48.3 52 q-9 -1 -13 -7   M49.7 52 q9 -3 12 -8"   stroke-width="1.4"/>
+          <path d="M48.6 42 q-8 -1 -11 -6   M50 42 q8 -3 10 -7"     stroke-width="1.3"/>
+          <path d="M49.4 33 q-7 -1 -9 -5    M50.6 33 q7 -3 8 -6"    stroke-width="1.3"/>
+          <path d="M50.8 25 q-5 -1 -7 -4    M52 25 q5 -2 6 -5"      stroke-width="1.2"/>
+        </g>
+      </svg>
+
+      <header>
+        <svg class="mark" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2.6" y="5" width="14.8" height="10" rx="1.1"
+                fill="none" stroke="#3a5a44" stroke-width="1.4"/>
+          <path d="M6.2 5v10M9.8 5v10M13.4 5v10M16.2 6.4v7.2"
+                stroke="#3a5a44" stroke-width=".9" fill="none"/>
+        </svg>
+        <div class="org">MERIDIAN LINE<span>PACIFIC FREIGHT SERVICE</span></div>
+        <div class="tag">BOOKING</div>
+      </header>
+
+      <div class="rule"></div>
+
+      <div class="mid">
+        <div class="frame">
+          <svg viewBox="0 0 108 134" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Container ship — printed illustration">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#f7f0dc"/><stop offset="1" stop-color="#e0d8bd"/>
+              </linearGradient>
+              <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#5d7764"/><stop offset="1" stop-color="#324839"/>
+              </linearGradient>
+              <linearGradient id="hullG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#3b362b"/><stop offset="1" stop-color="#211e17"/>
+              </linearGradient>
+              <radialGradient id="pvig" cx=".5" cy=".34" r=".95">
+                <stop offset=".55" stop-color="rgba(0,0,0,0)"/><stop offset="1" stop-color="rgba(24,34,20,.28)"/>
+              </radialGradient>
+              <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.1"/></filter>
+              <filter id="pgrain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+                <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.55 0.55 0.55 0 0"/></filter>
+              <clipPath id="hullClip"><path d="M14 86 L88 86 L99 77 L97.5 88 C96 95 89 99 80 99 L24 99 C16 99 13 93 14 86 Z"/></clipPath>
+            </defs>
+
+            <!-- printed sky -->
+            <rect width="108" height="134" fill="url(#sky)"/>
+            <circle cx="79" cy="23" r="9" fill="rgba(185,111,75,.26)"/>
+            <circle cx="79" cy="23" r="12.5" fill="none" stroke="rgba(185,111,75,.20)" stroke-width=".7"/>
+            <path d="M12 28h20M18 34h12M58 17h26" stroke="rgba(112,104,84,.28)" stroke-width="1.1"/>
+            <path d="M26 20q2-2 4 0 2-2 4 0M42 15q1.6-1.6 3.2 0 1.6-1.6 3.2 0"
+                  stroke="rgba(70,66,58,.38)" stroke-width=".7" fill="none"/>
+
+            <!-- sea -->
+            <rect y="97" width="108" height="37" fill="url(#sea)"/>
+            <path d="M4 104h16M66 102h34M10 114h22M58 116h42" stroke="rgba(255,255,255,.16)" stroke-width="1.1"/>
+            <path d="M30 108h20M84 110h18M6 122h30" stroke="rgba(14,24,14,.18)" stroke-width="1.1"/>
+
+            <!-- hull reflection on the water -->
+            <ellipse cx="56" cy="100.5" rx="43" ry="2.6" fill="rgba(14,24,14,.22)" filter="url(#soft)"/>
+
+            <!-- container stacks on deck (deck line y=86) -->
+            <g stroke="rgba(22,18,10,.30)" stroke-width=".35">
+              <rect x="43"   y="80.6" width="7.6" height="5.4" fill="#3a5a44"/>
+              <rect x="43"   y="74.4" width="7.6" height="5.4" fill="#b96f4b"/>
+              <rect x="43"   y="68.2" width="7.6" height="5.4" fill="#ddd5bd"/>
+              <rect x="51.5" y="80.6" width="7.6" height="5.4" fill="#b96f4b"/>
+              <rect x="51.5" y="74.4" width="7.6" height="5.4" fill="#45423a"/>
+              <rect x="51.5" y="68.2" width="7.6" height="5.4" fill="#3a5a44"/>
+              <rect x="51.5" y="62"   width="7.6" height="5.4" fill="#a8843e"/>
+              <rect x="60"   y="80.6" width="7.6" height="5.4" fill="#ddd5bd"/>
+              <rect x="60"   y="74.4" width="7.6" height="5.4" fill="#3a5a44"/>
+              <rect x="60"   y="68.2" width="7.6" height="5.4" fill="#b96f4b"/>
+              <rect x="60"   y="62"   width="7.6" height="5.4" fill="#3a5a44"/>
+              <rect x="68.5" y="80.6" width="7.6" height="5.4" fill="#a8843e"/>
+              <rect x="68.5" y="74.4" width="7.6" height="5.4" fill="#b96f4b"/>
+              <rect x="68.5" y="68.2" width="7.6" height="5.4" fill="#45423a"/>
+              <rect x="77"   y="80.6" width="7.6" height="5.4" fill="#3a5a44"/>
+              <rect x="77"   y="74.4" width="7.6" height="5.4" fill="#ddd5bd"/>
+            </g>
+            <!-- corrugation ribs -->
+            <path d="M46.8 81.3v3.9M46.8 75.1v3.9M46.8 68.9v3.9M55.3 81.3v3.9M55.3 75.1v3.9M55.3 68.9v3.9M55.3 62.7v3.9M63.8 81.3v3.9M63.8 75.1v3.9M63.8 68.9v3.9M63.8 62.7v3.9M72.3 81.3v3.9M72.3 75.1v3.9M72.3 68.9v3.9M80.8 81.3v3.9M80.8 75.1v3.9"
+                  stroke="rgba(20,14,6,.20)" stroke-width=".5" fill="none"/>
+            <path d="M42 86.4h43" stroke="rgba(20,16,8,.25)" stroke-width=".8"/>
+
+            <!-- hull -->
+            <path d="M14 86 L88 86 L99 77 L97.5 88 C96 95 89 99 80 99 L24 99 C16 99 13 93 14 86 Z" fill="url(#hullG)"/>
+            <rect x="13" y="93.4" width="86" height="2.6" fill="#b96f4b" clip-path="url(#hullClip)"/>
+            <path d="M14 86 H88 L99 77" fill="none" stroke="rgba(240,235,215,.5)" stroke-width=".9"/>
+            <circle cx="19" cy="89.6" r=".9" fill="rgba(238,230,205,.5)"/>
+            <circle cx="24" cy="90"   r=".9" fill="rgba(238,230,205,.5)"/>
+            <circle cx="29" cy="90.3" r=".9" fill="rgba(238,230,205,.5)"/>
+            <text x="63" y="92.6" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+                  font-size="3.4" letter-spacing="1" fill="rgba(240,235,215,.62)">MERIDIAN LINE</text>
+
+            <!-- aft castle + funnel -->
+            <rect x="17" y="64" width="23" height="22" fill="#ece4cd" stroke="rgba(22,18,10,.3)" stroke-width=".4"/>
+            <path d="M17 70.5h23M17 77h23M17 83h23" stroke="rgba(22,18,10,.12)" stroke-width=".5"/>
+            <rect x="19.5" y="57.5" width="18" height="6.5" fill="#f2ebd8" stroke="rgba(22,18,10,.3)" stroke-width=".4"/>
+            <rect x="22" y="51" width="13.5" height="6.5" fill="#e8e0c8" stroke="rgba(22,18,10,.3)" stroke-width=".4"/>
+            <rect x="23.6" y="53" width="2.4" height="1.7" fill="#2f2b24"/>
+            <rect x="27.3" y="53" width="2.4" height="1.7" fill="#2f2b24"/>
+            <rect x="31"   y="53" width="2.4" height="1.7" fill="#2f2b24"/>
+            <rect x="24.5" y="41.5" width="8" height="10" fill="#b96f4b" stroke="rgba(22,18,10,.3)" stroke-width=".4"/>
+            <rect x="24.5" y="41.5" width="8" height="2.8" fill="#3a5a44"/>
+            <rect x="24.5" y="40.4" width="8" height="1.4" fill="#2f2b24"/>
+            <path d="M33 51V44M30.5 46.5h5" stroke="#3a3428" stroke-width=".8"/>
+
+            <!-- foremast + pennant -->
+            <path d="M93 81V63.5" stroke="#3a3428" stroke-width=".9"/>
+            <path d="M93 63.5l6.5 1.5-6.5 1.7z" fill="#b96f4b"/>
+
+            <!-- bow wave + stern wake -->
+            <path d="M97 92.5c4 .9 7 2.5 8.5 4.5M95 96.5c3 .7 5.5 2 7 3.8" stroke="rgba(255,255,255,.5)" stroke-width="1" fill="none"/>
+            <path d="M2 100.5h9M4 103.5h7M2 107h10" stroke="rgba(255,255,255,.38)" stroke-width="1"/>
+
+            <!-- misregistration ghost -->
+            <g transform="translate(.55 .35)" fill="none" stroke="#b96f4b" stroke-width=".5" opacity=".13">
+              <path d="M14 86 L88 86 L99 77 L97.5 88"/>
+              <rect x="17" y="64" width="23" height="22"/>
+              <rect x="51.5" y="62" width="7.6" height="5.4"/>
+              <rect x="77" y="74.4" width="7.6" height="5.4"/>
+            </g>
+
+            <!-- vignette + print grain -->
+            <rect width="108" height="134" fill="url(#pvig)"/>
+            <rect width="108" height="134" filter="url(#pgrain)" opacity="0.5"/>
+          </svg>
+          <div class="holo" aria-hidden="true"></div>
+        </div>
+
+        <div class="info">
+          <div class="lbl">Booking Request</div>
+          <div class="name" id="cName" data-t="BK-2481-TC">BK-2481-TC</div>
+          <div class="role" id="cRoute">Shanghai → Rotterdam</div>
+          <div class="dept" id="cDept">FCL · STANDARD SERVICE</div>
+          <div class="rows">
+            <div class="r"><span>Voyage</span><b id="cVoyage">ML-114E</b></div>
+            <div class="r"><span>Issued</span><b id="cIssued">—</b></div>
+            <div class="r"><span>Status</span><b id="cStatus">DRAFT</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat stat-ctn" tabindex="0" aria-label="Container count">
+          <div class="lbl">Containers</div>
+          <div class="ctn-line">
+            <div class="ctn-num" id="cTeu" data-t="3">3</div>
+            <svg class="ctn-stack" viewBox="0 0 60.5 18.8" preserveAspectRatio="xMinYMid meet" aria-hidden="true"><g id="ctnStack"></g></svg>
+          </div>
+          <div class="tip" id="cTip" aria-hidden="true">DRY ×3</div>
+        </div>
+        <div class="stat" aria-label="Gross weight">
+          <div class="lbl">Gross weight</div>
+          <div class="wt"><b id="cWt">0.0</b><i>t</i></div>
+          <div class="gauge" aria-hidden="true"><i></i></div>
+        </div>
+        <div class="stat" aria-label="Requested departure">
+          <div class="lbl">Departure</div>
+          <div class="cal">
+            <div class="cal-chip" aria-hidden="true"><span>D+</span><b id="cDep">—</b></div>
+            <div class="cal-sub" id="cFlexSub" aria-hidden="true">±<br>— D</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- alt-hub routing stepper -->
+      <div class="hubs" aria-label="Alternative routing — Singapore to Oakland via Hong Kong, Busan or Kaohsiung">
+        <svg class="hmap" viewBox="0 0 296 50" aria-hidden="true">
+          <defs>
+            <marker id="mkA" viewBox="0 0 6 6" refX="5.2" refY="3" markerWidth="4.6" markerHeight="4.6" orient="auto">
+              <path d="M0 .5 L5.6 3 L0 5.5 z" fill="#b96f4b"/>
+            </marker>
+            <marker id="mkS" viewBox="0 0 6 6" refX="5.2" refY="3" markerWidth="4.6" markerHeight="4.6" orient="auto">
+              <path d="M0 .5 L5.6 3 L0 5.5 z" fill="#3a5a44"/>
+            </marker>
+          </defs>
+          <!-- alternative routings — straight legs, corner bends at the hubs -->
+          <path d="M18 27 H 48 C 60 27 68 23.5 76 19.8 L 100 14.6 C 106.5 13.2 113 14.9 117.6 18.4 L 236 24.8 C 250 25.7 262 26.5 270 27"
+                fill="none" stroke="#b96f4b" stroke-width=".9" stroke-dasharray="2.6 3"
+                opacity=".85" marker-end="url(#mkA)"/>
+          <path d="M18 27 H 48 C 62 27 74 30.8 84 33 L 194 38.6 C 201.5 39.9 209 38.6 214.5 35 L 270 27.6"
+                fill="none" stroke="#b96f4b" stroke-width=".9" stroke-dasharray="2.6 3"
+                opacity=".85" marker-end="url(#mkA)"/>
+          <!-- booked routing — dashed baseline -->
+          <path d="M18 27 H 270" fill="none" stroke="#3a5a44" stroke-width="1.1"
+                stroke-dasharray="3.4 3" marker-end="url(#mkS)"/>
+          <!-- port nodes -->
+          <circle cx="108"   cy="14.2" r="3.1" fill="#f6f1e0" stroke="#b96f4b" stroke-width="1"/>
+          <circle cx="203.5" cy="39.2" r="3.1" fill="#f6f1e0" stroke="#b96f4b" stroke-width="1"/>
+          <circle cx="138"   cy="27"   r="3.4" fill="#f6f1e0" stroke="#3a5a44" stroke-width="1.1"/>
+          <!-- origin / destination -->
+          <circle cx="18"  cy="27" r="4.2" fill="none" stroke="#3a5a44" stroke-width="1"/>
+          <circle cx="18"  cy="27" r="1.9" fill="#3a5a44"/>
+          <circle cx="274" cy="27" r="4.2" fill="none" stroke="#3a5a44" stroke-width="1"/>
+          <circle cx="274" cy="27" r="1.9" fill="#b96f4b"/>
+          <!-- port codes -->
+          <text class="hp hp-alt" id="hpM1" x="108" y="6.5"  text-anchor="middle">—</text>
+          <text class="hp hp-alt" id="hpM2" x="218" y="49"   text-anchor="middle">—</text>
+          <text class="hp" id="hpA"   x="18"  y="38.5" text-anchor="middle">—</text>
+          <text class="hp" id="hpMid" x="138" y="38.5" text-anchor="middle">—</text>
+          <text class="hp" id="hpB"   x="274" y="38.5" text-anchor="middle">—</text>
+        </svg>
+      </div>
+
+      <div class="micro">MERIDIAN LINE · BOOKING REQUEST BK-2481-TC · VERIFY AT OPS.MERIDIANLINE.COM · MERIDIAN LINE · BOOKING REQUEST BK-2481-TC · VERIFY AT OPS.MERIDIANLINE.COM · MERIDIAN</div>
+
+      <div class="bottom">
+        <div class="bar-wrap">
+          <canvas id="barcode" width="118" height="34"></canvas>
+          <div class="cap" id="barCap">2481 0314</div>
+        </div>
+        <div class="vr"></div>
+        <div class="qr-wrap">
+          <canvas id="qr" width="66" height="66"></canvas>
+          <div class="cap">SCAN · VERIFY</div>
+        </div>
+      </div>
+
+      <div class="band">
+        <span class="dot"></span>
+        <span class="band-t">BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;PENDING REVIEW</span>
+        <svg class="band-mark" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2.6" y="5" width="14.8" height="10" rx="1.1"
+                fill="none" stroke="rgba(240,238,228,.7)" stroke-width="1.3"/>
+          <path d="M6.2 5v10M9.8 5v10M13.4 5v10" stroke="rgba(240,238,228,.7)"
+                stroke-width=".8" fill="none"/>
+        </svg>
+      </div>
+
+      <!-- printed-ink grain over the whole face -->
+      <svg class="grain" aria-hidden="true">
+        <filter id="gnoise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" stitchTiles="stitch"/>
+          <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.5 0.5 0.5 0 0"/></filter>
+        <rect width="100%" height="100%" filter="url(#gnoise)"/>
+      </svg>
+    </div>
+
+    <!-- gloss / laminate reflections -->
+    <div class="laminate" aria-hidden="true"></div>
+
+    <!-- ambient occlusion where the loop grips the card -->
+    <div class="ao" aria-hidden="true"></div>
+
+    <!-- brass split ring + leather loop through the grommet -->
+    <div class="clip" aria-hidden="true">
+      <svg viewBox="0 0 60 62" width="60" height="62">
+        <defs>
+          <linearGradient id="rBrass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0"   stop-color="#e8d29a"/>
+            <stop offset=".3"  stop-color="#a8843e"/>
+            <stop offset=".55" stop-color="#e6cb8c"/>
+            <stop offset=".8"  stop-color="#8a682c"/>
+            <stop offset="1"   stop-color="#6b4e1e"/>
+          </linearGradient>
+        </defs>
+        <!-- leather loop passing down through the grommet -->
+        <path d="M26.4 13 C25.6 30 26.2 45 27.4 56.5" fill="none" stroke="#5a4128" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M33.6 13 C34.4 30 33.8 45 32.6 56.5" fill="none" stroke="#5a4128" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M25.9 14 C25.2 30 25.8 44 27 55" fill="none" stroke="rgba(255,224,180,.28)" stroke-width="1" stroke-linecap="round"/>
+        <!-- shadow where the strands sink into the hole -->
+        <ellipse cx="30" cy="55.5" rx="5.6" ry="2" fill="rgba(18,10,4,.35)"/>
+        <!-- leather keeper wrap binding the loop -->
+        <rect x="24" y="15.5" width="12" height="8" rx="2.4" fill="#4a3421" stroke="rgba(20,10,4,.5)" stroke-width=".6"/>
+        <path d="M27.2 15.5v8M30 15.5v8M32.8 15.5v8" stroke="rgba(20,10,4,.4)" stroke-width=".8"/>
+        <path d="M24.5 16.5h11" stroke="rgba(255,225,185,.25)" stroke-width=".7"/>
+        <!-- brass split ring the cord is knotted to -->
+        <circle cx="30" cy="8.5" r="6.6" fill="none" stroke="url(#rBrass)" stroke-width="3.4"/>
+        <circle cx="30" cy="8.5" r="8.2" fill="none" stroke="rgba(48,32,8,.30)" stroke-width=".5"/>
+        <circle cx="30" cy="8.5" r="4.9" fill="none" stroke="rgba(48,32,8,.22)" stroke-width=".5"/>
+        <path d="M25.2 4.4 A6.6 6.6 0 0 1 33.8 2.6" fill="none" stroke="rgba(255,248,220,.6)" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hint">DRAG THE BADGE&nbsp;&nbsp;·&nbsp;&nbsp;FLING IT&nbsp;&nbsp;·&nbsp;&nbsp;GRAB THE CORD</div>
+</div>
+
+<!-- booking-details multi-column deck — revealed once the badge swings left -->
+<div id="panel" class="panel-deck" aria-label="Booking details">
+  <!-- Column 1: Request size -->
+  <aside class="panel-col col-1" id="col1" aria-label="Request size">
+    <div class="p-inner">
+      <div class="p-head rvl">
+        <span class="p-eyebrow">MERIDIAN LINE · BOOKING BK-2481-TC</span>
+        <span class="p-tag">01 · CARGO</span>
+      </div>
+      <div class="p-rule rvl"></div>
+
+      <div class="pg-scroll">
+        <div class="q">
+          <div class="q-h rvl">REQUEST SIZE</div>
+          <div class="q-sub rvl">IN TEU · 20′ EQUIVALENT UNITS</div>
+          <div id="types"></div>
+          <button id="addType" class="add-type rvl" type="button">+ ADD NEW TYPE</button>
+        </div>
+      </div>
+
+      <div class="btnrow rvl">
+        <button class="btn ghost" type="button" data-cancel>CANCEL</button>
+        <button class="btn go" type="button" data-next>CONTINUE&nbsp;<span class="arr">→</span></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Column 2: Scheduling & Port Pair -->
+  <aside class="panel-col col-2" id="col2" aria-label="Scheduling and port pair">
+    <div class="p-inner">
+      <div class="p-head rvl">
+        <span class="p-eyebrow">MERIDIAN LINE · BOOKING BK-2481-TC</span>
+        <span class="p-tag p-tag-alt">02 · ROUTE</span>
+      </div>
+      <div class="p-rule rvl"></div>
+
+      <div class="pg-scroll">
+        <div class="q">
+          <div class="q-h rvl">SCHEDULING</div>
+          <div class="q-sub rvl">DEPARTURE · TAP A DAY-TILE</div>
+          <div class="dayrow rvl" id="dayRow" role="radiogroup" aria-label="Requested departure day"></div>
+          <div class="sched-row rvl">
+            <div class="fstep" id="flexStep">
+              <button class="fsb" data-d="-1" type="button" aria-label="less departure tolerance"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1 1 5 5 9"/></svg></button>
+              <div class="fsv" id="flexVal" tabindex="0" role="spinbutton"
+                   aria-valuemin="0" aria-valuemax="9" aria-valuenow="2"
+                   aria-label="departure tolerance in days" title="scroll to adjust"><b class="gnum" id="flexNum" data-t="2">2</b><span class="u">± DAYS</span></div>
+              <button class="fsb" data-d="1" type="button" aria-label="more departure tolerance"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1 5 5 1 9"/></svg></button>
+            </div>
+            <div class="segrow" id="segRow" role="radiogroup" aria-label="service segment"></div>
+          </div>
+        </div>
+
+        <div class="q pp-q">
+          <div class="q-h rvl">PORT PAIR</div>
+          <div class="q-sub rvl">TAP A STAMP TO RE-ROUTE · SCROLL THE RATE</div>
+          <div class="pp-row rvl">
+            <div class="pp-fields">
+              <div class="frow frow-route">
+                <div class="fld" id="fOrigin">
+                  <label class="fl" for="selOrigin">ORIGIN · UN/LOCODE</label>
+                  <div class="fval">
+                    <select id="selOrigin" aria-label="port of loading"></select>
+                    <svg class="fchev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 5 5 9 1"/></svg>
+                  </div>
+                </div>
+                <svg class="farrow" viewBox="0 0 30 10" aria-hidden="true">
+                  <path d="M1 5 H 24" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2.6 2.4"/>
+                  <path d="M21 1.5 L 27.5 5 L 21 8.5 Z" fill="currentColor"/>
+                </svg>
+                <div class="fld" id="fDest">
+                  <label class="fl" for="selDest">DESTINATION · UN/LOCODE</label>
+                  <div class="fval">
+                    <select id="selDest" aria-label="port of discharge"></select>
+                    <svg class="fchev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 5 5 9 1"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="pp-dist2" id="ppDist" aria-live="polite">≈ — NM · — DAYS</div>
+            </div>
+            <div class="stepper st-c pp-price" id="ppPrice" title="Request price — click or scroll">
+              <button class="sbtn" data-d="1" type="button" aria-label="raise request price"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 5 5 1 9 5"/></svg></button>
+              <div class="sval pp-val" id="ppVal" tabindex="0" role="spinbutton"
+                   aria-valuemin="0" aria-valuemax="999990" aria-valuenow="4820"
+                   aria-label="request price in US dollars" title="scroll to adjust"><span class="u">USD</span><span class="pp-num" id="ppNum" data-t="4,820">4,820</span></div>
+              <button class="sbtn" data-d="-1" type="button" aria-label="lower request price"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 5 5 9 1"/></svg></button>
+              <div class="sunit">REQUEST PRICE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnrow rvl">
+        <button class="btn ghost" type="button" data-back>← BACK</button>
+        <button class="btn go" type="button" data-submit disabled>CONFIRM BOOKING&nbsp;<span class="arr">→</span></button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="script.js?v=7"></script>
+</body>
+</html>

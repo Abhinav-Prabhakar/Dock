@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MERIDIAN LINE — Consignment Desk</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- shared rubber-stamp ink distress + grain (no assets, SVG only) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- heavy speckle — datestamps, kind stamps, filed stamps -->
+    <filter id="stampInk" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 6 -1.4" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+    <!-- lighter speckle — chips, notes -->
+    <filter id="mildInk" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 7 -2.2" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<header class="desk-head">
+  <svg class="mark" viewBox="0 0 20 20" aria-hidden="true">
+    <rect x="2.6" y="5" width="14.8" height="10" rx="1.1"
+          fill="none" stroke="#3a5a44" stroke-width="1.4"/>
+    <path d="M6.2 5v10M9.8 5v10M13.4 5v10M16.2 6.4v7.2"
+          stroke="#3a5a44" stroke-width=".9" fill="none"/>
+  </svg>
+  <div class="org">MERIDIAN LINE<span>CONSIGNMENT DESK · INTAKE</span></div>
+  <span class="head-eyebrow">PACIFIC FREIGHT SERVICE · WAYBILL ML-INTAKE</span>
+  <a class="dash-chip" href="../dashboard/">→ DASHBOARD</a>
+</header>
+
+<main class="desk" id="desk">
+
+  <!-- ==================== MASTER WAYBILL STRIP ==================== -->
+  <section class="waybill" aria-label="Master waybill — shared fields">
+    <div class="wb-pin" aria-hidden="true"></div>
+    <div class="wb-pin wb-pin-r" aria-hidden="true"></div>
+    <div class="wb-head">
+      <span class="wb-eyebrow">MASTER WAYBILL</span>
+      <span class="wb-form">FORM ML/3 · SHARED FIELDS — STAMPED ONCE, FILED PER SLIP</span>
+    </div>
+    <div class="rule"></div>
+
+    <div class="wb-row">
+      <!-- origin datestamp -->
+      <div class="port-block">
+        <div class="wb-lbl">ORIGIN</div>
+        <button class="port-stamp ps-a" id="stampA" type="button"
+                aria-label="Origin port — activate to change"></button>
+        <div class="port-menu" id="menuA" role="listbox" aria-label="Origin ports" hidden></div>
+      </div>
+
+      <svg class="wb-route" viewBox="0 0 96 46" aria-hidden="true">
+        <defs>
+          <marker id="wbMk" viewBox="0 0 6 6" refX="5" refY="3"
+                  markerWidth="4.4" markerHeight="4.4" orient="auto">
+            <path d="M0 .5 L5.6 3 L0 5.5 z" fill="#3a5a44"/>
+          </marker>
+        </defs>
+        <path d="M6 14 Q 48 44 90 14" fill="none" stroke="#3a5a44"
+              stroke-width="1.1" stroke-dasharray="3.2 3" marker-end="url(#wbMk)"/>
+        <!-- little freighter parked mid-voyage -->
+        <g class="wb-ship">
+          <path d="M-7 1h12.4l-2 3h-8.4z" fill="#2f2b24"/>
+          <rect x="-6.6" y="-2.8" width="1.9" height="3.8" fill="#ece4cd" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+          <rect x="-3.6" y="-1.6" width="2.6" height="2.6" fill="#3a5a44" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+          <rect x="-.6"  y="-1.6" width="2.6" height="2.6" fill="#b96f4b" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+        </g>
+      </svg>
+
+      <!-- destination datestamp -->
+      <div class="port-block">
+        <div class="wb-lbl">DESTINATION</div>
+        <button class="port-stamp ps-b" id="stampB" type="button"
+                aria-label="Destination port — activate to change"></button>
+        <div class="port-menu" id="menuB" role="listbox" aria-label="Destination ports" hidden></div>
+      </div>
+
+      <div class="wb-sep" aria-hidden="true"></div>
+
+      <!-- service segment chips -->
+      <div class="seg-block">
+        <div class="wb-lbl">SEGMENT</div>
+        <div class="seg-chips" role="radiogroup" aria-label="Service segment">
+          <button class="seg-chip" type="button" data-seg="flexible" role="radio" aria-checked="false">FLEXIBLE</button>
+          <button class="seg-chip on" type="button" data-seg="standard" role="radio" aria-checked="true">STANDARD</button>
+          <button class="seg-chip" type="button" data-seg="urgent" role="radio" aria-checked="false">URGENT</button>
+        </div>
+        <div class="seg-cap" id="segCap">BOOKED SPACE · BEST AVAILABLE SAILING</div>
+      </div>
+
+      <div class="wb-sep" aria-hidden="true"></div>
+
+      <!-- departure strip — DAY n ± flex as stamped tiles -->
+      <div class="dep-block">
+        <div class="wb-lbl">DEPARTURE · SIM-DAYS</div>
+        <div class="dep-tiles">
+          <div class="dep-tile" id="tileDay">
+            <button class="hbtn" data-d="-1" type="button" aria-label="earlier departure day">
+              <svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1 1 5 5 9"/></svg></button>
+            <div class="dt-in">
+              <i>DAY</i>
+              <b class="gnum sval" id="depDay" data-t="3" tabindex="0" role="spinbutton"
+                 aria-valuemin="0.5" aria-valuemax="60" aria-valuenow="3"
+                 aria-label="requested departure day">3</b>
+            </div>
+            <button class="hbtn" data-d="1" type="button" aria-label="later departure day">
+              <svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1 5 5 1 9"/></svg></button>
+          </div>
+          <div class="dep-tile" id="tileFlex">
+            <button class="hbtn" data-d="-1" type="button" aria-label="less flexibility">
+              <svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1 1 5 5 9"/></svg></button>
+            <div class="dt-in">
+              <i>± FLEX</i>
+              <b class="gnum sval" id="depFlex" data-t="2" tabindex="0" role="spinbutton"
+                 aria-valuemin="0" aria-valuemax="14" aria-valuenow="2"
+                 aria-label="departure tolerance in days">2</b>
+            </div>
+            <button class="hbtn" data-d="1" type="button" aria-label="more flexibility">
+              <svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1 5 5 1 9"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="wb-sep" aria-hidden="true"></div>
+
+      <!-- seeded barcode dressing -->
+      <div class="wb-bar" aria-hidden="true">
+        <canvas id="wbBarcode" width="96" height="26"></canvas>
+        <div class="wb-bar-cap">ML · INTAKE · 2481</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== THE SLIP STACK ==================== -->
+  <section class="slipzone-wrap" aria-label="Consignment slips — one per cargo kind">
+    <div class="sz-eyebrow">CONSIGNMENT — ONE PAPER SLIP PER KIND OF CARGO · MAX SIX</div>
+    <div class="slipzone" id="slipzone"><!-- slips injected --></div>
+    <button class="add-slip" id="addSlip" type="button">+ ADD SLIP</button>
+  </section>
+
+  <!-- ==================== RUNNING TOTAL + CONFIRM ==================== -->
+  <section class="totalbar" aria-label="Running total and confirm">
+    <div class="tot-line">
+      <span class="tot-cap">RUNNING TOTAL — ACROSS ALL SLIPS</span>
+      <span class="tot-nums">
+        Σ <b class="gnum" id="totTeu" data-t="8">8</b> <i class="tot-u">TEU</i>
+        · <b class="gnum" id="totWt" data-t="88.0">88.0</b> <i class="tot-u">T</i>
+        · <b class="gnum" id="totSlips" data-t="1">1</b> <i class="tot-u" id="totSlipsU">SLIP</i>
+      </span>
+    </div>
+    <button class="stamp-go" id="confirmBtn" type="button" aria-label="Confirm — file all slips">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <g filter="url(#stampInk)">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="#3a5a44" stroke-width="2.6"/>
+          <circle cx="60" cy="60" r="49" fill="none" stroke="#3a5a44" stroke-width="1"/>
+          <circle cx="60" cy="60" r="33" fill="none" stroke="#3a5a44" stroke-width=".8"/>
+        </g>
+        <text class="go-t1" x="60" y="57" text-anchor="middle">CONFIRM</text>
+        <text class="go-t2" x="60" y="71" text-anchor="middle">FILE ALL SLIPS</text>
+      </svg>
+    </button>
+  </section>
+
+  <!-- stamped error/422 note -->
+  <div class="note" id="note" hidden>
+    <span class="note-stamp" aria-hidden="true">RETURNED</span>
+    <span class="note-txt" id="noteTxt"></span>
+  </div>
+
+</main>
+
+<div class="hint">TAP A STAMP TO CHANGE PORTS&nbsp;&nbsp;·&nbsp;&nbsp;DRAG A NUMERAL OR USE ITS CHEVRONS&nbsp;&nbsp;·&nbsp;&nbsp;ONE POST PER SLIP</div>
+
+<script src="script.js"></script>
+</body>
+</html>
