@@ -18,34 +18,20 @@
 
 /* ==================== CUSTOMER GATE ==================== */
 /* This is the first-run screen: a customer with no orders lands
-   here to file their first booking. Once the mock order store
-   (localStorage 'ml.orders') has entries, the customer-facing
-   home is the fleet dashboard instead. '?new' forces this page
-   so returning customers can make additional requests.        */
-const ORDERS_KEY    = 'ml.orders';
+   here to file their first booking; once orders exist, the
+   customer-facing home is the fleet dashboard. '?new' forces this
+   page so returning customers can make additional requests.
+   Orders come from the live backend only (shared/api.js) — no
+   local cache, no offline mode.                                 */
 const DASHBOARD_URL = 'dashboard/';
-const API = location.port === '8399' ? '' : 'http://localhost:8399';
 const forceNew = new URLSearchParams(location.search).has('new');
 
-/* gate: orders on the shared store → dashboard; nothing filed → this
-   form. ?new always forces the form so returning customers can file
-   additional requests. Falls back to the localStorage cache offline. */
 (async () => {
   if (forceNew) return;
-  let has = null;
   try {
-    const r = await fetch(`${API}/orders`);
-    if (r.ok) {
-      const list = await r.json();
-      has = Array.isArray(list) && list.length > 0;
-      try { localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); } catch (e) {}
-    }
-  } catch (e) { /* offline */ }
-  if (has === null) {
-    try { has = (JSON.parse(localStorage.getItem(ORDERS_KEY)) || []).length > 0; }
-    catch (e) { has = false; }
-  }
-  if (has) location.replace(DASHBOARD_URL);
+    const list = await DockAPI.orders();
+    if (Array.isArray(list) && list.length) location.replace(DASHBOARD_URL);
+  } catch (e) { /* API down: stay on the form; submitting will say so */ }
 })();
 
 /* ============ SHARED REQUEST STATE — drives the live card ============ */
@@ -943,17 +929,11 @@ deckEl.addEventListener('click', e => {
       setSplit(false);
     }
   } else if (b.hasAttribute('data-submit')) {
-    b.textContent = '✓ BOOKING SUBMITTED';
+    b.textContent = 'PRICING…';
     b.disabled = true;
-    b.style.background = '#2c4234';
-    const badgeStatus = document.querySelector('.face .rows .r:last-child b');
-    if (badgeStatus) badgeStatus.textContent = 'CONFIRMED';
-    const bandText = document.querySelector('.face .band-t');
-    if (bandText) bandText.innerHTML = 'BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;CONFIRMED';
 
-    /* file one order per container kind into the shared store
-       (POST {API}/orders), then hand the customer off to the fleet
-       dashboard. Falls back to the localStorage cache offline.   */
+    /* one order per container kind, each priced live by the fleet
+       (POST /orders -> offers), then the rate-quotation slip        */
     const txt = s => { const el = document.querySelector(s); return el ? el.textContent.trim() : ''; };
     const CARGO_API = { dry: 'dry', haz: 'hazmat', reef: 'reefer' };
     const types = [...document.querySelectorAll('.ctype')].map(t => ({
@@ -962,7 +942,7 @@ deckEl.addEventListener('click', e => {
       units: parseInt((t.querySelector('.sv-c') || {}).textContent, 10) || 0,
     })).filter(t => t.units > 0);
 
-    /* departure window → sim-day midpoint ± tolerance */
+    /* departure window -> days-from-now midpoint +/- tolerance */
     const cal = window.__mlCal;
     let reqDep = 1, flex = 0;
     if (cal) {
@@ -982,39 +962,33 @@ deckEl.addEventListener('click', e => {
       flex_days:   flex,
     }));
 
+    const inkBadge = status => {
+      const badgeStatus = document.querySelector('.face .rows .r:last-child b');
+      if (badgeStatus) badgeStatus.textContent = status;
+      const bandText = document.querySelector('.face .band-t');
+      if (bandText) bandText.innerHTML = `BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;${status}`;
+    };
+
     (async () => {
-      let created = null;
+      let results;
       try {
-        created = await Promise.all(bodies.map(b =>
-          fetch(`${API}/orders`, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(b),
-          }).then(r => { if (!r.ok) return r.json().then(j => Promise.reject(j.detail)); return r.json(); })));
-        try {
-          const cache = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-          localStorage.setItem(ORDERS_KEY, JSON.stringify(created.concat(cache)));
-        } catch (e) {}
+        results = await Promise.all(bodies.map(DockAPI.quote));
       } catch (e) {
-        /* offline — mirror into the local cache in the legacy shape so the
-           dashboard still shows the request */
-        try {
-          const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-          orders.push({
-            id:      'BK-' + (2481 + orders.length) + '-TC',
-            status:  'PENDING REVIEW',
-            origin:  bodies[0].origin, dest: bodies[0].dest,
-            types,   teu: types.reduce((s, t) => s + t.units, 0),
-            weight_t: types.reduce((s, t) => s + t.kg * t.units, 0) / 1000,
-            cargo_type: bodies[0].cargo_type,
-            segment: 'standard',
-            req_dep_day: reqDep, flex_days: flex,
-            progress: 0, created: Date.now() / 1000,
-          });
-          localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-        } catch (e2) {}
+        b.textContent = 'CONFIRM BOOKING';
+        b.disabled = false;
+        b.title = e.message;
+        inkBadge('NOT PRICED');
+        alert(`We couldn't price this booking: ${e.message}`);
+        return;
       }
-      setTimeout(() => { location.href = DASHBOARD_URL; }, 1400);
+      b.textContent = 'QUOTE RECEIVED';
+      inkBadge('QUOTED');
+      const final = await DockOffers.review(results);
+      const booked = final.some(o => ['CONFIRMED', 'LOADING'].includes(o.status));
+      inkBadge(booked ? 'CONFIRMED' : final.some(o => o.status === 'QUOTED') ? 'QUOTED' : 'CLOSED');
+      b.textContent = booked ? '✓ BOOKING CONFIRMED' : 'QUOTE CLOSED';
+      b.style.background = '#2c4234';
+      setTimeout(() => { location.href = DASHBOARD_URL; }, 900);
     })();
   }
 });
