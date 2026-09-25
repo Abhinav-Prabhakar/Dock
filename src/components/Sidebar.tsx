@@ -1,11 +1,18 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import Link from "next/link";
 import {
   ArrowUpRight,
+  Check,
   Expand,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { sidebarContainers, type SidebarContainer } from "@/lib/data";
 import { AiChat } from "@/components/chat/AiChat";
 import { SparkleButton } from "@/components/chat/SparkleButton";
+import { useOps } from "@/components/ops/OpsProvider";
 
 const toneStyles: Record<
   SidebarContainer["tone"],
@@ -22,15 +29,27 @@ const toneStyles: Record<
 };
 
 function ContainerCard({ c }: { c: SidebarContainer }) {
-  const t = toneStyles[c.tone];
-  const highlight = c.tone === "highlight";
+  const { query, selected, setSelected, resolved, resolve } = useOps();
+  const isResolved = resolved.has(c.id);
+  const t = toneStyles[isResolved ? "optimized" : c.tone];
+  const highlight = c.tone === "highlight" && !isResolved;
+  const isSelected = selected === c.id;
+  const dimmed =
+    query.trim() !== "" &&
+    !`${c.id} ${c.platform} ${c.status}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase());
+
   return (
-    <div
-      className={`relative overflow-hidden rounded-2xl px-4 pt-3.5 pb-4 ${t.card} ${
+    <button
+      onClick={() => setSelected(isSelected ? null : c.id)}
+      className={`relative overflow-hidden rounded-2xl px-4 pt-3.5 pb-4 text-left transition-all ${t.card} ${
         highlight ? "" : "border"
+      } ${isSelected ? "ring-2 ring-accent" : ""} ${
+        dimmed ? "opacity-30" : ""
       }`}
     >
-      {!highlight && (
+      {!highlight && !isResolved && (
         <span className={`absolute left-0 top-3.5 h-3.5 w-[3px] rounded-r ${t.bar}`} />
       )}
       <div className="flex items-start justify-between">
@@ -55,7 +74,7 @@ function ContainerCard({ c }: { c: SidebarContainer }) {
           >
             Status{" "}
             <span className={highlight ? "text-white" : "text-mid"}>
-              {c.status}
+              {isResolved ? "Optimized" : c.status}
             </span>
           </p>
         </div>
@@ -64,22 +83,66 @@ function ContainerCard({ c }: { c: SidebarContainer }) {
         <p className="font-display text-[22px] leading-none font-medium text-hi">
           {c.weight} <span className="text-[15px] font-normal">t</span>
         </p>
-        <button
+        <span
           className={`rounded-full p-1.5 transition-colors ${
             highlight
-              ? "bg-white/15 text-white hover:bg-white/25"
-              : "text-low hover:text-mid"
+              ? "bg-white/15 text-white"
+              : isSelected
+                ? "bg-accent/25 text-accent"
+                : "text-low"
           }`}
-          aria-label={`Expand ${c.id}`}
         >
           <ArrowUpRight size={14} strokeWidth={1.75} />
-        </button>
+        </span>
       </div>
-    </div>
+
+      {/* selected details + action */}
+      {isSelected && (
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <p
+            className={`text-[10px] uppercase tracking-[0.12em] ${
+              highlight ? "text-white/60" : "text-faint"
+            }`}
+          >
+            40ft hc · dry · bay {c.platform}
+          </p>
+          {!isResolved && c.tone !== "optimized" ? (
+            <span
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                resolve(c.id);
+              }}
+              className="chip mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium text-loaded-soft transition-colors hover:border-loaded/50"
+            >
+              <Sparkles size={10} strokeWidth={2} />
+              Mark optimized
+            </span>
+          ) : (
+            <span className="mt-2 inline-flex items-center gap-1 text-[10px] text-loaded-soft">
+              <Check size={10} strokeWidth={2.5} /> optimized
+            </span>
+          )}
+        </div>
+      )}
+    </button>
   );
 }
 
 export function Sidebar() {
+  const [fs, setFs] = useState(false);
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+      setFs(false);
+    } else {
+      document.documentElement
+        .requestFullscreen()
+        .then(() => setFs(true))
+        .catch(() => {});
+    }
+  }, []);
+
   return (
     <aside className="sticky top-0 flex h-screen w-[384px] shrink-0 flex-col gap-4 px-4 pt-4 pb-4">
       {/* brand + controls */}
@@ -89,12 +152,22 @@ export function Sidebar() {
         </span>
         <div className="flex items-center gap-2">
           <SparkleButton />
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg chip text-mid transition-colors hover:text-hi">
+          <button
+            onClick={toggleFullscreen}
+            title={fs ? "Exit fullscreen" : "Fullscreen"}
+            aria-label="Toggle fullscreen"
+            className="flex h-8 w-8 items-center justify-center rounded-lg chip text-mid transition-colors hover:text-hi"
+          >
             <Expand size={14} strokeWidth={1.75} />
           </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-lg chip text-mid transition-colors hover:text-hi">
+          <Link
+            href="/fleet"
+            title="Fleet controls"
+            aria-label="Fleet controls"
+            className="flex h-8 w-8 items-center justify-center rounded-lg chip text-mid transition-colors hover:text-hi"
+          >
             <SlidersHorizontal size={14} strokeWidth={1.75} />
-          </button>
+          </Link>
         </div>
       </div>
 
