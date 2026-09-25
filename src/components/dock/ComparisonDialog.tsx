@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
-import { api, type SummaryData, type TimelineData } from '@/lib/api';
+import { useEffect, useState } from "react";
+import {
+  X,
+  Loader2,
+  TriangleAlert,
+  Gauge,
+  Leaf,
+  Container,
+  Handshake,
+  Repeat,
+  GitBranch,
+  Dices,
+  Layers,
+  CalendarClock,
+} from "lucide-react";
+import { api, type SummaryData, type TimelineData, type MetaData } from "@/lib/api";
 
 interface ComparisonDialogProps {
   open: boolean;
@@ -10,73 +23,106 @@ interface ComparisonDialogProps {
 }
 
 const POLICY_COLORS: Record<string, string> = {
-  static: '#6b7280',
-  greedy: '#3b82f6',
-  heuristic: '#f59e0b',
-  heuristic_bid: '#14b8a6',
-  ppo: '#22c55e',
+  static: "#4b5180",
+  greedy: "#9aa1c9",
+  heuristic: "#d9b13b",
+  heuristic_bid: "#3fbdb0",
+  ppo: "#6a73ea",
 };
 
 const POLICY_NAMES: Record<string, string> = {
-  static: 'Static Rate Card',
-  greedy: 'Greedy',
-  heuristic: 'Dynamic Heuristic',
-  heuristic_bid: 'Bid-Price Heuristic',
-  ppo: 'Dock (PPO)',
+  static: "Static Rate Card",
+  greedy: "Greedy",
+  heuristic: "Heuristic",
+  heuristic_bid: "Heuristic + Bid",
+  ppo: "Dock · PPO",
 };
 
-const POLICY_ORDER = ['static', 'greedy', 'heuristic', 'heuristic_bid', 'ppo'];
+const POLICY_ORDER = ["static", "greedy", "heuristic", "heuristic_bid", "ppo"];
 
-function formatCurrencyM(val: number) {
-  return `$${(val / 1000000).toFixed(1)}M`;
-}
-
-function formatPct(val: number) {
-  return `${(val * 100).toFixed(1)}%`;
-}
+const fmtM = (v: number) =>
+  `${v < 0 ? "−" : ""}$${(Math.abs(v) / 1e6).toFixed(1)}M`;
+const fmtPct = (v: number) => `${(v * 100).toFixed(1)}%`;
+const fmtSignedPct = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v * 100).toFixed(1)}%`;
 
 export default function ComparisonDialog({ open, onClose }: ComparisonDialogProps) {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [timeline, setTimeline] = useState<TimelineData | null>(null);
+  const [meta, setMeta] = useState<MetaData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setLoading(true);
-      Promise.all([
-        api.getCompare('summary'),
-        api.getCompare('timeline')
-      ]).then(([sData, tData]) => {
-        setSummary(sData);
-        setTimeline(tData);
-      }).catch(console.error).finally(() => setLoading(false));
-    }
+    if (!open) return;
+    setLoading(true);
+    setFailed(false);
+    Promise.all([
+      api.getCompare("summary"),
+      api.getCompare("timeline"),
+      api.getCompare("meta"),
+    ])
+      .then(([s, t, m]) => {
+        setSummary(s);
+        setTimeline(t);
+        setMeta(m);
+      })
+      .catch(() => setFailed(true))
+      .finally(() => setLoading(false));
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-6xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-800">
-          <h2 className="text-2xl font-bold text-white">Policy Performance Comparison</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors">
-            <X size={24} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-abyss/80 p-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="panel relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border-edge shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-edge px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Layers size={15} className="text-accent" strokeWidth={1.75} />
+            <h2 className="font-display text-[17px] font-semibold tracking-tight text-hi">
+              Policy Ladder
+            </h2>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-faint">
+              identical scenarios · identical seeds
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="chip flex h-8 w-8 items-center justify-center rounded-full text-mid transition-colors hover:text-hi"
+          >
+            <X size={14} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-8">
+        <div className="flex-1 space-y-6 overflow-y-auto p-6">
           {loading ? (
-            <div className="flex items-center justify-center h-64 text-slate-400">Loading data...</div>
+            <div className="flex h-64 items-center justify-center text-low">
+              <Loader2 size={20} className="animate-spin" />
+            </div>
+          ) : failed || !summary ? (
+            <div className="flex h-64 flex-col items-center justify-center gap-3 text-low">
+              <TriangleAlert size={20} className="text-warn" />
+              <p className="text-[12px]">comparison export missing — run scripts.export_demo</p>
+            </div>
           ) : (
             <>
-              {summary && <PolicyLadder summary={summary} />}
+              <PolicyLadder summary={summary} meta={meta} />
               {timeline && <RacingChart timeline={timeline} />}
-              {summary && <MetricsChips summary={summary} />}
-              {summary && <SegmentStrip summary={summary} />}
+              <MetricsChips summary={summary} />
+              <SegmentStrip summary={summary} />
+              {meta && <Provenance meta={meta} />}
             </>
           )}
         </div>
@@ -85,46 +131,74 @@ export default function ComparisonDialog({ open, onClose }: ComparisonDialogProp
   );
 }
 
-function PolicyLadder({ summary }: { summary: SummaryData }) {
+function PolicyLadder({ summary, meta }: { summary: SummaryData; meta: MetaData | null }) {
+  const present = new Set(meta?.policies_present ?? Object.keys(summary.policies));
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-      {POLICY_ORDER.map(policyKey => {
-        const policy = summary.policies[policyKey];
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      {POLICY_ORDER.map((key, i) => {
+        const policy = summary.policies[key];
         if (!policy) return null;
-        const lift = summary.lift_vs_static?.[policyKey];
-        const isPPO = policyKey === 'ppo';
-        
+        const lift = summary.lift_vs_static?.[key];
+        const isPpo = key === "ppo";
         return (
-          <div key={policyKey} className={`relative p-5 rounded-xl border ${isPPO ? 'border-green-500/50 bg-green-500/10 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-slate-800 bg-slate-800/50'}`}>
-            <h3 className={`font-semibold mb-1 ${isPPO ? 'text-green-400 text-lg' : 'text-slate-200'}`}>
-              {POLICY_NAMES[policyKey] || policyKey}
-            </h3>
-            
-            <div className="mt-4 mb-3">
-              <div className="text-3xl font-bold text-white tracking-tight">
-                {formatCurrencyM(policy.profit_usd.mean)}
-              </div>
-              <div className="text-sm text-slate-400 mt-1">
-                ± {formatCurrencyM(policy.profit_usd.std)}
-              </div>
+          <div
+            key={key}
+            className={`relative rounded-2xl px-4 pb-4 pt-3.5 ${
+              isPpo
+                ? "border border-accent/50 bg-gradient-to-b from-accent/15 to-accent-deep/10 shadow-[0_0_24px_rgba(106,115,234,0.15)]"
+                : "panel-flat"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: POLICY_COLORS[key] }}
+              />
+              <span className="text-[9px] uppercase tracking-[0.12em] text-faint">
+                rung {i + 1}
+              </span>
             </div>
-            
-            {lift && policyKey !== 'static' && (
-              <div className="mb-4">
-                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${lift.profit_usd_pct > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                  {lift.profit_usd_pct > 0 ? '+' : ''}{formatPct(lift.profit_usd_pct)} profit
-                </span>
+            <p className={`mt-2 text-[11px] font-medium ${isPpo ? "text-hi" : "text-mid"}`}>
+              {POLICY_NAMES[key] ?? key}
+              {!present.has(key) && <span className="text-faint"> · n/a</span>}
+            </p>
+            <p className="mt-2 font-display text-[24px] leading-none font-semibold tracking-tight text-hi tabular-nums">
+              {fmtM(policy.profit_usd.mean)}
+            </p>
+            <p className="mt-1 text-[10px] text-low tabular-nums">
+              ± {fmtM(policy.profit_usd.std)}
+            </p>
+            {key !== "static" && (
+              <div className="mt-2.5">
+                {lift ? (
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums ${
+                      lift.profit_usd_pct > 0
+                        ? "bg-loaded/15 text-loaded-soft"
+                        : "bg-critical/15 text-pending-soft"
+                    }`}
+                  >
+                    {fmtSignedPct(lift.profit_usd_pct)}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-low">
+                    static ≤ 0
+                  </span>
+                )}
               </div>
             )}
-            
-            <div className="space-y-2 mt-4 pt-4 border-t border-slate-700/50 text-sm">
+            <div className="mt-3 space-y-1 border-t border-edge-soft pt-2.5 text-[10.5px]">
               <div className="flex justify-between">
-                <span className="text-slate-400">Rev/TEU</span>
-                <span className="font-medium text-slate-200">${policy.revenue_per_teu.mean.toFixed(0)}</span>
+                <span className="text-faint">rev/teu</span>
+                <span className="text-mid tabular-nums">
+                  ${policy.revenue_per_teu.mean.toFixed(0)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Utilization</span>
-                <span className="font-medium text-slate-200">{formatPct(policy.utilization.mean)}</span>
+                <span className="text-faint">util</span>
+                <span className="text-mid tabular-nums">
+                  {fmtPct(policy.utilization.mean)}
+                </span>
               </div>
             </div>
           </div>
@@ -136,158 +210,250 @@ function PolicyLadder({ summary }: { summary: SummaryData }) {
 
 function RacingChart({ timeline }: { timeline: TimelineData }) {
   const width = 1000;
-  const height = 350;
-  const margin = { top: 20, right: 40, bottom: 40, left: 60 };
-  
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const height = 320;
+  const margin = { top: 16, right: 24, bottom: 34, left: 56 };
+  const iw = width - margin.left - margin.right;
+  const ih = height - margin.top - margin.bottom;
 
   let maxProfit = 0;
-  const allDays = 90; // Horizon is 90 days
-
-  Object.values(timeline.policies).forEach(days => {
-    days.forEach(d => {
+  let maxDay = 90;
+  Object.values(timeline.policies).forEach((days) => {
+    days.forEach((d) => {
       if (d.cum_profit > maxProfit) maxProfit = d.cum_profit;
+      if (d.day > maxDay) maxDay = d.day;
     });
   });
-  
-  // Round max up to nearest 10M for nice grid
-  const yMax = Math.max(1, Math.ceil(maxProfit / 10000000) * 10000000);
-  
-  const getX = (day: number) => margin.left + ((day - 1) / (allDays - 1)) * innerWidth;
-  const getY = (val: number) => height - margin.bottom - (val / yMax) * innerHeight;
-  
-  const yTicks = [0, yMax * 0.25, yMax * 0.5, yMax * 0.75, yMax];
-  const xTicks = [1, 15, 30, 45, 60, 75, 90];
+  const yMax = Math.max(1, Math.ceil(maxProfit / 1e7) * 1e7);
+  const getX = (day: number) => margin.left + ((day - 1) / Math.max(1, maxDay - 1)) * iw;
+  const getY = (v: number) => margin.top + ih - (v / yMax) * ih;
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * yMax);
+  const xTicks = Array.from({ length: 7 }, (_, i) => 1 + Math.round((i * (maxDay - 1)) / 6));
 
   return (
-    <div className="bg-slate-800/30 border border-slate-800 rounded-xl p-4">
-      <h3 className="text-lg font-medium text-white mb-4 pl-2">Cumulative Profit (90 Days)</h3>
-      <div className="w-full overflow-x-auto">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto min-w-[600px]">
-          {/* Grid lines and Y-axis labels */}
-          {yTicks.map((tick, i) => (
-            <g key={`y-${i}`}>
-              <line x1={margin.left} y1={getY(tick)} x2={width - margin.right} y2={getY(tick)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-              <text x={margin.left - 10} y={getY(tick)} fill="#94a3b8" fontSize="12" textAnchor="end" dominantBaseline="middle">
-                ${(tick / 1000000).toFixed(0)}M
-              </text>
-            </g>
+    <div className="panel-flat rounded-2xl p-5">
+      <div className="mb-3 flex items-center justify-between px-1">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-faint">
+          cumulative profit
+        </p>
+        <div className="flex items-center gap-4">
+          {POLICY_ORDER.map((key) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <span
+                className="h-[3px] w-4 rounded-full"
+                style={{ backgroundColor: POLICY_COLORS[key] }}
+              />
+              <span
+                className={`text-[10px] ${key === "ppo" ? "font-semibold text-accent" : "text-low"}`}
+              >
+                {POLICY_NAMES[key]}
+              </span>
+            </div>
           ))}
-          
-          {/* X-axis labels */}
-          {xTicks.map((tick, i) => (
-            <g key={`x-${i}`}>
-              <line x1={getX(tick)} y1={height - margin.bottom} x2={getX(tick)} y2={height - margin.bottom + 5} stroke="#475569" strokeWidth="1" />
-              <text x={getX(tick)} y={height - margin.bottom + 20} fill="#94a3b8" fontSize="12" textAnchor="middle">
-                Day {tick}
-              </text>
-            </g>
-          ))}
-          
-          {/* Lines */}
-          {POLICY_ORDER.map(policyKey => {
-            const data = timeline.policies[policyKey];
-            if (!data || data.length === 0) return null;
-            
-            const points = data.map(d => `${getX(d.day)},${getY(d.cum_profit)}`).join(' ');
-            
-            return (
-              <polyline 
-                key={policyKey}
-                points={points}
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full">
+        <defs>
+          <filter id="ppo-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="5" />
+          </filter>
+        </defs>
+        {yTicks.map((t, i) => (
+          <g key={i}>
+            <line
+              x1={margin.left}
+              y1={getY(t)}
+              x2={width - margin.right}
+              y2={getY(t)}
+              stroke="rgba(148,158,220,0.09)"
+              strokeDasharray="3 5"
+            />
+            <text
+              x={margin.left - 10}
+              y={getY(t)}
+              fill="#4b5180"
+              fontSize="11"
+              textAnchor="end"
+              dominantBaseline="middle"
+            >
+              ${(t / 1e6).toFixed(0)}M
+            </text>
+          </g>
+        ))}
+        {xTicks.map((t, i) => (
+          <text
+            key={i}
+            x={getX(t)}
+            y={height - 12}
+            fill="#4b5180"
+            fontSize="11"
+            textAnchor="middle"
+          >
+            d{t}
+          </text>
+        ))}
+        {POLICY_ORDER.map((key) => {
+          const data = timeline.policies[key];
+          if (!data?.length) return null;
+          const pts = data.map((d) => `${getX(d.day)},${getY(d.cum_profit)}`).join(" ");
+          return (
+            <g key={key}>
+              {key === "ppo" && (
+                <polyline
+                  points={pts}
+                  fill="none"
+                  stroke={POLICY_COLORS[key]}
+                  strokeWidth={7}
+                  opacity={0.25}
+                  filter="url(#ppo-glow)"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              )}
+              <polyline
+                points={pts}
                 fill="none"
-                stroke={POLICY_COLORS[policyKey] || '#ffffff'}
-                strokeWidth={policyKey === 'ppo' ? "4" : "2"}
+                stroke={POLICY_COLORS[key]}
+                strokeWidth={key === "ppo" ? 2.75 : 1.5}
+                opacity={key === "ppo" ? 1 : 0.75}
                 strokeLinejoin="round"
                 strokeLinecap="round"
-                className={policyKey === 'ppo' ? 'drop-shadow-md' : ''}
               />
-            );
-          })}
-        </svg>
-      </div>
-      
-      {/* Legend */}
-      <div className="flex flex-wrap items-center justify-center gap-6 mt-4">
-        {POLICY_ORDER.map(key => (
-          <div key={key} className="flex items-center gap-2">
-            <div className="w-4 h-1 rounded" style={{ backgroundColor: POLICY_COLORS[key] }}></div>
-            <span className={`text-sm ${key === 'ppo' ? 'text-green-400 font-medium' : 'text-slate-300'}`}>
-              {POLICY_NAMES[key]}
-            </span>
-          </div>
-        ))}
-      </div>
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
 
 function MetricsChips({ summary }: { summary: SummaryData }) {
   const ppo = summary.policies.ppo;
-  const staticPol = summary.policies.static;
-  if (!ppo || !staticPol) return null;
+  const stat = summary.policies.static;
+  if (!ppo || !stat) return null;
+
+  const chips = [
+    {
+      icon: Gauge,
+      label: "utilization",
+      value: fmtPct(ppo.utilization.mean),
+      delta: ppo.utilization.mean - stat.utilization.mean,
+      fmt: (v: number) => `${v > 0 ? "+" : "−"}${(Math.abs(v) * 100).toFixed(1)}pp`,
+      good: (v: number) => v > 0,
+    },
+    {
+      icon: Leaf,
+      label: "co₂ / teu",
+      value: `${ppo.co2_per_teu.mean.toFixed(2)}t`,
+      delta: ppo.co2_per_teu.mean - stat.co2_per_teu.mean,
+      fmt: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}t`,
+      good: (v: number) => v < 0,
+    },
+    {
+      icon: Container,
+      label: "empty teu·nm",
+      value: `${(ppo.empty_teu_nm.mean / 1e6).toFixed(1)}M`,
+      delta: (ppo.empty_teu_nm.mean - stat.empty_teu_nm.mean) / 1e6,
+      fmt: (v: number) => `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}M`,
+      good: (v: number) => v < 0,
+    },
+    {
+      icon: Handshake,
+      label: "counter win",
+      value: fmtPct(ppo.counter_win_rate?.mean ?? 0),
+    },
+    {
+      icon: Repeat,
+      label: "reject→counter",
+      value: fmtPct(ppo.reject_to_counter_conv?.mean ?? 0),
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <MetricChip title="Utilization" value={formatPct(ppo.utilization.mean)} compare={ppo.utilization.mean - staticPol.utilization.mean} compareFmt={v => `${v > 0 ? '+' : ''}${formatPct(v)}`} />
-      <MetricChip title="CO₂ / TEU" value={`${ppo.co2_per_teu.mean.toFixed(2)} t`} compare={ppo.co2_per_teu.mean - staticPol.co2_per_teu.mean} compareFmt={v => `${v > 0 ? '+' : ''}${v.toFixed(2)} t`} reverseColor />
-      <MetricChip title="Empty TEU-nm" value={(ppo.empty_teu_nm.mean / 1000000).toFixed(1) + 'M'} compare={(ppo.empty_teu_nm.mean - staticPol.empty_teu_nm.mean) / 1000000} compareFmt={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}M`} reverseColor />
-      <MetricChip title="Counter Win Rate" value={formatPct(ppo.counter_win_rate?.mean || 0)} />
-      <MetricChip title="Reject → Counter" value={formatPct(ppo.reject_to_counter_conv?.mean || 0)} />
-    </div>
-  );
-}
-
-function MetricChip({ title, value, compare, compareFmt, reverseColor = false }: { title: string, value: string, compare?: number, compareFmt?: (v: number) => string, reverseColor?: boolean }) {
-  let colorClass = 'text-slate-400';
-  if (compare !== undefined) {
-    if (compare > 0) colorClass = reverseColor ? 'text-red-400' : 'text-green-400';
-    if (compare < 0) colorClass = reverseColor ? 'text-green-400' : 'text-red-400';
-  }
-  
-  return (
-    <div className="bg-slate-800/40 border border-slate-700/60 rounded-lg p-3 flex flex-col justify-center">
-      <div className="text-xs text-slate-400 mb-1">{title}</div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-lg font-medium text-slate-200">{value}</span>
-        {compare !== undefined && compare !== 0 && compareFmt && (
-          <span className={`text-xs ${colorClass}`}>{compareFmt(compare)}</span>
-        )}
-      </div>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      {chips.map((c) => (
+        <div key={c.label} className="panel-flat flex flex-col gap-1.5 rounded-xl px-3.5 py-3">
+          <div className="flex items-center gap-1.5 text-faint">
+            <c.icon size={11} strokeWidth={1.75} />
+            <span className="text-[9.5px] uppercase tracking-[0.12em]">{c.label}</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-[17px] font-semibold text-hi tabular-nums">
+              {c.value}
+            </span>
+            {c.delta !== undefined && c.delta !== 0 && c.fmt && (
+              <span
+                className={`text-[10px] font-medium tabular-nums ${
+                  c.good!(c.delta) ? "text-loaded-soft" : "text-pending-soft"
+                }`}
+              >
+                {c.fmt(c.delta)}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 function SegmentStrip({ summary }: { summary: SummaryData }) {
   const ppo = summary.policies.ppo;
-  if (!ppo || !ppo.segments) return null;
-
+  if (!ppo?.segments) return null;
   return (
-    <div className="bg-slate-800/40 border border-slate-700/60 rounded-xl p-5">
-      <h3 className="text-sm font-medium text-slate-300 mb-4">Dock (PPO) Segment Performance</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {['urgent', 'standard', 'flexible'].map(seg => {
-          const stats = ppo.segments[seg as keyof typeof ppo.segments];
-          if (!stats) return null;
-          
-          const fillPct = stats.requests > 0 ? (stats.booked / stats.requests) * 100 : 0;
-          
+    <div className="panel-flat rounded-2xl p-5">
+      <p className="mb-4 text-[10px] uppercase tracking-[0.14em] text-faint">
+        dock · ppo — booked / requested by segment
+      </p>
+      <div className="grid grid-cols-3 gap-6">
+        {(["urgent", "standard", "flexible"] as const).map((seg) => {
+          const s = ppo.segments[seg];
+          if (!s) return null;
+          const pct = s.requests > 0 ? (s.booked / s.requests) * 100 : 0;
           return (
             <div key={seg}>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="capitalize text-slate-200">{seg}</span>
-                <span className="text-slate-400">{stats.booked.toFixed(0)} / {stats.requests.toFixed(0)} booked</span>
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <span className="text-[11px] font-medium capitalize text-mid">{seg}</span>
+                <span className="text-[10px] text-faint tabular-nums">
+                  {s.booked.toFixed(0)}/{s.requests.toFixed(0)}
+                </span>
               </div>
-              <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                <div 
-                  className="bg-green-500 h-full rounded-full" 
-                  style={{ width: `${fillPct}%` }} 
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-accent-deep to-accent"
+                  style={{ width: `${pct}%` }}
                 />
               </div>
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function Provenance({ meta }: { meta: MetaData }) {
+  const items: [typeof GitBranch, string][] = [
+    [GitBranch, meta.git_sha ? meta.git_sha.slice(0, 8) : "worktree"],
+    [CalendarClock, new Date(meta.generated_at).toLocaleDateString()],
+    [Dices, `seed ${meta.seed}`],
+    [Layers, `${meta.episodes} ep × ${meta.horizon_days}d`],
+  ];
+  return (
+    <div className="flex items-center justify-between border-t border-edge-soft pt-4">
+      <div className="flex items-center gap-4">
+        {items.map(([Icon, text], i) => (
+          <span key={i} className="flex items-center gap-1.5 text-[10px] text-faint">
+            <Icon size={11} strokeWidth={1.75} />
+            {text}
+          </span>
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5">
+        {(meta.scenarios ?? []).map((s) => (
+          <span key={s} className="chip rounded-full px-2 py-0.5 text-[9.5px] text-low">
+            {s}
+          </span>
+        ))}
       </div>
     </div>
   );
