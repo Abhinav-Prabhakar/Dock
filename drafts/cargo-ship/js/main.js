@@ -17,6 +17,9 @@ import { COLOR_MODES, legendFor, boxColor } from './colors.js';
 import { StowageView } from './stowage/view.js';
 import { StatsPage } from './pages/stats.js';
 import { ModelPage } from './pages/model.js';
+import { API } from './api.js';
+import { live, describeEvent } from './live.js';
+import { layoutFromStowage } from './stowage/fromLive.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -61,6 +64,116 @@ let screen = 'vessel';
 let busy = false;
 let metricsTimer = 0;
 
+/* ------------------------------------------------------------------ live data */
+
+let currentVessel = 'VES1';
+let stowageKey = null;
+let vesselOptionsBuilt = false;
+const MAX_BOOKINGS = 14;
+let bookingItems = [];
+
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function renderBookings() {
+  $('booking-list').innerHTML = bookingItems.length
+    ? bookingItems.map((it) => `<li class="tone-${it.tone}${it.customer ? ' customer' : ''}"><span class="day">D${it.day}</span>${escapeHtml(it.text)}</li>`).join('')
+    : '<li class="mut">No booking activity yet.</li>';
+}
+
+function flashBookings() {
+  const p = $('bookings-panel');
+  p.classList.remove('flash');
+  void p.offsetWidth;
+  p.classList.add('flash');
+}
+
+// Destination when a vessel is at sea: the next call after the current one.
+function vesselDest(stow) {
+  const next = (stow.upcoming_calls || []).find((c) => c.idx > stow.at_call);
+  return next ? next.port : null;
+}
+
+function updateVesselHud(stow) {
+  $('vessel-name').textContent = stow.name;
+  const where = stow.mode === 'SEA' ? `at sea → ${vesselDest(stow) ?? '—'}` : `at ${stow.port}`;
+  $('vessel-sub').textContent = `${stow.vessel_id} · ${stow.capacity_teu.toLocaleString()} TEU · ${Math.round(stow.aboard_teu).toLocaleString()} TEU aboard · ${where}`;
+}
+
+function setCargoUnavailable(message) {
+  const el = $('cargo-note');
+  el.classList.toggle('unavailable', !!message);
+  if (message) el.textContent = `Live simulation unavailable — ${message}`;
+}
+
+async function refreshStowage({ applySpeed = false, force = false } = {}) {
+  let stow;
+  try {
+    stow = await API.stowage(currentVessel);
+  } catch (e) {
+    stowageKey = null;
+    cargo.clear({ hold: true });
+    $('vessel-sub').textContent = 'Live simulation unavailable';
+    setCargoUnavailable(e.message);
+    return;
+  }
+  updateVesselHud(stow);
+  if (applySpeed) {
+    const kt = stow.mode === 'SEA' ? stow.speed_kt : 0;
+    motion.setSpeedKnots(kt);
+    $('r-speed').value = kt;
+    $('v-speed').textContent = `${kt} kn`;
+  }
+  const key = `${currentVessel}:${stow.at_call}:${stow.aboard_teu}`;
+  if (!force && key === stowageKey) return;
+  stowageKey = key;
+  const { specs, summary } = layoutFromStowage(stow, cargo.bays, SHIP.holdTiers);
+  cargo.clear({ hold: true });
+  for (const spec of specs) cargo.place(spec);
+  const pct = Math.round(summary.fill * 100);
+  const shipName = SHIP.name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  const note = $('cargo-note');
+  note.classList.remove('unavailable');
+  note.textContent = `Live stowage of ${stow.name} — each bay mirrors its real fill, discharge mix, weights and cargo types (${shipName} hull at ${pct}% fill).`;
+}
+
+function syncVesselOptions(snap) {
+  if (vesselOptionsBuilt || !Array.isArray(snap.vessels)) return;
+  const sel = $('vessel-select');
+  sel.innerHTML = snap.vessels.map((v) => `<option value="${v.vessel_id}">${v.vessel_id}</option>`).join('');
+  sel.value = currentVessel;
+  vesselOptionsBuilt = true;
+}
+
+function updateProfitPanel(snap) {
+  const p = snap.metrics?.cum_profit;
+  $('p-profit').textContent = p != null ? Math.round(p).toLocaleString() : '—';
+}
+
+async function refreshCompare() {
+  try {
+    const cmp = await API.compare('summary');
+    const pct = cmp?.lift_vs_static?.ppo?.profit_usd_pct;
+    $('p-profit-delta').textContent = pct != null ? `${pct >= 0 ? '▲ +' : '▼ '}${pct.toFixed(1)}%` : '—';
+  } catch (e) {
+    $('p-profit-delta').textContent = '—';
+  }
+}
+
+function wireLive() {
+  live.onSnapshot((snap) => { syncVesselOptions(snap); updateProfitPanel(snap); });
+  live.onEvents((events) => {
+    events.forEach((ev) => bookingItems.unshift(describeEvent(ev)));
+    bookingItems = bookingItems.slice(0, MAX_BOOKINGS);
+    renderBookings();
+    if (events.some((ev) => ev.source === 'customer' || ev.type.startsWith('order.'))) flashBookings();
+  });
+  live.onStatus((s) => {
+    const el = $('bookings-unavailable');
+    if (s.ok) { el.hidden = true; }
+    else { el.textContent = `Live simulation unavailable — ${s.message}`; el.hidden = false; }
+  });
+}
+
 function recomputeMetrics() {
   metrics = computeMetrics(cargo, ship);
   panel.update(metrics);
@@ -72,7 +185,8 @@ async function build() {
   ship = new Ship(params.get('livery') in LIVERIES ? params.get('livery') : 'magenta', LIVERIES);
   scene.add(ship.group);
   cargo = new Cargo(ship);
-  cargo.fillAll({ seed: 2481 });
+  // Cargo starts empty — it's populated from the live stowage endpoint below
+  // (refreshStowage), never seeded or randomly generated.
   ocean = new Ocean({ waves, hullProfile: hullWaterlineProfile(), ship });
   scene.add(ocean.mesh, ocean.spray.points);
   motion = new ShipMotion(waves);
@@ -103,6 +217,12 @@ async function build() {
   if (params.get('screen') in pages) setTimeout(() => switchScreen(params.get('screen')), 400);
   window.dock = { THREE, scene, camera, controls, renderer, ship, cargo, ocean, sky, motion, waves, stowage, pages, setTimeOfDay, goDay, goNight, switchScreen, get metrics() { return metrics; } };
   loop();
+
+  wireLive();
+  live.start();
+  refreshCompare();
+  refreshStowage({ applySpeed: true, force: true });
+  setInterval(() => refreshStowage(), 30000);
 }
 
 /* ------------------------------------------------------------------ post */
@@ -170,13 +290,16 @@ function setupUI() {
   };
   $('btn-cam').onclick = resetCamera;
   $('collapse-cargo').onclick = () => $('cargo-panel').classList.toggle('collapsed');
+  $('collapse-bookings').onclick = () => $('bookings-panel').classList.toggle('collapsed');
+
+  $('vessel-select').innerHTML = `<option value="${currentVessel}">${currentVessel}</option>`;
+  $('vessel-select').onchange = (e) => {
+    currentVessel = e.target.value;
+    refreshStowage({ applySpeed: true, force: true });
+  };
 
   const bs = $('bay-select');
   bs.innerHTML = cargo.bayInfo().map((b) => `<option value="${b.bay}">Bay ${String(b.bay).padStart(2, '0')}  (20': ${b.bays20.map((n) => String(n).padStart(2, '0')).join('/')}) · ${b.rows.length} rows · ${String(b.maxDeckTier)}</option>`).join('');
-  $('btn-load-bay').onclick = () => cargo.fillBay(+bs.value);
-  $('btn-discharge-bay').onclick = () => cargo.clearBay(+bs.value);
-  $('btn-restow').onclick = () => { cargo.clear({ hold: true }); cargo.fillAll({ seed: (Math.random() * 1e6) | 0 }); };
-  $('btn-clear').onclick = () => cargo.clear();
 
   const ls = $('livery-select');
   ls.innerHTML = Object.entries(LIVERIES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
@@ -379,22 +502,13 @@ function setupPicking() {
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const tip = $('tooltip');
-  let down = null, hoverPending = null;
+  let hoverPending = null;
   const el = renderer.domElement;
   const cast = (e) => {
     ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     return cargo.pick(ray);
   };
-  el.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
-  el.addEventListener('pointerup', (e) => {
-    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
-    const hit = cast(e);
-    if (!hit) return;
-    const b = hit.box;
-    if (e.shiftKey) cargo.removeById(b.id, { cascade: true });
-    else if (e.altKey) cargo.stack(b.bayNumber, b.row, { type: b.type === '20' ? '20' : undefined });
-  });
   el.addEventListener('pointermove', (e) => { hoverPending = e; });
   el.addEventListener('pointerleave', () => { hoverPending = null; tip.classList.remove('show'); cargo.setHighlight(null); });
   setInterval(() => {

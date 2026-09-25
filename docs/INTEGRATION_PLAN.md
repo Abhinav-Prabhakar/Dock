@@ -98,27 +98,23 @@ tab for the latest).
 orders/offers plus the hash-chained ledger on the `dock_ledger` volume; episodes themselves stay in
 memory. Revisit only if restarts losing the live world becomes a problem.
 
-### Next PR — step 8: operator console (`drafts/cargo-ship`), one screen at a time
+### Step 8 — operator console on live data (branch `integration/operator-console`)
 
-Add a small `js/live.js` (poll `/api/live` + `/api/live/events?after_seq=` every ~2 s; no WS
-needed) shared by all screens; show an explicit "live simulation unavailable" state on error.
+Done. **The original UI and `drafts/cargo-ship/design.md` are retained**; only data sources changed
+(product-owner rule: connect the existing UI, don't redesign it).
+- Vessel/Stowage: cargo from `/live/vessels/{id}/stowage` (`js/stowage/fromLive.js`, proportional
+  mapping of the real vessel onto the Dock Pioneer hull), Vessel select, real profit + holdout lift, ship
+  speed from the vessel, 8 real ports for colour-by-port. The Bay select and Load/Discharge/Restow/Clear
+  buttons stay visible but disabled (they used to invent cargo). New: Live bookings panel
+  (`js/live.js`), requested so the port side sees bookings in real time.
+- Statistics: `/compare/*` (holdout 5-policy, shock replay) + live world (`js/pages/statsLive.js`);
+  original labels kept and made true (TEU moved, TEU by destination, per-vessel rate, segment mix).
+- Model: real network weights + live decisions (`js/pages/liveDecision.js`); every original panel fed
+  by real data from the backend (`server/decision_context.py`): option legs, the engine's price/accept
+  curve, the same request under the baseline policies, measured stage timings, on-chain deal.
+- Tests: `drafts/cargo-ship/tests/*.mjs` (adapters vs the live API), `scripts/check_imports.py`; both in CI.
 
-1. **Live bookings feed** — a panel/ticker of `booking.decision` + `order.*` events, customer ones
-   (`source: "customer"`) highlighted. This is "port side sees bookings in real time".
-2. **Stowage + Vessel** — replace `cargo.fillAll()` with a load from
-   `/api/live/vessels/{id}/stowage` (default `VES1`, add a vessel select): map the 64 logical bays
-   onto the 23 physical bays in order, fill each physical bay hold-first bottom-up in the returned
-   stacking order (latest discharge at the bottom); colour-by-port uses `discharge`. Profit panel
-   → `/api/live` `metrics.cum_profit`; vessel name/telemetry from `/api/live` vessels.
-3. **Statistics** — replace `pages/statsData.js` with `/api/compare/{summary,timeline,offers,shock}`
-   (5-policy comparison) + `/api/live` metrics + `/api/orders`; delete `statsData.js`.
-4. **Model** — replace `pages/engine.js` (`MockEngine`) with `/api/live/policy/network` (once) and
-   `/api/live/policy` (poll; replay the latest decision through the existing stage animation).
-   The shapes already match (112 obs, 44 actions, 28 units per layer); action labels come from the
-   network endpoint. Delete `engine.js`.
-5. Tests: `node --check` (already in CI); extend smoke with the operator's data endpoints.
-
-### After that — step 9
+### Next — step 9
 
 Refresh `api.md` (new endpoints above, `/orders` contract: `req_dep_day` is days-from-now, response
 is `{order, offers, recommendation}`), `plan.md` §2.9, `frontend.md`, `technical.md`; final

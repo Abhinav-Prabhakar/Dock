@@ -3,7 +3,15 @@
 // utilisation, a portolan chart for the rotation, canal locks for the booking funnel, a container yard for
 // the outcome mix, a tide table for daily revenue and the fleet riding at its real draught.
 import { Page, fit, clamp, lerp, ease, easeOut, nf, money, roundRect, spline, along, mulberry32, drawShip, grainURL } from './page.js';
-import { buildStats, SCENARIOS, SEGMENTS } from './statsData.js';
+import { loadStats, SEGMENTS } from './statsLive.js';
+
+// The scenario selector offers exactly two live sources: a holdout replay
+// (5 policies, pre-aggregated over 2 unseen scenarios x 3 seeds) and a shock
+// replay (2 policies, a forced NLRTM closure). See statsLive.js.
+const SOURCES = [
+  { key: 'holdout', label: 'Holdout · 2 unseen scenarios × 3 seeds' },
+  { key: 'shock', label: 'Shock replay · NLRTM closure' },
+];
 
 const ink = (a) => `rgba(43,36,25,${a})`;
 const sea = (a) => `rgba(44,110,170,${a})`;
@@ -18,15 +26,30 @@ const kfmt = (v) => (Math.abs(v) >= 1e6 ? `$${nf(v / 1e6, 2)}M` : `$${nf(v / 1e3
 // Display nudges so the tight North-Sea cluster stays legible at chart scale.
 const NUDGE = { NLRTM: [0, 55.5], BEANR: [-4, 47.5], DEHAM: [14, 58] };
 
+// The horizon selector (7/30/90 days) only changes how much of the already-loaded
+// 90-day series is shown — it never re-fetches. Everything that isn't a daily
+// series (ports, loops, funnel, outcomes, lift, headline) is a live/aggregate
+// figure and doesn't depend on the horizon.
+function sliceModel(raw, days) {
+  const policies = {};
+  for (const [k, p] of Object.entries(raw.policies)) {
+    const cum = p.cum.slice(0, days), cumRev = p.cumRev.slice(0, days);
+    policies[k] = { ...p, cum, cumRev, daily: p.daily.slice(0, days), revenue: p.revenue.slice(0, days), profit: cum[cum.length - 1], revTotal: cumRev[cumRev.length - 1] };
+  }
+  return { ...raw, days, policies, tide: raw.tide.slice(0, days) };
+}
+
 export class StatsPage extends Page {
   constructor(root) {
     super(root);
-    this.scenario = 'volatile';
+    this.scenario = 'holdout';
     this.days = 90;
     this.segment = 'all';
     this.hover = {};
+    this.raw = null;
+    this.d = null;
     this.build();
-    this.setData();
+    this.load();
   }
 
   /* ---------------------------------------------------------------- DOM */
@@ -38,19 +61,22 @@ export class StatsPage extends Page {
         <header class="pg-head">
           <div class="pg-title">
             <div class="brand"><span class="dot"></span>DOCK <em>Harbour statistics</em></div>
-            <h1>Statistics <small data-k="scen">Volatile shocks</small></h1>
-            <div class="sub">Holdout scenario replay · identical seeds across policies · every figure vs the static rate card</div>
+            <h1>Statistics <small data-k="scen">Holdout</small></h1>
+            <div class="sub">Scenario replay · identical seeds across policies · every figure vs the static rate card</div>
+            <div class="hint" data-k="metaLine"></div>
             <div class="stow-stats" data-k="head"></div>
           </div>
           <div class="lpanel pg-controls">
             <label class="field-label">Scenario</label>
-            <div class="seg light" data-k="scenSeg">${Object.entries(SCENARIOS).map(([k, v]) => `<button data-v="${k}">${v.label}</button>`).join('')}</div>
+            <div class="seg light" data-k="scenSeg">${SOURCES.map((s) => `<button data-v="${s.key}">${s.label}</button>`).join('')}</div>
             <label class="field-label">Horizon</label>
             <div class="seg light" data-k="rangeSeg"><button data-v="7">7 days</button><button data-v="30">30 days</button><button data-v="90">90 days</button></div>
           </div>
         </header>
 
-        <section class="pg-grid">
+        <div class="lpanel hint" data-k="status" style="display:none"></div>
+
+        <section class="pg-grid" data-k="grid">
           <article class="lpanel sc span-12">
             <div class="sc-head"><span>The regatta · cumulative profit by policy</span><em data-k="raceNote">day 0</em>
               <button class="pill-btn" data-a="replay"><svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Replay</button></div>
@@ -101,8 +127,8 @@ export class StatsPage extends Page {
       el.querySelectorAll('button').forEach((b) => (b.onclick = () => { sync(b.dataset.v); fn(b.dataset.v); }));
       sync(cur);
     };
-    seg(this.k.scenSeg, this.scenario, (v) => { this.scenario = v; this.setData(); });
-    seg(this.k.rangeSeg, this.days, (v) => { this.days = +v; this.setData(); });
+    seg(this.k.scenSeg, this.scenario, (v) => { this.scenario = v; this.load(); });
+    seg(this.k.rangeSeg, this.days, (v) => { this.days = +v; if (this.raw) this.setData(); });
     seg(this.k.segSeg, this.segment, (v) => { this.segment = v; this.locksT = this.time; });
     r.querySelector('[data-a="replay"]').onclick = () => { this.scrub = null; this.raceT = this.time; };
 
@@ -119,12 +145,12 @@ export class StatsPage extends Page {
       const a = Math.atan2(y - h.cy, x - h.cx), rr = Math.hypot(x - h.cx, y - h.cy);
       const i = h.petals.findIndex((p) => Math.abs(Math.atan2(Math.sin(a - p.a), Math.cos(a - p.a))) < 0.3 && rr < p.r + 20);
       this.hover.rose = i >= 0 ? i : null;
-      if (i >= 0) { const p = this.d.ports[i]; this.tip(e, `<b>${p.name}</b> <span class="mut">${p.code}</span><br>${nf(p.booked)} TEU booked of ${nf(p.requested)} requested<br><span class="mut">${nf((p.booked / p.requested) * 100)}% captured</span>`); } else this.tip(null);
+      if (i >= 0) { const p = this.d.ports[i]; this.tip(e, `<b>${p.name}</b> <span class="mut">${p.code}</span><br>${nf(p.booked)} TEU booked of ${nf(p.requested)} requested<br><span class="mut">${nf(p.requested ? (p.booked / p.requested) * 100 : 0)}% captured</span>`); } else this.tip(null);
     });
     on('yard', (x, y, e) => {
       const hit = this.yardHits?.find((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
       this.hover.yard = hit ? hit.o : null;
-      if (hit) { const o = this.d.outcomes[hit.o]; this.tip(e, `<span class="sw" style="background:${o.color}"></span><b>${o.label}</b><br>${nf(o.n)} requests · ${nf((o.n / this.d.requests) * 100, 1)}%<br><span class="mut">${o.key}</span>`); } else this.tip(null);
+      if (hit) { const o = this.d.outcomes[hit.o]; this.tip(e, `<span class="sw" style="background:${o.color}"></span><b>${o.label}</b><br>${nf(o.n)} requests · ${nf(this.d.requests ? (o.n / this.d.requests) * 100 : 0, 1)}%<br><span class="mut">${o.key}</span>`); } else this.tip(null);
     }, () => (this.hover.yard = null));
     on('tide', (x, y, e) => {
       const t = this.tideGeom; if (!t) return;
@@ -134,7 +160,7 @@ export class StatsPage extends Page {
     }, () => (this.hover.tide = null));
     const lg = this.c.log;
     let drag = false;
-    const seek = (e) => { const [x] = pos(e, lg); const g = this.logGeom; if (g) this.scrub = clamp((x - g.l) / g.w) * this.d.days; };
+    const seek = (e) => { const [x] = pos(e, lg); const g = this.logGeom; if (g && this.d) this.scrub = clamp((x - g.l) / g.w) * this.d.days; };
     lg.addEventListener('pointerdown', (e) => { drag = true; lg.setPointerCapture(e.pointerId); seek(e); });
     lg.addEventListener('pointermove', (e) => drag && seek(e));
     lg.addEventListener('pointerup', () => (drag = false));
@@ -149,23 +175,45 @@ export class StatsPage extends Page {
     t.classList.add('show', 'light');
   }
 
+  // Fetch from the live backend for the current scenario source. No mock, no
+  // cached fallback — a failed call renders an explicit unavailable state.
+  async load() {
+    this.k.status.style.display = '';
+    this.k.status.textContent = 'Loading statistics from the Dock backend…';
+    this.k.grid.style.display = 'none';
+    this.raw = null; this.d = null;
+    try {
+      const raw = await loadStats(this.scenario);
+      this.raw = raw;
+      this.k.status.style.display = 'none';
+      this.k.grid.style.display = '';
+      this.setData();
+    } catch (e) {
+      this.k.status.textContent = `Statistics unavailable — ${e.message}`;
+      this.k.grid.style.display = 'none';
+    }
+  }
+
   setData() {
-    const d = (this.d = buildStats(this.scenario, this.days));
+    if (!this.raw) return;
+    const d = (this.d = sliceModel(this.raw, this.days));
     this.raceT = this.time; this.appearT = this.time; this.locksT = this.time; this.scrub = null;
     const lead = d.policies.ppo;
     this.k.scen.textContent = `${d.scenario.label} · ${d.days} d`;
+    this.k.metaLine.textContent = `generated ${d.meta.generated_at} · episodes: ${d.meta.episodes} · ${nf(d.customerDecisions)} customer-originated of ${nf(d.requests)} decisions`;
     this.k.head.innerHTML = [
       ['Revenue', money(d.headline.revenue), ''], ['Profit', money(d.headline.profit), ''],
       ['TEU booked', nf(d.headline.teu), ''], ['Requests', nf(d.requests), ''],
       ['Lift vs static', pct(d.lift.profit), 'profit'],
     ].map(([l, v, s]) => `<div><label>${l}</label><span>${v}</span>${s ? `<small>${s}</small>` : ''}</div>`).join('');
     const st = d.policies.static;
+    const heur = d.policies.heuristic;
     const kpis = [
       { id: 'rev', label: 'Cargo landed', value: money(lead.revTotal), unit: 'revenue', sub: `$${nf(lead.revPerTEU)}/TEU · ${pct(d.lift.rpt)} vs static` },
       { id: 'util', label: 'Loaded to the mark', value: nf(lead.util * 100), unit: '% util.', sub: `${d.lift.util >= 0 ? '+' : '−'}${nf(Math.abs(d.lift.util), 1)} pp vs static` },
-      { id: 'co2', label: 'Funnel emissions', value: nf(lead.co2, 2), unit: 't CO₂/TEU', sub: `${pct(((lead.co2 - st.co2) / st.co2) * 100)} vs static · slow steaming` },
-      { id: 'win', label: 'Counter-offers won', value: nf(lead.counterWin * 100), unit: '%', sub: `heuristic ${nf(d.policies.heuristic.counterWin * 100)}% · static never counters` },
-      { id: 'empty', label: 'Empty miles', value: nf(lead.empty / 1e6, 1), unit: 'M TEU-nm', sub: `${pct(((lead.empty - st.empty) / st.empty) * 100)} repositioning waste` },
+      { id: 'co2', label: 'Funnel emissions', value: nf(lead.co2, 2), unit: 't CO₂/TEU', sub: `${pct(st.co2 ? ((lead.co2 - st.co2) / st.co2) * 100 : null)} vs static · slow steaming` },
+      { id: 'win', label: 'Counter-offers won', value: nf(lead.counterWin * 100), unit: '%', sub: `${heur ? `heuristic ${nf(heur.counterWin * 100)}% · ` : ''}static never counters` },
+      { id: 'empty', label: 'Empty miles', value: nf(lead.empty / 1e6, 1), unit: 'M TEU-nm', sub: `${pct(st.empty ? ((lead.empty - st.empty) / st.empty) * 100 : null)} repositioning waste` },
     ];
     this.kpis = kpis;
     this.k.kpis.innerHTML = kpis.map((q) => `
@@ -177,7 +225,7 @@ export class StatsPage extends Page {
     this.k.loopLegend.innerHTML = d.loops.map((l) => `<span><i style="background:${l.color}"></i>${l.vessel} ${l.name}</span>`).join('')
       + `<span><i style="background:${GREEN};border-radius:50%"></i>Berth free</span><span><i style="background:${RED};border-radius:50%"></i>Congested</span>`;
     this.k.perBox.textContent = nf(d.requests / 120);
-    this.k.yardLegend.innerHTML = d.outcomes.map((o, i) => `<span data-o="${i}"><i style="background:${o.color}"></i>${o.label} <b>${nf((o.n / d.requests) * 100)}%</b></span>`).join('');
+    this.k.yardLegend.innerHTML = d.outcomes.map((o, i) => `<span data-o="${i}"><i style="background:${o.color}"></i>${o.label} <b>${nf(d.requests ? (o.n / d.requests) * 100 : 0)}%</b></span>`).join('');
     this.k.fleet.innerHTML = d.loops.map((l, i) => `
       <div class="fleet-card">
         <canvas class="cv" data-ship="${i}"></canvas>
@@ -188,8 +236,9 @@ export class StatsPage extends Page {
             <div><label>Speed</label><span>${nf(l.speed, 1)}<small>kn</small></span></div>
             <div><label>Fuel</label><span>${nf(l.fuelDay)}<small>t/d</small></span></div>
             <div><label>CO₂</label><span>${nf(l.co2Day)}<small>t/d</small></span></div>
-            <div><label>Margin</label><span>$${nf(l.margin)}<small>/TEU</small></span></div>
+            <div><label>Rate</label><span>${l.ratePerTEU != null ? `$${nf(l.ratePerTEU)}` : '—'}<small>/TEU</small></span></div>
           </div>
+          ${l.segShares ? '' : '<div class="ksub">no recent bookings — stack colour not split by segment</div>'}
         </div>
       </div>`).join('');
     this.shipCanvases = [...this.k.fleet.querySelectorAll('[data-ship]')];
@@ -503,7 +552,7 @@ export class StatsPage extends Page {
 
     // lanes
     const coord = (q) => (typeof q === 'string' ? (NUDGE[q] || [d.ports.find((p) => p.code === q).lon, d.ports.find((p) => p.code === q).lat]) : q);
-    const maxMoved = Math.max(...d.loops.map((l) => l.teuMoved));
+    const maxMoved = Math.max(1, ...d.loops.map((l) => l.teuMoved));
     const hovered = this.hover.map != null ? d.ports[this.hover.map].code : null;
     for (const [li, l] of d.loops.entries()) {
       const poly = spline(l.lane.map((q) => P(coord(q))), 10);
@@ -537,11 +586,12 @@ export class StatsPage extends Page {
     this.mapHits = [];
     const cc = (v) => (v > 0.8 ? RED : v > 0.55 ? AMBER : GREEN);
     const labelSide = { NLRTM: 'up', BEANR: 'right', DEHAM: 'right', SGSIN: 'right', CNSHA: 'left', KRPUS: 'right', USLAX: 'left', USNYC: 'left' };
+    const maxThroughput = Math.max(1, ...d.ports.map((p) => p.throughput));
     d.ports.forEach((p, i) => {
       const [x, y] = P(coord(p.code));
       this.mapHits.push({ x, y, i });
       const hov = this.hover.map === i;
-      const r = 5 + 5 * Math.sqrt(p.throughput / (60000 * (d.days / 90)));
+      const r = 5 + 9 * Math.sqrt(p.throughput / maxThroughput);
       if (p.shocked) {
         const pu = (t * 0.8) % 1;
         g.strokeStyle = `rgba(200,69,47,${0.6 * (1 - pu)})`; g.lineWidth = 2;
@@ -602,7 +652,7 @@ export class StatsPage extends Page {
     const { g, w, h } = fit(this.c.rose);
     const d = this.d, a = this.appear;
     const cx = w / 2, cy = h / 2 + 6, R = Math.min(w, h) / 2 - 42;
-    const maxReq = Math.max(...d.ports.map((p) => p.requested));
+    const maxReq = Math.max(1, ...d.ports.map((p) => p.requested));
     // rings + degree scale
     g.strokeStyle = ink(0.1); g.lineWidth = 1; g.setLineDash([2, 4]);
     [0.25, 0.5, 0.75, 1].forEach((f) => { g.beginPath(); g.arc(cx, cy, R * Math.sqrt(f), 0, Math.PI * 2); g.stroke(); });
@@ -638,7 +688,7 @@ export class StatsPage extends Page {
       const lx = cx + Math.cos(an) * (rq + 14), ly = cy + Math.sin(an) * (rq + 14);
       g.textAlign = Math.abs(Math.cos(an)) < 0.3 ? 'center' : Math.cos(an) > 0 ? 'left' : 'right';
       g.fillStyle = ink(dim ? 0.35 : 0.9); g.font = '700 9.5px Inter, sans-serif'; g.fillText(p.code, lx, ly);
-      g.fillStyle = ink(dim ? 0.25 : 0.5); g.font = '600 8.5px Inter, sans-serif'; g.fillText(`${nf((p.booked / p.requested) * 100)}% won`, lx, ly + 10);
+      g.fillStyle = ink(dim ? 0.25 : 0.5); g.font = '600 8.5px Inter, sans-serif'; g.fillText(`${nf(p.requested ? (p.booked / p.requested) * 100 : 0)}% won`, lx, ly + 10);
     });
     this.roseHits = { cx, cy, petals };
     this.rose(g, cx, cy, 20);
@@ -650,7 +700,9 @@ export class StatsPage extends Page {
     const d = this.d, t = this.time;
     const segs = this.segment === 'all' ? d.funnel : d.funnel.filter((s) => s.key === this.segment);
     const sum = (k) => segs.reduce((a, s) => a + s[k], 0);
-    const stages = [['Requests', sum('req')], ['Quoted', sum('quoted')], ['Booked', sum('booked')], ['Delivered', sum('delivered')]];
+    // Delivered has no per-segment breakdown in the live event stream (delivery.confirmed
+    // carries no segment) — it's shown as a total across all segments regardless of filter.
+    const stages = [['Requests', sum('req')], ['Quoted', sum('quoted')], ['Booked', sum('booked')], ['Delivered', d.deliveredTotal]];
     const countered = sum('countered');
     const n = stages.length, pad = 14, gateW = 10, top = 26, step = 16, bottom = 44;
     const cw = (w - pad * 2 - gateW * (n - 1)) / n;
@@ -660,7 +712,7 @@ export class StatsPage extends Page {
     const floors = stages.map((_, i) => top + maxDepth + 8 + i * step);
     stages.forEach(([name, v], i) => {
       const x0 = x0s[i], x1 = x0 + cw, floor = floors[i];
-      const depth = maxDepth * (v / stages[0][1]) * fill;
+      const depth = maxDepth * (v / (stages[0][1] || 1)) * fill;
       const surf = floor - depth;
       // chamber masonry
       g.fillStyle = ink(0.06); g.fillRect(x0, top, cw, floor - top);
@@ -677,7 +729,7 @@ export class StatsPage extends Page {
       g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = 1;
       g.beginPath(); for (let x = x0; x <= x1; x += 3) g.lineTo(x, surf + Math.sin(x * 0.12 + t * 2 + i) * 1.3); g.stroke();
       // boats on the surface
-      const boats = Math.max(1, Math.round(6 * (v / stages[0][1])));
+      const boats = Math.max(1, Math.round(6 * (v / (stages[0][1] || 1))));
       for (let b = 0; b < boats; b++) {
         const bx = x0 + 10 + (b + 0.5) * ((cw - 20) / 6), by = surf + Math.sin(bx * 0.12 + t * 2 + i) * 1.3;
         drawShip(g, bx - 11, by + 2, 22, { hull: i === 3 ? '#1d4f86' : '#2a241b', colors: BOXES, fill: 0.7, seed: b + i * 7 });
@@ -693,7 +745,7 @@ export class StatsPage extends Page {
         g.fillStyle = ink(0.75); g.fillRect(x1, top - 4, gateW, 4);
         g.strokeStyle = ink(0.75); g.lineWidth = 2;
         g.beginPath(); g.moveTo(gx - 3, top); g.lineTo(gx, floor - 6); g.lineTo(gx + 3, top); g.stroke();
-        const drop = (stages[i + 1][1] - v) / v * 100;
+        const drop = (stages[i + 1][1] - v) / (v || 1) * 100;
         const lbl = `${drop >= 0 ? '+' : '−'}${nf(Math.abs(drop), 1)}%`;
         g.font = '700 9px Inter, sans-serif'; g.textAlign = 'center';
         const tw = g.measureText(lbl).width + 10;
@@ -717,7 +769,7 @@ export class StatsPage extends Page {
     const d = this.d, t = this.time;
     const cols = 15, tiers = 8, total = cols * tiers;
     // largest-remainder allocation of 120 boxes
-    const raw = d.outcomes.map((o) => (o.n / d.requests) * total);
+    const raw = d.outcomes.map((o) => (o.n / (d.requests || 1)) * total);
     const alloc = raw.map(Math.floor);
     let rest = total - alloc.reduce((a, b) => a + b, 0);
     raw.map((v, i) => [v - Math.floor(v), i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (rest-- > 0) alloc[i]++; });
@@ -833,8 +885,12 @@ export class StatsPage extends Page {
   drawFleetShip(c) {
     const { g, w, h } = fit(c);
     const l = this.d.loops[+c.dataset.ship], t = this.time, i = +c.dataset.ship;
-    const shares = { flexible: 0.36, standard: 0.44, urgent: 0.2 };
-    const colors = Object.entries(shares).flatMap(([k, s]) => Array(Math.round(s * 10)).fill(SEG_COLORS[k]));
+    // Real per-vessel cargo mix (booked TEU by segment, from recent live bookings for
+    // this vessel_id). No split is invented: with no bookings yet, stacks are neutral ink.
+    let colors = l.segShares
+      ? Object.entries(l.segShares).flatMap(([k, s]) => Array(Math.round(s * 10)).fill(SEG_COLORS[k]))
+      : [];
+    if (!colors.length) colors = [ink(0.4)];
     const len = w * 0.72, x = w * 0.13, wl = h * 0.72;
     const sink = (l.util - 0.5) * 8;
     const keel = wl + len * 0.06 + sink + Math.sin(t * 1.4 + i) * 0.8;

@@ -79,10 +79,26 @@ html, body {
 
 /* ---------- cargo panel */
 .cargo-panel { top: 78px; right: 22px; width: 268px; overflow: hidden; }
-.panel-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+.panel-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; border-bottom: 1px solid var(--line); transition: background-color 0.3s; }
 .panel-body { padding: 12px 14px 14px; }
 .cargo-panel.collapsed .panel-body { display: none; }
 .cargo-panel.collapsed .panel-head { border-bottom: none; }
+.unavailable { color: #ffc35a; }
+
+/* ---------- live bookings panel (left side, below the header block) */
+.bookings-panel { top: 210px; left: 26px; width: 268px; overflow: hidden; }
+.bookings-panel.collapsed .panel-body { display: none; }
+.bookings-panel.collapsed .panel-head { border-bottom: none; }
+.bookings-panel.flash .panel-head { background-color: rgba(124,196,255,0.4); }
+.booking-list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+.booking-list li { font-size: 11px; line-height: 1.4; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); border-left: 2px solid transparent; color: var(--muted); }
+.booking-list li .day { display: inline-block; min-width: 26px; color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+.booking-list li.tone-booked { border-left-color: #5fe39a; }
+.booking-list li.tone-rejected { border-left-color: #ff6b6b; }
+.booking-list li.tone-declined { border-left-color: #ffc35a; }
+.booking-list li.tone-order { border-left-color: rgba(255,255,255,0.2); }
+.booking-list li.customer { background: rgba(124,196,255,0.12); color: var(--text); }
+
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
 .stats div { background: rgba(255,255,255,0.05); border-radius: 9px; padding: 8px 8px 6px; }
 .stats span { display: block; font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -143,7 +159,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border: none; b
 @media (max-width: 1100px) {
   .controls { gap: 14px; flex-wrap: wrap; justify-content: center; width: calc(100% - 40px); }
   .hint-bar { display: none; }
-  .profit-panel, .cargo-panel { width: 230px; }
+  .profit-panel, .cargo-panel, .bookings-panel { width: 230px; }
 }
 
 /* ---------- segmented control + legend */
