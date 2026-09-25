@@ -102,12 +102,25 @@ def main() -> int:
     else:
         model = MaskablePPO("MlpPolicy", venv, **kwargs)
 
+    import subprocess
+    try:
+        git_sha = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"], capture_output=True,
+            text=True, cwd=Path(__file__).resolve().parent.parent,
+            timeout=10).stdout.strip() or None
+    except Exception:
+        git_sha = None
     (log_dir / "config.json").write_text(json.dumps({
         "phase": args.phase, "timesteps": args.timesteps,
         "n_envs": args.n_envs, "seed": args.seed, "pool": pool,
         "horizon_days": cfg.horizon_days, "vessel_ids": cfg.vessel_ids,
         "pricing": args.pricing, "shaping": shaping,
-        "init_from": args.init_from,
+        "init_from": args.init_from, "git_sha": git_sha,
+        "obs_semantics": "forecaster-v1 (demand slots = "
+                         "BoundDemandForecaster.next_week, lam units)",
+        "forecaster": str(
+            Path(__file__).resolve().parent.parent
+            / "models" / "artifacts" / "demand_forecaster"),
     }, indent=2))
 
     model.learn(total_timesteps=args.timesteps)

@@ -4,17 +4,20 @@
 
 ## Mission right now
 
-**Next task (user's explicit instruction):** implement the full backend training
-pipeline, test everything end-to-end, verify logical correctness, run PPO
-training **on the remote GPU box**, and bring the trained model back to this
-machine for local use. That means:
+Backend is functionally complete. Full PPO curriculum (phases 1–5, ~1.8M
+steps) is running on the remote GPU box via `scripts/run_curriculum.sh`
+(log: `~/Dock/backend/runs/curriculum.log`, checkpoints `runs/ppo_c1..c5/`).
 
-1. Bid-price engine (plan §2.5) — still missing; needed for realistic pricing + reward shaping.
-2. Supervised forecasters (plan §2.4) — demand/congestion models trained on `backend/data/generated/`.
-3. Full PPO curriculum training on the GPU box (`rl/train.py` exists, phases 1–5).
-4. Evaluate trained policy vs baselines on **holdout** scenarios only.
-5. Copy the final `model.zip` (and any artifacts) back to this Mac under `backend/runs/`.
-6. Keep tests green; commit + push to GitHub frequently (`git add -A`, remote = `origin`, branch `main`).
+**Remaining:** when the run finishes, pull `runs/ppo_c5/model.zip` back
+here, re-run `scripts/export_demo.py` (it adds `ppo` to the artifacts when
+`--model` is given), and confirm the holdout eval table. Frontend stays
+mock — do not touch `src/` unless the user asks; the artifact-driven
+`/compare` build is technical.md §4.2.
+
+**Product direction (explicit):** RL is the decision engine — no classic-ML
+fallback anywhere. Missing artifacts raise `RuntimeError`, never degrade
+silently. Supervised models feed RL (forecast → obs + bid-price engine),
+they do not replace it.
 
 ## Repository
 
@@ -56,24 +59,42 @@ backend/
                       #   hazmat-designated bays (MAX 2/bay), reefer powered bays +
                       #   plug cap. can_place() = trial-place + rollback.
   env/
-    fleet_env.py      # CargoFleetEnv (Gymnasium): Discrete(44), OBS_DIM=108,
-                      #   action_masks() for MaskablePPO, per-step profit reward
+    fleet_env.py      # CargoFleetEnv (Gymnasium): Discrete(44), OBS_DIM=112,
+                      #   action_masks() for MaskablePPO, per-step profit reward;
+                      #   obs demand slots = forecaster.next_week() (no oracle)
+  models/
+    demand.py         # DemandForecaster: closed-form ridge on climatology
+                      #   residual, lam units; bind() -> BoundDemandForecaster
+                      #   (.daily = engine demand_fn, .next_week = env obs)
+    elasticity.py     # per-segment OLS on log volume ratio (recovers 0.55/1.1/1.8)
+    wtp.py            # per-segment lognormal WTP/market (recovers 1.00/1.08/1.38)
+    train.py          # python -m models.train --data data/generated --out models/artifacts
+    artifacts/        # committed: weights.npz + meta.json + report.json
   baselines/
     heuristics.py     # StaticRateCardPolicy, GreedyPolicy, DynamicHeuristicPolicy
   rl/
     train.py          # MaskablePPO + SubprocVecEnv; --phase 1..5 curriculum
+    evaluate.py       # --model none|<path>; holdout-only, pinned seeds
   scripts/
     run_episode.py    # python -m scripts.run_episode --episodes 3 --horizon 90
-  tests/              # 58 pytest tests, all passing (~20s). pytest.ini at backend root
-  requirements.txt    # numpy pandas pyarrow gymnasium pytest
+    export_demo.py    # python -m scripts.export_demo --out ../public/demo
+    run_curriculum.sh # full 5-phase PPO curriculum on the GPU box
+  tests/              # 77 pytest tests, all passing (~90s). pytest.ini at backend root
+  requirements.txt    # numpy pandas pyarrow gymnasium pytest + sb3/sb3-contrib/torch
 ```
 
-## Verified state (as of last session)
+## Verified state
 
-- `cd backend && .venv/bin/python -m pytest` → **58 passed**
-- `python -m scripts.run_episode --episodes 3 --horizon 90` →
-  static $10.8M / greedy $12.3M / heuristic $15.7M profit; utilization ~0.51;
-  ~60–90 sim-days/sec (~7.5M× real-time). Outcome mix has reason codes.
+- `cd backend && .venv/bin/python -m pytest` → **77 passed**
+- `python -m models.train` → elasticity {1.797, 1.106, 0.553} vs true
+  {1.8, 1.1, 0.55}; WTP mults {1.000, 1.080, 1.380}; demand MAPE 0.58.
+- `rl.evaluate --model none` (3×60d): baseline — static 16.9M / greedy
+  20.1M / heuristic 20.7M / heuristic_bid 21.5M (vs 22.7M oracle — inside
+  the ±10% gate); volatile-shocks — bid 23.2M wins; depressed-demand — bid
+  7.3M vs heuristic 9.2M (forecast lags a collapsing regime — honest
+  artifact, reported).
+- `scripts/export_demo.py` → `public/demo/{summary,timeline,offers,shock,
+  meta}.json`, all 4 baseline policies, reason-coded explain blocks.
 - Env: 44 actions = 12 booking (reject, accept, flex-window{5,10,15,20%},
   alt-hub{5,10,15%}, split{50/50,60/40,70/30}) + 16 speed (4 vessels ×
   {12,14,16,18}kt) + 16 reposition (8 pairs × {75,150} TEU).
@@ -97,17 +118,18 @@ backend/
 
 - `ssh abhinav@192.168.1.3` — **key-based auth already configured** from this
   Mac (`~/.ssh/id_ed25519`). No password needed. Always `-o BatchMode=yes`.
-- It is **WSL2**, python3.12, ~940GB free. GPU: RTX 3050 8GB, driver 572.70,
-  CUDA 12.8 driver-level. `nvidia-smi` lives at `/usr/lib/wsl/lib/nvidia-smi`.
-- Project synced at `~/Dock`; venv `~/Dock/backend/.venv` has torch
-  `2.6.0+cu124` (`cuda.is_available()=True`), stable-baselines3 2.9,
-  sb3-contrib, gymnasium, pandas, xgboost, sklearn, pytest, tensorboard.
+- It is **WSL2**, python3.12, ~920GB free, 12 cores, 5GB RAM. GPU: RTX 3050
+  8GB, driver 572.70, CUDA 12.8 driver-level. `nvidia-smi` lives at
+  `/usr/lib/wsl/lib/nvidia-smi`.
+- Project synced at `~/Dock`. **`~/Dock/backend/.venv` is BROKEN** (mixed
+  cu12/cu13 nvidia wheels — torch dumps core; do not use it). The working
+  stack is **`~/.venvs/dock-rl/`**: torch 2.9.1+cu128 (cuda OK),
+  stable-baselines3, sb3-contrib, tensorboard, numpy/pandas/pyarrow/
+  gymnasium. Always `PY=~/.venvs/dock-rl/bin/python`.
 - Sync code changes before remote runs:
-  `rsync -az --delete --exclude '.venv/' --exclude 'data/generated/' --exclude '__pycache__/' --exclude 'runs/' -e "ssh -o BatchMode=yes" backend/ abhinav@192.168.1.3:~/Dock/backend/`
-- Verified: `python -m rl.train --phase 1 --timesteps 12000 --n-envs 4 --device cuda`
-  → 12,288 steps in 26s, model saved to `~/Dock/backend/runs/ppo_phase1_*/model.zip`.
-- Gotcha: torch cu128 wheel install for `torch==2.11.0` hangs/fails — that
-  version doesn't exist. cu124 is fine; don't retry.
+  `rsync -az --exclude '.venv/' --exclude 'data/generated/' --exclude '__pycache__/' --exclude 'runs/' --exclude 'eval_results.json' -e "ssh -o BatchMode=yes" backend/ abhinav@192.168.1.3:~/Dock/backend/`
+- Full curriculum: `PY=~/.venvs/dock-rl/bin/python nohup bash scripts/run_curriculum.sh > runs/curriculum.log 2>&1 &`
+  phases warm-start via --init-from, then auto-evaluates on holdout.
 
 ## Critical design decisions / gotchas
 
@@ -129,16 +151,24 @@ backend/
 - `run_episode.py` prints per-policy metrics + heuristic outcome mix.
 - Tests build requests via `anchored_request(sim, ...)` in `conftest.py` —
   use it, don't fabricate dep_days that miss all sailings.
+- **Demand units gotcha**: `lam` is a request-rate intensity — requests
+  arrive at `lam / MEAN_TEU_PER_BOOKING`/wk but carry ~15.7 TEU each, so raw
+  requested TEU ≈ 1.75×lam. The forecaster + obs_teu both work in lam units
+  (request counts × MEAN_TEU_PER_BOOKING). Never feed raw TEU sums into the
+  forecaster.
+- **No oracle**: `sim.demand.lam` is only read inside `DemandStream` itself.
+  `pricing="bid_price"` or `attach_pricer()` or `CargoFleetEnv.reset` without
+  a forecaster raise `RuntimeError` (point the user at `models.train`).
+- Tests use `conftest.stub_forecaster()` (constant-demand StubForecaster) —
+  keeps the suite hermetic without the real artifact.
 
 ## What's NOT built yet
 
-- `pricing/` bid-price engine (plan §2.5: shadow-price opportunity cost,
-  urgency/flexibility premiums, competitiveness guard, reason codes).
-- `models/` supervised forecasters (demand per route-week, congestion delay,
-  WTP/acceptance probability, elasticity) trained on `data/generated/`.
-- PPO actually trained beyond the 12K-step smoke run; no eval harness vs
-  baselines on holdout yet; no model export/inference wrapper.
-- No HTTP API; no frontend/backend wiring.
+- Trained PPO beyond the 12K-step smoke run — **in flight**: full curriculum
+  on the GPU box (see "Mission right now"). Old `ppo_phase1_*` checkpoint
+  used oracle obs — stale, ignore it.
+- Frontend reads `public/demo/` artifacts — `src/` still 100% mock data by
+  explicit instruction; `/compare` build is technical.md §4.2.
 
 ## Working agreement
 

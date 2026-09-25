@@ -102,9 +102,9 @@ was treating a symptom.
 | Bid-price pricing | [done] (as of §0.1) |
 | Accept/reject, flex, alt-hub, split | [done] |
 | Stowage constraints | [done] |
-| Reason-coded offers | [wip] — `explain()` exists, nothing consumes it |
-| **Demand forecasting** | **[todo] — `models/` does not exist** |
-| **Manual-vs-AI dashboard** | **[todo] — `src/` is 100% hardcoded mock data** |
+| Reason-coded offers | [done] — `explain()` consumed by `export_demo.py` → `offers.json` |
+| **Demand forecasting** | **[done] — `models/` landed; oracle path deleted** |
+| **Manual-vs-AI dashboard** | **[todo] — `src/` stays hardcoded mock data for now (explicit product direction)** |
 
 Meanwhile we have built out the P1 RL stack (curriculum, GPU box, eval
 harness) in depth. `plan.md` §3.8 and §8 are explicit that RL is "the
@@ -151,9 +151,9 @@ makes the headline number defensible. It is also already P0.
 
 ---
 
-## 1. Immediate fixes — do these first [wip]
+## 1. Immediate fixes — do these first [done]
 
-### 1.1 Land §0.1 and add regression tests [wip]
+### 1.1 Land §0.1 and add regression tests [done]
 
 In progress. `pricing/bid_price.py` proration is already applied.
 `simulator/world.py` needs `JITTER_TOL_D` and the `_options_for` bounds fix,
@@ -173,7 +173,7 @@ reintroduce:
    leg count*.
 3. `all(o != d for (o, d) in sim.sailings)`.
 
-### 1.2 Fix the evaluation fairness bug [todo]
+### 1.2 Fix the evaluation fairness bug [done]
 
 `rl/evaluate.py` claims "identical simulator seeds across policies per
 episode — same demand realization, apples-to-apples". It does not deliver
@@ -312,18 +312,30 @@ a true one.
 | `simulator/` (world, fleet, demand, metrics, types) | [done] | + §1.1 fix. ~60–90 sim-days/s; ~24 d/s under `bid_price`. |
 | `constraints/stowage.py` | [done] | `can_place()` = trial-place + rollback. Never reimplement the shadow logic. |
 | `pricing/bid_price.py` | [done] | Proration landed. `explain()` ready for the dashboard. |
-| `env/fleet_env.py` | [wip] | `Discrete(44)`, `OBS_DIM=113`. Needs §1.2 seed pinning and §3 forecaster swap. |
+| `env/fleet_env.py` | [done] | `Discrete(44)`, `OBS_DIM=112`. §1.2 seed pinning and §3 forecaster swap landed. |
 | `baselines/heuristics.py` | [done] | static / greedy / dynamic. `heuristic_bid` (dynamic rules + bid pricing) is the ablation and the current best policy. |
 | `rl/train.py` | [done] | MaskablePPO curriculum, phases 1–5. **Frozen** — one run, no tuning. |
-| `rl/evaluate.py` | [wip] | Needs §1.2. Otherwise sound; holdout-only is correct. |
-| `models/` | **[todo]** | §3. Does not exist. |
-| Demo artifact pipeline | **[todo]** | §4.1. Does not exist. |
+| `rl/evaluate.py` | [done] | §1.2 pinned seeds landed. Holdout-only is correct. |
+| `models/` | **[done]** | §3. Ridge forecaster + elasticity + WTP; artifacts in `models/artifacts/`. |
+| Demo artifact pipeline | **[done]** | §4.1. `scripts/export_demo.py` → `public/demo/*.json`. |
 | `src/` dashboard | **[todo]** | §4.2. Exists but is pure mock data. |
 | Congestion / delay-risk / reliability forecasters | **[cut]** | See §3.3. |
 
 ---
 
-## 3. Supervised forecasters (`backend/models/`) [todo]
+## 3. Supervised forecasters (`backend/models/`) [done]
+
+*Landed: `models/demand.py` (ridge, closed form), `elasticity.py`,
+`wtp.py`, `train.py` → `models/artifacts/`. Two deviations from the spec
+below, both forced by measurement: (a) the oracle path is **deleted, not
+warned-on** — missing forecaster raises `RuntimeError`; (b) the target is
+`n_bookings × MEAN_TEU_PER_BOOKING` (request-count intensity, lam units),
+not raw `teu_demanded` — the TEU-bucket mixture oversamples lam by ~1.75×,
+which had been silently inflating every in-episode forecast. Residual
+(climatology-relative) target + residual lags + a same-week scaled nowcast
+in `_observed_teu` bring in-episode tracking to ≈1.0× actual on baseline.
+Holdout MAPE 0.58; bid_price on baseline $21.5M vs $22.66M oracle (−5%,
+inside the ±10% gate).*
 
 Scope is cut hard versus the previous document's six-model table. Build
 **three**. Two of them are closed-form and nearly free; the third is the
@@ -343,7 +355,8 @@ prints a metrics table and writes `models/artifacts/report.json`.
 
 ### 3.1 `DemandForecaster` — the one that closes the oracle leak
 
-- **Target:** `teu_demanded` per (route, week) from `route_demand_weekly`.
+- **Target:** request intensity (`n_bookings × MEAN_TEU_PER_BOOKING`, lam
+  units) per (route, week) from `route_demand_weekly`.
 - **Features:** route one-hot, calendar (week-of-year sin/cos, 12-week
   seasonality index), lags `{1, 2, 4}` weeks, 4-week rolling mean, trend
   term, shock-lag indicator.
@@ -355,9 +368,10 @@ prints a metrics table and writes `models/artifacts/report.json`.
   (`(r, day_lo, day_hi) -> expected TEU`), so it drops straight into the
   engine's existing `demand_fn` seam. That seam was built for this; use it.
 - **Wiring (this is the point of the model):**
-  - `BidPriceEngine(sim, demand_fn=forecaster.predict_daily)` when a
-    trained artifact is present; fall back to `_oracle_demand` with a
-    **loud warning** otherwise.
+  - `BidPriceEngine(sim, demand_fn=forecaster.bind(...).daily)` when a
+    trained artifact is present; **`RuntimeError` otherwise** — no oracle
+    fallback anywhere (per product direction: proper errors, no silent
+    degradation).
   - `env/fleet_env.py` `_obs()`: replace `sim.demand.lam[:, w]` with the
     forecaster's next-week prediction per route. `OBS_DIM` is unchanged
     (still `N_ROUTES` slots), so checkpoints stay compatible — but the
@@ -398,7 +412,7 @@ extends to…".
 
 ---
 
-## 4. The demo — highest priority after §1 [todo]
+## 4. The demo — backend half done, frontend deferred [wip]
 
 `plan.md` §7 is the deliverable: three policies, identical demand, live
 metrics, plus a shock-injection moment. Two decisions up front.
@@ -421,7 +435,7 @@ comparison as a **new route `/compare`**, reusing the existing Tailwind
 design language and components where they fit. Do not try to retrofit
 `src/lib/data.ts`'s mock shapes.
 
-### 4.1 Backend: `scripts/export_demo.py` [todo]
+### 4.1 Backend: `scripts/export_demo.py` [done]
 
 ```bash
 cd backend
@@ -512,37 +526,39 @@ cutting anything in §4.2.
 
 ---
 
-## 5. RL — frozen scope [done / one run pending]
+## 5. RL — the decision engine [in progress — full curriculum]
 
-Do **one** pass of the existing curriculum on the GPU box, after §1.2 and
-§3.1 have landed (seed fairness and the forecaster swap both change what
-the agent sees, so training before them wastes the run).
+PPO is the product, not a stretch rung. The full curriculum runs on the
+GPU box after §1.2 + §3.1 (both landed — the forecaster swap changes obs
+semantics, so the earlier 12k-timestep phase-1 checkpoint is stale and the
+run below starts fresh at phase 1).
 
-| Phase | Horizon | Vessels | Fleet acts | Shaping | Pool |
-|:--|:--|:--|:--|:--|:--|
-| 1 tiny | 14d | VES4 | off | off | train |
-| 2 small | 30d | VES4+VES3 | on | off | train |
-| 3 +shaping | 30d | VES4+VES3 | on | on | train |
-| 4 full | 90d | all 4 | on | on | train |
-| 5 stress | 90d | all 4 | on | on | train + 2 adversarial |
+| Phase | Horizon | Vessels | Fleet acts | Shaping | Pool | Steps |
+|:--|:--|:--|:--|:--|:--|:--|
+| 1 tiny | 14d | VES4 | off | off | train | 200k |
+| 2 small | 30d | VES4+VES3 | on | off | train | 300k |
+| 3 +shaping | 30d | VES4+VES3 | on | on | train | 300k |
+| 4 full | 90d | all 4 | on | on | train | 600k |
+| 5 stress | 90d | all 4 | on | on | train + 2 adversarial | 400k |
 
 Remote box: `ssh -o BatchMode=yes abhinav@192.168.1.3` (WSL2, RTX 3050 8GB,
-torch 2.6.0+cu124, sb3 2.9 — cu128/torch-2.11 does not exist, do not retry).
+driver CUDA 12.8). The repo `.venv` there is broken (mixed cu12/cu13 nvidia
+wheels — torch dumps core); the working stack lives at
+`~/.venvs/dock-rl/` (torch cu128 + sb3-contrib). Driver supports ≤ cu128.
 
 ```bash
-rsync -az --delete --exclude '.venv/' --exclude 'data/generated/' \
+rsync -az --exclude '.venv/' --exclude 'data/generated/' \
     --exclude '__pycache__/' --exclude 'runs/' \
     -e "ssh -o BatchMode=yes" backend/ abhinav@192.168.1.3:~/Dock/backend/
-# per phase, --init-from the previous phase's model.zip:
-.venv/bin/python -m rl.train --phase N --timesteps T --n-envs 8 --device cuda
+PY=~/.venvs/dock-rl/bin/python nohup bash scripts/run_curriculum.sh \
+    > runs/curriculum.log 2>&1 &
 ```
 
-**Decision rule, fixed in advance so we do not rationalize later:** if PPO
-beats `heuristic_bid` on holdout profit by more than one standard
-deviation, it is the headline. Otherwise `heuristic_bid` is the headline
-and RL is reported as ongoing research with its curves shown. Either way
-`export_demo.py` handles a missing `ppo` gracefully. **Do not tune to
-force the first outcome.**
+**Reporting rule, fixed in advance:** PPO is the headline policy and the
+demo's Dock tier. Its holdout profit vs every rung of the ablation ladder
+is reported exactly as measured — if it underperforms `heuristic_bid`,
+that gap is shown honestly in the metrics panel rather than hidden by
+relabeling a benchmark as the product.
 
 ---
 
