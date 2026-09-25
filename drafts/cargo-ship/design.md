@@ -1,11 +1,14 @@
 # Dock — Vessel View · Design Document
 
-A two-screen interactive vessel experience for a ~366 m ultra-large container ship
-("DOCK PIONEER", IMO 9876543, flag Monrovia). Screen 1 is a real-time 3D vessel
-view with an instrument HUD and a load-metrics drawer; screen 2 is a light,
-paper-textured "technical drawing" stowage profile with an animated crane
-timeline. One design language, two treatments — dark glass over a living sea,
-and warm ink-on-paper for the engineering view.
+A four-screen port-operator console for a ~366 m ultra-large container ship
+("DOCK PIONEER", IMO 9876543, flag Monrovia). **Vessel** is a real-time 3D view
+with an instrument HUD and a load-metrics drawer; **Stowage** is a light,
+paper-textured "technical drawing" with a side-elevation profile *and* a top-down
+plan, both driven by an animated crane timeline; **Statistics** is the operator's
+ledger drawn as an Admiralty chart; **Model** replays the decision engine one
+decision at a time on a dark "night bridge". One design language, two treatments
+— dark glass over a living sea, and warm ink-on-paper for the engineering and
+reporting views. All data outside the 3D vessel is mocked (seeded) for now.
 
 No image, font, or audio assets are loaded. Every texture, icon, sound, and
 pixel of the ship is generated procedurally at runtime.
@@ -173,7 +176,11 @@ POD + category. `.light` variant flips to cream glass + ink text on stowage.
 ### 4.9 Screen switcher
 Top-centre glass pill with an animated `glider` that slides (0.5 s
 cubic-bezier(.2,.8,.2,1)) to the active tab — Vessel (ship glyph) / Stowage
-(grid glyph). In stowage mode the pill re-materializes to cream.
+(grid glyph) / Statistics (bars over a swell) / Model (helm glyph). On the
+paper screens (Stowage, Statistics) the pill re-materializes to cream; on Model
+it deepens to a darker glass. Vessel ↔ Stowage uses the 3D dolly-zoom; the two
+DOM pages (Statistics, Model) fade over whatever is underneath (0.6 s opacity +
+10 px rise), and the stowage canvas is suspended/resumed rather than re-entered.
 
 ### 4.10 Stowage dock (light theme)
 Bottom strip: **timeline panel** (phase badge · current move title/sub ·
@@ -267,12 +274,88 @@ the whole UI.
   cones, trolley with operator cab and glass, four rigged wire ropes,
   headblock, telescopic spreader with flipper arms and twistlock LED
   indicators. Trolley depth is expressed as scale+haze receding into paper.
+- **Side / Top toggle**: a `Side | Top` segmented control heads the legend panel
+  (`V` toggles). The swap is a *paper wipe*: over 0.7 s the drawing folds
+  slightly (y-scale 0.95) while a paper sheet fades over it, the renderer swaps at
+  the midpoint when fully covered, then the sheet lifts. Pan/zoom reset on swap.
+  Entering from 3D always lands on Side (it is what the dolly-zoom flattens
+  into); leaving from Top first wipes back to Side.
+- **Top plan** (`planview.js`): the ship lies port-side-to at the berth, bow to
+  the right, quay up. World coords are `(x, −z)` so `makeView`, pan/zoom and
+  crane-follow are shared with the profile. Drawn: ripple-marked water, the quay
+  apron (expansion joints, twin crane rails, amber truck lane, fenders,
+  bollards, mooring lines), the deck outline from the same `halfBreadth(x, D)`,
+  full-width hatch-cover panels, lashing bridges, accommodation + bridge wings,
+  casing + oval funnel, breakwater. Each (bay, row) cell shows the **top box
+  per 20' half** as a roof (transverse corrugation, rails, castings, `×n` stack
+  height at zoom) and a **cast shadow** thrown in proportion to stack height, so
+  tall stacks read as tall without a legend. The selected row is a blue band with
+  dashed edges; it follows the crane timeline — its hold wells show open (dark,
+  top hold box dimmed) until that bay's hatch move lands, then the deck fills in.
+  Other rows show as fully stowed. Click any cell to select its row; hover shows
+  the top box, deck/hold counts and stack tonnes.
+- **Plan crane**: portal legs on the rails, Warren-laced boom from backreach to
+  outreach, machinery house, blinking tip light, trolley with cab glass,
+  spreader frame with twistlock lamps (amber unlocked / green locked). The load
+  hangs at the trolley with pendulum sway and a shadow whose throw grows with its
+  height above the stow — the hoist reads in plan.
 - **Plan** (`plan.js`): deterministic crane timeline — fetch → travel → lower
   → land → unlock → hoist → retreat per box, hatch covers between hold and
   deck stows; `stateAt(t)` is pure, so scrubbing forward/backward is exact.
   Load sway: quasi-static lag during gantry travel, then damped pendulum.
 
 ---
+
+## 6b. Statistics — the Admiralty chart (`pages/stats.js`, `statsData.js`)
+
+Same cream paper + grain as stowage, with a faint 60 px chart grid. Every figure
+is a maritime picture rather than a stock chart:
+- **KPI strip** — five paper tiles, each with a small canvas glyph (Plimsoll
+  mark for utilisation, etc.).
+- **The regatta** — cumulative profit per policy as ships racing along their own
+  wakes (Dock PPO vs heuristic + bid, heuristic, greedy, static rate card), with
+  a scrubbable ship's log underneath.
+- **Chart of the rotation** — portolan-style map; lane line weight = TEU moved,
+  port roundels coloured by congestion.
+- **Compass of demand** — compass-rose petals, area ∝ TEU by destination.
+- **The locks** — request → quote → booking → delivery funnel as canal locks.
+- **The yard** — every request's outcome as a stacked container yard.
+- **Tide table** — daily revenue, Dock vs static, as high/low water; moon = week.
+- **The fleet at sea** — each vessel riding at its real draught; stack colour =
+  customer segment, bow wave = speed.
+Data is seeded and synthetic (`buildStats`), shaped for a later API swap.
+
+## 6c. Model — "Inside the helm" (`pages/model.js`, `engine.js`)
+
+A night-bridge treatment (navy radial + 48 px blueprint grid, dark glass cards)
+that replays a mocked MaskablePPO engine decision by decision. A **voyage strip**
+at the top sails a small ship through eight stations — Request → Forecast → Bid
+price → Observe → Policy → Mask → Act → Settle — with per-stage latency; cards
+below un-dim (`.pending` → lit) as their stage is reached. Transport: play/pause
+(`Space`), step (`→`), 0.5–4× speed.
+- **01 · What the agent sees** — the request as a container (reefer unit, IMDG
+  diamond), voyage options as leg bars coloured by bid-price pressure with
+  hatched infeasibility, the harbour as buoys whose colour/blink = congestion
+  and the fleet at sea, and a teal swell for the 18-slot demand forecast with a
+  calendar dial. Each card is tagged with its `obs[a:b]` slice.
+- **02 · How it thinks** — the 112-float observation as a colour-banded tape,
+  then two hidden layers (28 of 256 units shown) and the 44-row policy head.
+  Edges are *currents*: width = |weight × activation|, blue positive / red
+  negative, particles drift at a speed set by strength, and a wavefront sweeps
+  the forward pass. Masked rows get struck out. After acting, glowing dashed
+  **attribution streams** run from the top input features through the network
+  into the chosen action, listed below as signed bars.
+- **03 · What it does** — **the helm**: a teak ship's wheel whose 44 spokes are
+  the action space (booking / speed / reposition arcs), spoke length = π,
+  masked spokes collapse to anchored stubs, and the wheel turns until the chosen
+  action sits under the lubber line. Then the top-5 policy bars, a pricing
+  swell (expected margin = P(accept)·(p − bid) with bid, market and guard lines;
+  or the v³ fuel curve for speed orders; or empties before/after for
+  repositioning), and a settlement card with a rubber-stamp outcome and chained
+  ledger hash.
+- **Wake** — recent decisions float astern of a ship, height = expected margin,
+  dashed = customer walked; beside it, the same request priced by the baseline
+  "captains" as counterfactuals.
 
 ## 7. Motion & interaction language
 
@@ -292,7 +375,7 @@ the whole UI.
   `Shift`+click discharges a box + anything above it, `Alt`+click stacks.
 - Keyboard: `N` day/night · `M` metrics · `H` hide UI · `C` camera ·
   `Space/←/→/Home/End` transport · `↑/↓` rows · `F` follow · `S` sound ·
-  `Esc` back.
+  `V` side/top view · `Esc` back. Model page: `Space` play/pause, `→` step.
 
 ---
 
@@ -319,5 +402,8 @@ deterministic plan timeline; a dynamics compressor glues the bus.
 - All 2D canvases are DPR-aware (`setTransform(dpr,…)`) and redraw on a
   `ResizeObserver`.
 - `window.dock` exposes the live scene graph for debugging.
-- URL params: `?livery=`, `?night`, `?t=`, `?screen=stowage`, `?play`,
-  `?capture`.
+- URL params: `?livery=`, `?night`, `?t=`, `?screen=stowage|stats|model`,
+  `?play`, `?capture`.
+- DOM pages extend `Page` (`pages/page.js`): fade lifecycle, own ~30 fps RAF
+  loop only while visible, DPR-aware `fit()` canvases, shared drawing
+  primitives (`drawShip` pictogram, splines, seeded RNG, paper grain URL).

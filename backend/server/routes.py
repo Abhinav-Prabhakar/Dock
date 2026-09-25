@@ -17,7 +17,7 @@ from . import orders as order_store
 
 GENERATED = BACKEND / "data" / "generated"
 SCENARIO_DIR = GENERATED / "scenarios"
-DEMO_DIR = REPO_ROOT / "public" / "demo"
+DEMO_DIR = BACKEND / "demo"
 COMPARE_NAMES = {"summary", "timeline", "offers", "shock", "meta"}
 
 router = APIRouter()

@@ -1,10 +1,15 @@
 """Customer booking orders — shared store between the customer site
-(customers/) and the operator site (drafts/cargo-ship).
+(customers/) and the operator site (drafts/cargo-ship/).
 
-Plain SQLite (stdlib sqlite3), one table, at backend/data/dock.db.
-A customer "order" is one booking request for a single cargo type —
-a multi-type consignment is filed as several orders (the intake UI
-posts one order per container kind).
+Postgres (via server/db.py), table `orders` — schema owned by the Alembic
+migration in alembic/versions/, not created here. A customer "order" is one
+booking request for a single cargo type — a multi-type consignment is
+filed as several orders (the intake UI posts one order per container kind).
+
+No mock/seed rows: a fresh database starts with an empty table (see the
+"no mock data as a fallback" project decision). Local synthetic data, if
+wanted, is a separate opt-in seed script — never baked into this module or
+a migration.
 
 Public surface (wired into routes.py):
     GET    /orders         -> [order] newest first
@@ -25,16 +30,15 @@ POST validation:
 
 from __future__ import annotations
 
-import sqlite3
 import time
-from pathlib import Path
 
 from pydantic import BaseModel, Field
+from sqlalchemy import (Column, Float, Integer, MetaData, Table, Text,
+                        delete, insert, select, text)
 
 from data import calibration as C
 
-BACKEND = Path(__file__).resolve().parent.parent
-DB_PATH = BACKEND / "data" / "dock.db"
+from .db import engine
 
 CARGO_TYPES = ("dry", "reefer", "hazmat")
 SEGMENTS = ("flexible", "standard", "urgent")
@@ -46,71 +50,27 @@ SERVABLE = {(o, d) for (o, d, *_rest) in C.ROUTES}
 STATUSES = ("PENDING REVIEW", "CONFIRMED", "LOADING",
             "IN TRANSIT", "AT PORT", "DELIVERED")
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS orders (
-    id          TEXT PRIMARY KEY,
-    origin      TEXT NOT NULL,
-    dest        TEXT NOT NULL,
-    teu         INTEGER NOT NULL,
-    weight_t    REAL NOT NULL,
-    cargo_type  TEXT NOT NULL,
-    segment     TEXT NOT NULL,
-    req_dep_day REAL NOT NULL,
-    flex_days   INTEGER NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'PENDING REVIEW',
-    created     REAL NOT NULL,
-    vessel      TEXT,
-    voyage      TEXT,
-    eta         TEXT,
-    progress    REAL,
-    price_usd   REAL
-);
-"""
-
-# --- seed: the sample set from the ledger dashboard, re-keyed to real ports
-# and the booking-request schema (one cargo_type per order) ---------------
-_SEED = [
-    dict(id="BK-2481-TC", origin="CNSHA", dest="USLAX", teu=20, weight_t=224.0,
-         cargo_type="dry", segment="standard", req_dep_day=8.0, flex_days=3,
-         status="CONFIRMED", vessel="Pacific Aurora", voyage="ML-114E",
-         progress=0.0, price_usd=4820.0),
-    dict(id="BK-2477-QH", origin="CNSHA", dest="NLRTM", teu=25, weight_t=271.0,
-         cargo_type="dry", segment="standard", req_dep_day=6.0, flex_days=4,
-         status="IN TRANSIT", vessel="Pacific Aurora", voyage="ML-108W",
-         progress=0.62, price_usd=5910.0),
-    dict(id="BK-2474-BM", origin="KRPUS", dest="USLAX", teu=16, weight_t=192.0,
-         cargo_type="reefer", segment="urgent", req_dep_day=4.0, flex_days=0,
-         status="IN TRANSIT", vessel="Meridian Star", voyage="ML-097W",
-         progress=0.41, price_usd=5380.0),
-    dict(id="BK-2469-RD", origin="SGSIN", dest="NLRTM", teu=13, weight_t=145.0,
-         cargo_type="dry", segment="flexible", req_dep_day=2.0, flex_days=6,
-         status="AT PORT", vessel="Coral Empress", voyage="ML-121N",
-         progress=0.96, price_usd=6140.0),
-    dict(id="BK-2466-JF", origin="CNSHA", dest="SGSIN", teu=9, weight_t=104.0,
-         cargo_type="dry", segment="standard", req_dep_day=3.0, flex_days=2,
-         status="LOADING", vessel="Pacific Aurora", voyage="ML-132E",
-         progress=0.04, price_usd=4470.0),
-    dict(id="BK-2460-NV", origin="CNSHA", dest="NLRTM", teu=28, weight_t=310.0,
-         cargo_type="dry", segment="flexible", req_dep_day=-20.0, flex_days=5,
-         status="DELIVERED", vessel="Pacific Aurora", voyage="ML-089W",
-         progress=1.0, price_usd=7250.0),
-    dict(id="BK-2456-GT", origin="SGSIN", dest="BEANR", teu=7, weight_t=88.0,
-         cargo_type="hazmat", segment="urgent", req_dep_day=5.0, flex_days=0,
-         status="PENDING REVIEW", vessel="Coral Empress", voyage="ML-141W",
-         progress=0.0, price_usd=3990.0),
-    dict(id="BK-2451-KP", origin="KRPUS", dest="USLAX", teu=13, weight_t=160.0,
-         cargo_type="reefer", segment="standard", req_dep_day=-45.0, flex_days=3,
-         status="DELIVERED", vessel="Meridian Star", voyage="ML-076W",
-         progress=1.0, price_usd=4680.0),
-    dict(id="BK-2485-WA", origin="CNSHA", dest="SGSIN", teu=2, weight_t=21.0,
-         cargo_type="reefer", segment="flexible", req_dep_day=12.0, flex_days=5,
-         status="PENDING REVIEW", vessel="Pacific Aurora", voyage="ML-144E",
-         progress=0.0, price_usd=1150.0),
-]
-
-_COLS = ("id", "origin", "dest", "teu", "weight_t", "cargo_type", "segment",
-         "req_dep_day", "flex_days", "status", "created", "vessel", "voyage",
-         "eta", "progress", "price_usd")
+metadata = MetaData()
+orders_table = Table(
+    "orders", metadata,
+    Column("id", Text, primary_key=True),
+    Column("origin", Text, nullable=False),
+    Column("dest", Text, nullable=False),
+    Column("teu", Integer, nullable=False),
+    Column("weight_t", Float, nullable=False),
+    Column("cargo_type", Text, nullable=False),
+    Column("segment", Text, nullable=False),
+    Column("req_dep_day", Float, nullable=False),
+    Column("flex_days", Integer, nullable=False),
+    Column("status", Text, nullable=False),
+    Column("created", Float, nullable=False),
+    Column("vessel", Text),
+    Column("voyage", Text),
+    Column("eta", Text),
+    Column("progress", Float),
+    Column("price_usd", Float),
+)
+_COLS = [c.name for c in orders_table.columns]
 
 
 class OrderIn(BaseModel):
@@ -124,53 +84,40 @@ class OrderIn(BaseModel):
     flex_days: int = Field(ge=0)
 
 
-def _conn() -> sqlite3.Connection:
-    cx = sqlite3.connect(DB_PATH)
-    cx.row_factory = sqlite3.Row
-    return cx
-
-
 def init_db() -> None:
-    """Create the table; seed the sample set only when the table is first
-    created — DELETE /orders + a restart must not silently reseed."""
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with _conn() as cx:
-        fresh = cx.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='orders'"
-        ).fetchone() is None
-        cx.execute(SCHEMA)
-        if not fresh:
-            return
-        now = time.time()
-        for i, o in enumerate(_SEED):
-            row = dict(o, created=now - (len(_SEED) - i) * 86400,
-                       eta=o.get("eta"))
-            cx.execute(
-                f"INSERT INTO orders ({', '.join(_COLS)}) "
-                f"VALUES ({', '.join('?' * len(_COLS))})",
-                [row.get(c) for c in _COLS])
-        cx.commit()
+    """Schema is owned by Alembic (`alembic upgrade head`, run on container
+    start). This just checks the table is reachable, so a misconfigured
+    DATABASE_URL or a skipped migration fails loudly at startup rather than
+    on the first request."""
+    with engine.connect() as cx:
+        cx.execute(select(orders_table.c.id).limit(1))
+
+
+def _row_to_dict(row) -> dict:
+    return dict(row._mapping)
 
 
 def list_orders() -> list[dict]:
-    with _conn() as cx:
+    with engine.connect() as cx:
         rows = cx.execute(
-            "SELECT * FROM orders ORDER BY created DESC").fetchall()
-    return [dict(r) for r in rows]
+            select(orders_table).order_by(orders_table.c.created.desc())
+        ).fetchall()
+    return [_row_to_dict(r) for r in rows]
 
 
 def get_order(order_id: str) -> dict | None:
-    with _conn() as cx:
-        r = cx.execute("SELECT * FROM orders WHERE id = ?",
-                       (order_id,)).fetchone()
-    return dict(r) if r else None
+    with engine.connect() as cx:
+        row = cx.execute(
+            select(orders_table).where(orders_table.c.id == order_id)
+        ).fetchone()
+    return _row_to_dict(row) if row else None
 
 
 def _next_id(cx) -> str:
     """BK-####-TC sequence continuing above the seeded range."""
-    n = cx.execute(
+    n = cx.execute(text(
         "SELECT MAX(CAST(REPLACE(REPLACE(id, 'BK-', ''), '-TC', '') "
-        "AS INTEGER)) FROM orders").fetchone()[0] or 2400
+        "AS INTEGER)) FROM orders")).scalar() or 2400
     return f"BK-{n + 1}-TC"
 
 
@@ -192,7 +139,7 @@ def create_order(body: OrderIn, sim_day: float = 0.0) -> dict:
             f"req_dep_day {body.req_dep_day} must be >= {sim_day + 0.5} "
             f"(current sim day {sim_day} + 0.5)")
 
-    with _conn() as cx:
+    with engine.begin() as cx:
         oid = _next_id(cx)
         rec = dict(id=oid, origin=o, dest=d, teu=body.teu,
                    weight_t=body.weight_t, cargo_type=body.cargo_type,
@@ -200,16 +147,11 @@ def create_order(body: OrderIn, sim_day: float = 0.0) -> dict:
                    flex_days=body.flex_days, status="PENDING REVIEW",
                    created=time.time(), vessel=None, voyage=None,
                    eta=None, progress=0.0, price_usd=None)
-        cx.execute(
-            f"INSERT INTO orders ({', '.join(_COLS)}) "
-            f"VALUES ({', '.join('?' * len(_COLS))})",
-            [rec[c] for c in _COLS])
-        cx.commit()
+        cx.execute(insert(orders_table).values(**rec))
     return rec
 
 
 def clear_orders() -> int:
-    with _conn() as cx:
-        n = cx.execute("DELETE FROM orders").rowcount
-        cx.commit()
-    return n
+    with engine.begin() as cx:
+        result = cx.execute(delete(orders_table))
+        return result.rowcount

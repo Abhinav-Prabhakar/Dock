@@ -86,8 +86,9 @@ customers/
 
 ## The shared order store
 
-Orders live in **SQLite at `backend/data/dock.db`** (table `orders`,
-managed by `backend/server/orders.py` — stdlib `sqlite3`, no ORM). One
+Orders live in **Postgres** (table `orders`, managed by
+`backend/server/orders.py` via SQLAlchemy Core; schema owned by
+`backend/alembic/`, not created by the app). One
 customer "order" = one booking request for **a single cargo type**; a
 multi-type consignment is filed as several orders, one POST per kind.
 
