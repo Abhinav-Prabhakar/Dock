@@ -28,6 +28,7 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-dock}:${POSTGRES_PASSWORD:-dockpw}@db:5432/${POSTGRES_DB:-dock}
       DOCK_SEED: ${DOCK_SEED:-0}
       DOCK_PPO_MODEL: ${DOCK_PPO_MODEL:-}
+      DOCK_LIVE_SPEED: ${DOCK_LIVE_SPEED:-0.0166667}   # sim-days per second; must stay numeric
       DOCK_LEDGER_DIR: /data/ledger
     volumes:
       - dock_ledger:/data/ledger     # hash-chained event ledgers survive rebuilds

@@ -66,9 +66,11 @@ done
 
 echo "customer booking (quote -> accept, Postgres)"
 oid=""; offer=""
-for dep in 5 9 14 20 26 33 40 5 12 19; do
+for try in CNSHA:NLRTM:5 SGSIN:NLRTM:6 CNSHA:USNYC:6 CNSHA:NLRTM:14 SGSIN:BEANR:9 \
+           CNSHA:USLAX:12 SGSIN:NLRTM:20 CNSHA:NLRTM:26 CNSHA:USNYC:33 SGSIN:NLRTM:40; do
+  IFS=: read -r from to dep <<< "$try"
   q=$(curl -s -X POST "$API/orders" -H 'content-type: application/json' \
-    -d "{\"origin\":\"CNSHA\",\"dest\":\"NLRTM\",\"teu\":6,\"weight_t\":60,\"cargo_type\":\"dry\",\"segment\":\"standard\",\"req_dep_day\":$dep,\"flex_days\":3}")
+    -d "{\"origin\":\"$from\",\"dest\":\"$to\",\"teu\":6,\"weight_t\":60,\"cargo_type\":\"dry\",\"segment\":\"standard\",\"req_dep_day\":$dep,\"flex_days\":3}")
   oid=$(echo "$q" | json 'd["order"]["id"]')
   offer=$(echo "$q" | json '(d["offers"] or [{}])[0].get("id","")')
   [ -n "$offer" ] && break
