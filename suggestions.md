@@ -1,166 +1,102 @@
-# Suggestions — what would actually win the hackathon
+# How Dock could become a hackathon winner
 
-## Where Dock is right now
+## The honest starting point
 
-You have an RL booking policy, a bid-price engine, stowage constraints, counter-offers, a live simulator, an EVM settlement layer, and a procedural 3D ship. That's a real system. The previous suggestions document proposed disruption recovery orchestration, inter-carrier exchanges, parametric guarantees, strategic network design, sim-to-real calibration, and executable stowage. Those are all plausible consulting-deck bullets — but they're also exactly the kind of thing an industry white-paper would list. They don't make a judge *feel* anything, and several of them (network redesign, sim-to-real) are PhD-scale efforts being handwaved into a hackathon build.
+Dock is **not** merely a binary booking classifier. The documented build already has demand forecasting, network bid prices, physical stowage checks, flexible/alternate-hub/split offers, a 44-action PPO policy that also controls speed and empty repositioning, a simulation, live events, a shock replay, an audit ledger, and local-EVM conditional settlement. The `/customers` and `/fleet` screens are different lenses on those decisions. Another screen, another chart, generic AI chat, or a prettier ship will not change the substance of the pitch.
 
-Here's what I think would actually make judges lean forward.
+The stronger story is: **Dock is an operating system for profitable promises in ocean freight.** It decides what to promise, finds a feasible way to fulfill that promise when reality changes, and prices or compensates the consequences. The current booking policy becomes one engine inside a larger closed loop, rather than the whole product.
 
----
+**My recommendation:** build **#1 as the hero**, connect it to **#2** for a genuinely new business model, and use **#5** as the credibility layer. If the hackathon is very short, ship one deep, interactive workflow from #1 instead of six shallow tabs.
 
-## 1. Adversarial red-team mode: break your own system live on stage
+| Rank | New capability | Decision Dock does **not** make today | Judge-visible moment |
+|---|---|---|---|
+| **1** | Disruption rescue orchestrator | Reassign *already committed* cargo across ships, partner slots, ports, and inland legs after a disruption | Close a port; watch committed shipments get rerouted or compensated |
+| **2** | Inter-carrier capacity exchange | Buy/sell or swap capacity and empties with another carrier, not just optimize our own four ships | Two competing fleets trade slots to save both a customer and margin |
+| **3** | Promise underwriting | Sell a delivery guarantee with a risk-priced fee, reserve, and automatic payout | A delayed container triggers a real contractual consequence |
+| **4** | Strategic fleet/network designer | Redesign sailing loops, vessel assignments, chartering, and weekly frequency over months | Show the best *new service network*, not just a better choice on the old one |
+| **5** | Sim-to-real evidence loop | Learn from external observations, quantify uncertainty, and reject unsafe-to-trust recommendations | Change an observed port-delay feed; the model recalibrates and admits uncertainty |
+| **6** | Executable stowage and terminal plan | Schedule crane moves/rehandles at each port, not just check whether a box fits | A proposed rescue route visibly fails or succeeds on crane time and ship stability |
 
-**The gap:** Dock demos itself by running curated scenarios against itself and winning. Every hackathon project does this. No one ever lets the *audience* try to break the system.
+## 1. The hero: disruption rescue orchestrator
 
-**Build:** A "Red Team" mode where a judge (or second player) controls the world while Dock's policy tries to survive. Give them a budget of disruption tokens they can spend in real time during a running episode:
+**The problem:** Dock's current shock replay demonstrates repricing and policy divergence, but it does not operate a recovery plan for the bookings that were *already sold*. A carrier's most expensive moment is when a port closes and promised deliveries become infeasible. The real question is not “what would the booking policy have done?” It is “which actual customers do we save, how, and who pays?”
 
-- **Close a port** (costs 3 tokens) — pick any of the 8 ports, pick duration.
-- **Spike fuel** (2 tokens) — VLSFO jumps 60% for N days.
-- **Demand shock** (2 tokens) — flood or starve a specific lane.
-- **Kill a vessel** (4 tokens) — one ship goes to unscheduled drydock for N days.
-- **Corrupt the forecast** (1 token) — inject systematic bias into the demand forecaster for a lane (the RL agent's observation becomes wrong).
+**Build:** Maintain a commitment graph: containers → booked vessel legs → transshipment calls → destination → delivery deadline → SLA/penalty. When a disruption arrives, generate candidate recovery itineraries across own vessels, partner slots, alternate discharge ports, rail/truck legs, and storage. Solve a time-expanded, capacity-constrained assignment with hard stowage/reefer/hazmat and cutoff constraints. Optimize **net retained profit** (revenue minus partner lift, fuel, handling, compensation, and missed-delivery costs), with explicit fairness/service floors. Keep a human approval gate before changing real commitments.
 
-The policy plays on. Dock shows: decisions it changed because of the disruption, profit it saved vs a static baseline running in the same adversarial world, and — critically — *where it broke*. A live leaderboard tracks "judge's score" (how much profit they destroyed) vs "Dock's resilience score" (how much it retained vs static). The judge is playing *against* your system.
+**What judges do:** They pick a port and closure duration, then click **Disrupt**. The screen turns from a map of ships into a list of endangered commitments. For one reefer booking, Dock offers: (A) wait and miss the SLA, (B) divert via Antwerp plus rail, (C) buy a partner slot. Each option shows arrival probability, incremental cost, carbon, physical feasibility, and the shipper's revised terms. Approve one; the itinerary changes, the customer receives a simulated amendment, and the contract/ledger records the consequence. A “do nothing” twin runs with the same disrupted world and initial bookings.
 
-**Why it wins:** This is interactive in a way demos never are. The judge isn't watching a replay — they're *attacking* your system and discovering its limits. When Dock survives, it's because they personally tried to kill it. When it breaks, you own that honestly. Either outcome is more memorable than a chart.
+**Technical challenge:** This is a new **recovery optimization** problem, not a larger PPO action space or a replay skin. Use column generation or constrained min-cost flow for routing, a mixed-integer/CP solver for scarce resources, and Monte Carlo for uncertain port reopening and travel times. Reuse Dock's existing booking, stowage, event, and settlement primitives. A deliberately small but complete 8-port scenario is more convincing than a decorative global map.
 
-**Technical work:**
-- Add a `POST /episodes/{id}/inject` endpoint that pushes live mid-episode disruption events into the running `Simulator`. The simulator already handles port closures and demand shocks via scenario config; you'd parameterize those to accept mid-run injections.
-- The "forecast corruption" token is the novel one: temporarily mutate the `BoundDemandForecaster.daily()` output for a lane by a multiplicative bias. This tests whether the policy is robust to observation noise — something the current eval never probes.
-- A small React panel in the Fleet screen with token buttons, a disruption timeline, and the live dual-profit counter.
-- Runs two episodes in parallel (PPO + static) on the same injected event sequence. You already support one episode at a time — either lift that limit for a paired run, or run the static baseline as a shadow computation within the same thread.
+**Proof:** Report promised TEU delivered on time, at-risk TEU rescued, incremental contribution margin, total compensation, and solver runtime against “wait” and greedy reroute on the same already-booked shipments. Show cases the solver declines because no safe route exists. Do not call the existing shock replay “recovery orchestration”; it does not yet do this.
 
-**Proof:** Report the policy's *regret* — how far its profit fell below the best-possible response to the same disruption sequence (you can compute an upper bound by re-running with the disruption known in advance). This is a stronger claim than "PPO beats static."
+## 2. Inter-carrier capacity and empty-equipment exchange
 
----
+**The problem:** A carrier cannot solve every shortage within its own fleet. One line may have an empty slot where another has a stranded customer, while the second has empty boxes where the first needs them. Today's simulator mentions partner lift, but Dock does not negotiate a scarce partner slot or clear a multi-party market.
 
-## 2. Counterfactual explainer: "what if we had said yes?"
+**Build:** Add a second carrier with its own schedule, capacities, reserve prices, and private costs. Expose sell/buy offers for slots, containers, and optionally reefer plugs. Match complementary imbalances via a double auction or combinatorial exchange, subject to feasible itineraries, contractual cutoffs, and no double-selling. Price a transaction so both parties do better than their no-trade counterfactual; reserve a human-approvable agreement and settle after execution. The existing on-chain demo can record a trade, but **the market-clearing algorithm and cross-carrier feasibility are the invention**, not the chain.
 
-**The gap:** Dock explains *why* it priced or rejected a booking (the `explain` block, bid-price decomposition, reason codes). But it never answers the question a shipper or ops manager actually asks: *"What would have happened if you'd taken that booking you rejected?"* or *"Was that counter-offer actually worth it?"*
+**What judges do:** Carrier A has a premium shipment it cannot carry. Carrier B has capacity on the right leg but lacks empty equipment at origin. Dock proposes a slot-for-equipment swap with a cash adjustment, and both profit projections improve. Toggle either carrier's reserve price to watch the trade vanish or change counterparties.
 
-**Build:** For every rejected or counter-declined booking in a completed episode, simulate an alternate timeline where that single decision was flipped: the booking was accepted at market rate (or the counter was accepted). Run the remainder of the episode forward from that branch point. Report the difference in terminal profit, utilization, and downstream rejections.
+**Proof:** More fulfilled profitable demand, lower empty TEU-miles, individual rationality for *each* carrier, and no capacity conflicts versus no exchange and naive first-match trading. This is a path from one fleet's decision support to a network marketplace, not just a new booking offer.
 
-This produces a per-decision *counterfactual impact* value: "Rejecting booking #247 (CNSHA→NLRTM, 22 TEU reefer, day 34) saved $18,400 in expected profit because it preserved capacity for 3 higher-value bookings on days 36–38." Or: "Rejecting booking #247 cost $4,100 — the capacity went unsold."
+## 3. Promise underwriting and parametric service guarantees
 
-**Why it wins:** This is the single most powerful explainability feature you could build. It turns the RL policy from a black box that says "trust me" into a system that can *prove* each decision was right — or honestly admit when it was wrong. Judges who are skeptical of RL will find this irresistible.
+**The problem:** A reason-coded quote does not tell a shipper whether the carrier will stand behind the ETA. Dock's present settlement covers conditional booking terms on a local EVM; it is **not** an actuarially priced guarantee or an independent proof of physical delivery.
 
-**Technical work:**
-- After an episode finishes, iterate over rejected/counter-declined events. For each one, fork the `Simulator` state at that day (you'll need to checkpoint `Simulator` state at each day boundary — serialize `fleet`, `stowage`, `metrics`, `empties`, `demand` RNG state).
-- Re-run `sim.apply_decision(req, BookingDecision(kind=accept))` and then continue the episode to completion using the same policy for all subsequent decisions, same demand stream.
-- The expensive part is re-running ~50 forked episodes per main episode. But each fork only runs the *remainder* from the branch point, and the simulator runs >1000× real-time. For a 90-day episode with ~30 interesting rejections, forking from the median branch point (day 45) means ~30 × 45-day runs — feasible in <30 seconds total.
-- Surface this as a "What-If" rail on the Customers screen: click any rejected card → a drawer shows the counterfactual outcome, with a before/after profit delta and a mini-timeline of what changed downstream.
+**Build:** Offer optional tiers such as standard, guaranteed-by-date, and carbon-budget delivery. Predict the distribution of arrival delay under congestion, weather, transshipment, and recovery options; quote a fee and reserve for each guarantee. If a verified milestone misses the contracted threshold, trigger a pre-agreed credit or payout. Price against expected claims plus capital at risk, not just against the mean ETA. Track exposure across correlated bookings on the same ship/port so one closure cannot bankrupt the guarantee pool.
 
-**Proof:** Aggregate the counterfactual impacts across an episode. If the policy is good, the sum of counterfactual impacts for rejections should be *positive* (rejecting those bookings was, on net, profitable). Report the fraction of rejections that were "correct" (positive impact) — this is a novel metric for RL policy quality that doesn't exist in the current eval.
+**What judges do:** Buy a guaranteed reefer delivery. Trigger a port closure. The recovery optimizer tries to save it; if it fails, a transparent payout is calculated from the signed terms. The judge can see why a higher-risk route costs more and why some promises are refused.
 
----
+**Proof:** Calibration of predicted delay probabilities, expected margin *after claims*, tail-loss/CVaR, fraction of guarantees honored, and comparison with flat-fee guarantees. In a demo, use simulator-generated or explicitly simulated attestations; a carrier-written oracle plus a local EVM is not independently verified real-world delivery. This extends the existing deal rail with a new risk decision rather than just adding another contract type.
 
-## 3. Customer lifetime value: stop optimizing single voyages
+## 4. Strategic fleet and service-network designer
 
-**The gap:** Dock treats every booking request as independent. The RL observation is per-request: route, TEU, segment, departure day, stowage feasibility. There is no notion of a *returning customer*. But in real shipping, 70–80% of volume comes from long-term contracts and repeat shippers. Rejecting a flexible shipper once costs you a booking; rejecting them three times costs you a customer.
+**The problem:** The current four vessels run fixed loops. That is fine for per-booking revenue management, but an operator also decides **where ships should sail in the first place**. The docs themselves note that four disjoint loops cannot provide realistic weekly service on all routes. Repricing an insufficient network is not the same as designing a better one.
 
-**Build:** Give the demand stream a notion of *shipper identity*. Each shipper has a patience counter — every rejection or unfavorable counter-offer decreases it. When patience hits zero, that shipper churns: they stop sending requests on that lane. The RL agent gets a new observation feature: `shipper_patience` (normalized 0–1) and `shipper_historical_volume` (how much this shipper has booked in the past). The agent must now learn that some low-margin bookings are worth accepting to keep a high-volume shipper, while a one-off urgent request from an unknown shipper can be squeezed harder.
+**Build:** Given OD demand distributions, berth windows, vessel specs, canal transits, fuel/carbon costs, and service-frequency commitments, choose loops, phased sailings, vessel assignments, and charter/buy-slot options. Run an outer optimization over candidate networks and an inner simulation of Dock's existing booking policy. Penalize brittle schedules and low-frequency service, not only operating cost. Present a Pareto frontier of profit, punctuality, and CO₂ rather than one magic route.
 
-Add a shipper leaderboard to the Customers screen: top 10 shippers by lifetime value, their churn risk, and the decisions that affected them. When a shipper churns, flash a notification: "Lost Shipper #42 (CNSHA→NLRTM, 340 TEU/year) — last 3 interactions were rejections."
+**What judges do:** Reassign vessels to a phased transpacific string, or add charters at a visible cost to achieve weekly frequency. Dock recomputes the schedule and then reruns booking performance on the *new* network. A seemingly expensive charter wins because it enables repeat premium bookings and fewer broken promises—or loses because it cannibalizes existing lift.
 
-**Why it wins:** This transforms Dock from a per-voyage optimizer into a *relationship-aware* revenue management system. Airlines figured this out in the 2000s with frequent-flyer tier pricing; shipping hasn't. It's a one-sentence pitch: "Dock knows when saying no costs you a customer, not just a booking."
+**Proof:** Out-of-sample profit, coverage/frequency, missed demand, fleet utilization, and carbon against the fixed-loop baseline. This is distinct from the already shipped speed and empty-reposition decisions. The plan lists buy/charter/sell as future vision; a working network-search loop would turn that slide into a second substantial optimization engine.
 
-**Technical work:**
-- Modify `DemandStream` to maintain a pool of ~100–200 synthetic shippers with Pareto-distributed volumes (a few large shippers, many small ones). Each request is attributed to a shipper. Shipper patience decays on rejection/counter-decline, recovers slowly on acceptance.
-- Add 2–3 shipper features to the RL observation vector (currently 112-dim, becomes ~115-dim). This requires retraining — but the curriculum is automated, and you have the GPU box.
-- The reward function gets a churn penalty term: when a shipper churns, subtract their estimated annual contribution from the reward.
-- New frontend component: a `ShipperPanel` on the Customers screen showing the shipper portfolio, churn events, and a scatter plot of shipper value vs. churn risk.
+## 5. Sim-to-real evidence and uncertainty engine
 
-**Proof:** Compare PPO with and without shipper features on a 90-day horizon: the shipper-aware policy should accept slightly more low-margin bookings from high-value shippers but reject more from one-off requesters, yielding higher *long-run* profit (measured over the full horizon including lost future demand from churned shippers). Report churn rate and retained shipper value alongside the usual profit metrics.
+**The problem:** The strongest current result is measured in Dock's own synthetic world. The docs are candid: demand data and willingness-to-pay are simulator-generated; the models can recover generator parameters, but that is not external validation. The PPO wins on aggregate holdout and the volatile-shock scenario, yet trails a heuristic in depressed demand. Judges may reasonably ask whether the learned strategy survives a different world.
 
----
+**Build:** Ingest a small, licensed/public sample of actual vessel calls, port waits, schedules, weather, bunker prices, and market-rate indices with provenance. Recalibrate delay and demand ranges; reserve a **separate external or shifted-regime test** that is not used to train or tune the new components. Build ensembles of plausible worlds rather than one calibrated simulator. Use distribution-shift detection and uncertainty bounds to flag decisions requiring a human, then test the old and new policies across those worlds. If booking-level outcome labels are unavailable, say so: evaluate observable ETA/port behaviors separately and keep commercial uplift as a simulation-only claim.
 
-## 4. Carbon budget market: make decarbonization a profit decision, not a compliance checkbox
+**What judges do:** Switch from the synthetic baseline to an observed high-congestion week. Dock shows changed delay probabilities, a wider profit interval, a recovered recommendation—or “insufficient evidence; manual approval required.” The trust moment is the system refusing to overclaim.
 
-**The gap:** Dock tracks CO₂/TEU as a reporting metric. The slow-steaming speed decisions reduce emissions. But carbon is treated as a *cost* (EU ETS at €80/tCO₂), never as a *tradable asset* or a *customer-facing product*. The current system can't answer: "Should I sell a 'green voyage' premium? How much is it worth? When should I burn my carbon budget vs. save it?"
+**Proof:** Forecast calibration, interval coverage, stress-test regret, robustness across parameter ranges, and an explicit provenance card for every number. Do **not** report the existing +164% simulated profit lift as a real-world outcome. The original holdout is useful, but an independently sourced shift test is a much harder credibility win.
 
-**Build:** Give the fleet an explicit **carbon budget** for the episode (e.g., total allowable tonnes CO₂, mimicking the EU ETS cap or a corporate net-zero target). Each booking consumes carbon based on the vessel's fuel curve, speed, and route. The RL agent gets a new observation: `carbon_budget_remaining` (fraction). The policy must now balance profit against carbon — not as a fixed tax, but as a *scarce resource* with an evolving shadow price.
+## 6. Executable stowage and terminal choreography
 
-On the customer side, offer a **green premium**: shippers can pay extra for a "verified low-carbon voyage" (vessel runs at ≤14kt on their leg). This is a new counter-offer type alongside flex-window/alt-hub/split. The green premium is priced against the carbon budget's opportunity cost — if the budget is nearly exhausted, the premium is high; if there's slack, it's cheap.
+**The problem:** The existing deterministic stowage plan is a bays × height feasibility model. The separate vessel design document imagines a detailed ship and crane timeline, but that visual design is not evidence that Dock has optimized actual terminal operations. A cargo plan that fits in the hold may still fail a tight connection if it needs too many rehandles or crane hours.
 
-**Why it wins:** Every shipping hackathon project mentions sustainability. None of them make it a *decision variable*. Dock would be the first to show carbon as a scarce resource that the RL agent actively manages — speeding up when carbon is cheap and the booking is valuable, slowing down to sell green premiums when carbon is tight. The demo moment: watch the carbon price evolve endogenously as the policy trades off profit against emissions.
+**Build:** Turn a proposed itinerary into an executable load/discharge sequence at each port: bay/row/tier placement, hatch access, crane assignment, rehandle count, crane interference, reefer power handoff, and vessel stability envelopes. Use constraint programming to jointly minimize turnaround time and disruption cost while respecting safety rules. Feed true port-time and handling costs back into the rescue planner; never ask an LLM to decide legal placement.
 
-**Technical work:**
-- Add a `carbon_budget` field to `SimConfig` and track cumulative emissions in `Simulator`. Add `carbon_remaining` to the RL observation.
-- New counter-offer type `green_voyage` with a premium calculated from the carbon shadow price (estimated from the marginal cost of the next unit of carbon, given remaining budget and expected future bookings).
-- The RL action space grows by ~3 actions (green_voyage at 5%/10%/15% premium) → `Discrete(47)`. Retrain.
-- Extend the `booking.decision` event with a `carbon_cost_kg` field. Add a carbon budget gauge to the Fleet screen and a "green voyage" badge to offer cards.
+**What judges do:** In the recovery demo, a tempting alternate vessel appears to have room. The executable planner rejects it because an early-discharge reefer is trapped below later-port cargo—or finds a safe restow with a measured crane-hour penalty. The vessel view animates *the computed move list*, not a scripted cinematic.
 
-**Proof:** Show the Pareto frontier: profit vs. total CO₂. The carbon-aware policy should dominate the carbon-unaware one (same profit, less carbon; or more profit at the same carbon level). Report the emergent carbon shadow price over time — it should rise as the budget depletes, which is exactly how a well-designed cap-and-trade system works.
+**Proof:** Zero hard-rule violations, feasible completion before berth cutoff, crane hours, rehandles, and avoided delay against a capacity-only planner. Make clear this is a new terminal-execution model, not a claim that the present stowage mask already provides bay/row/tier naval-architecture certification.
 
----
+## The pitch I would actually give
 
-## 5. Collaborative human-AI booking desk: the judge *is* the operator
+> “Carriers don't merely sell slots. They sell promises that can break. Dock prices each promise against modeled ship constraints, then—when a port shuts—finds the least-cost physically possible way to keep it, buys capacity from other carriers when necessary, and automatically accounts for customers it cannot save.”
 
-**The gap:** Dock's demo is fully autonomous — the RL policy makes every decision. But the real pitch is "decision *support*", not "decision replacement." Judges see an AI running on autopilot and think "cool tech demo." They see a human-AI team outperforming both the human and the AI alone and think "I'd buy this."
+**A tight live sequence:**
 
-**Build:** A hybrid mode where the RL policy *recommends* but a human operator (the judge) makes the final call. For each incoming booking, the system shows:
+1. **Establish the business:** Show one profitable booking and its existing stowage-aware bid price. Spend seconds, not minutes, on PPO architecture.
+2. **Break the world:** Close Rotterdam while real committed cargo is en route. Freeze the initial state and seed so “before/after” uses identical obligations.
+3. **Make a new decision:** Reveal three feasible recovery plans, one unsafe/infeasible plan, the solver's recommended choice, and the margin/SLA/carbon trade-off. Let a judge change the closure duration.
+4. **Close the loop:** Approve a rescue. Show a partner capacity trade or a guaranteed-delivery payout, plus the event trail and changed customer terms.
+5. **Prove it:** Compare delivered-on-time TEU and net retained profit against do-nothing and greedy recovery, with uncertainty and data provenance visible. Admit the synthetic-world boundary.
 
-- The RL agent's recommendation (accept/reject/counter, with confidence).
-- The bid-price decomposition (already built).
-- A quick expected-value estimate: "Accepting this booking is worth ~$2,400 in expected profit; rejecting preserves capacity worth ~$3,100 for expected future demand."
-- A "risk gauge": how sensitive is this decision? (high-risk = the counterfactual profit gap is large; low-risk = it doesn't matter much either way).
+**What not to spend the last build cycle on:** another fleet map, a generic AI copilot, more LLM prose for existing reason codes, a blockchain-first pitch, unsupported industry-wide savings extrapolations, or six half-built features. The existing ledger and local-EVM demo are supporting evidence; they are not a substitute for a second genuinely difficult decision problem.
 
-The operator clicks accept/reject/counter. At the end, compare three scores: the operator alone (their decisions with no AI guidance), the AI alone (full autopilot on the same demand), and the human-AI team (what actually happened). The hypothesis: the team beats both.
+## Practical cut line
 
-**Why it wins:** This is the centaur chess argument applied to shipping. It reframes the product from "we replaced the human" to "we made the human better." It's also intensely interactive — the judge is making real decisions under time pressure, with the AI whispering advice. The reveal at the end ("You + AI scored $22.3M; AI alone scored $21.8M; you alone would have scored $19.1M") is a killer demo moment.
+- **If you can build only one thing:** implement the recovery orchestrator for a fixed closure, a handful of committed shipments, two own vessels, one partner slot, and one inland alternative. Produce a real optimization result and an interactive counterfactual.
+- **If you can build two:** add a second carrier with economically meaningful trade offers; the recovery planner can now buy a solution it could not create alone.
+- **If you can go all in:** add guarantee underwriting, executable crane moves, network redesign, and independent data calibration. Keep the mathematical models separate, but connect them through one promise/commitment state and one auditable event trail.
 
-**Technical work:**
-- Add a `human` policy mode where each booking request pauses the episode and waits for a `POST /episodes/{id}/decide` call from the frontend with the operator's chosen action.
-- The frontend shows a decision card with the RL recommendation, confidence score, and expected-value breakdown. A countdown timer (10 seconds?) applies the AI recommendation if the human doesn't act — keeps the demo moving.
-- Run three episodes: human-only (no AI info shown, just raw request data), AI-only (PPO autopilot), human-AI team. Same seed, same demand.
-- The "human-only" baseline is tricky to get during a live demo — either pre-record it (let the judge play a quick round without AI guidance first) or simulate it by recording only the decisions where the judge *overrode* the AI and estimating what would have happened if they'd overridden everything.
-
-**Proof:** The comparison table. Also report *where* human overrides helped (the AI missed something the human intuited) and where they hurt (the human was too conservative). This is a genuine research result about human-AI complementarity in revenue management.
-
----
-
-## 6. Explain the RL policy through *attention*: what is the agent actually looking at?
-
-**The gap:** The `explain` block in offers.json explains the *bid-price engine's* reasoning. But the RL agent has its own, separate logic — it's a neural network that takes 112 observations and produces an action. The bid price is one input; the agent might be ignoring it. You have no visibility into *what the RL agent learned*.
-
-**Build:** Add a **policy attention map** to every decision. After the PPO agent selects an action, compute input-gradient saliency (or SHAP values, or simply the magnitude of the first-layer weights connecting each observation feature to the chosen action's logit). Group the 112 observation features into named blocks (market/request, voyage options, port state, vessel state, demand forecast, calendar) and report the relative importance of each block for this specific decision.
-
-Render this as a small heatmap on each offer card: "For this decision, the agent weighted *vessel capacity* (42%), *demand forecast* (28%), *request segment* (18%), *port congestion* (12%)." When the agent relies heavily on the demand forecast, that's a signal that forecast quality matters. When it ignores the forecast and relies on capacity, it's in a regime where scarcity dominates.
-
-**Why it wins:** RL in production is scary because it's a black box. This makes the box transparent — not by explaining the math, but by showing what information the agent *used* for each decision. A judge can look at a rejection and see "the agent rejected this because it expects 3× more demand on this lane next week" — that's an actionable insight, not a neural network weight.
-
-**Technical work:**
-- After `model.predict(obs)`, compute `torch.autograd.grad(action_logit, obs)` to get per-feature gradients. Normalize by L1 norm to get fractional attributions. This is ~1ms per decision — negligible.
-- Group the 112 features using the block structure already documented (market/request = features 0–17, voyage options = 18–61, ports = 62–85, vessels = 86–101, forecast = 102–109, calendar = 110–111).
-- Add an `attribution` field to the `booking.decision` event: `{"market": 0.18, "options": 0.12, "ports": 0.42, "vessels": 0.10, "forecast": 0.15, "calendar": 0.03}`.
-- Render as a small horizontal stacked bar on each offer card, color-coded by block.
-
-**Proof:** Sanity-check the attributions: in a port-closure scenario, `ports` attribution should spike for affected routes. In a demand-surge scenario, `forecast` attribution should dominate. If the attributions are random, the policy hasn't learned meaningful features — that's also useful information.
-
----
-
-## The pitch I'd give
-
-> "Every shipping AI shows you a chart that goes up. Dock lets you *attack* it and see what breaks. It explains not just what it decided, but what would have happened if it decided differently. And when you sit in the operator's chair, you and the AI together beat the AI alone."
-
-**A tight demo sequence:**
-
-1. **Set the stage** (30s): One booking arrives. Show the bid-price explanation *and* the RL attention map — the agent is looking at forecast demand and vessel capacity. Accept it. Show the counterfactual: "If you'd rejected this, you'd lose $2,400."
-2. **Break it** (90s): Hand the judge the red-team panel. They close Rotterdam, spike fuel, kill a vessel. Watch the RL policy adapt in real time — rerouting, repricing, slowing down. Show the dual profit counter: PPO is down 12%, static is down 40%.
-3. **Play together** (90s): Switch to collaborative mode. The judge makes 10 booking decisions with AI guidance. Show the risk gauge — the first 3 decisions don't matter much, but decision #7 is critical (high counterfactual gap). The judge follows the AI's advice on that one.
-4. **The reveal** (30s): Three-way score card. Human+AI: $22.3M. AI alone: $21.8M. Static: $17.0M. The judge made one override that saved $400K the AI would have lost.
-5. **The carbon twist** (30s): Same scenario, but with a carbon budget. The policy voluntarily slowed vessels and sold green premiums when carbon got tight. Same profit, 18% less CO₂. The Pareto chart.
-
-**What not to build:** More dashboards. More analytics views. More "insights." The suggestions.md you showed me was full of dashboards and "operational intelligence." Judges don't remember dashboards. They remember the moment they tried to break your system and it survived, or the moment they realized the AI made them better at a job they'd never done before.
-
----
-
-## Prioritization
-
-| If you have… | Build this |
-|---|---|
-| 6 hours | **#2 Counterfactual explainer** — it's the most novel, requires no retraining, and plugs into the existing offer cards. Fork the sim at each rejection, run the remainder, report the delta. |
-| 12 hours | Add **#6 Attention maps** — another no-retrain addition that makes every offer card richer and more transparent. Together with #2, you have the best *explainability* story at the hackathon. |
-| 24 hours | Add **#1 Red-team mode** — this is the demo *moment*. The technical work is moderate (mid-episode injection + paired runs), but the audience impact is enormous. |
-| 48 hours | Add **#5 Collaborative desk** — requires the human-in-the-loop episode mode and the decision UI, but the payoff is the centaur comparison that reframes the whole pitch. |
-| All in | Add **#3 Shipper CLV** and **#4 Carbon budget** — these require retraining the RL agent, which is the bottleneck, but they fundamentally deepen the decision space from "per-booking optimizer" to "relationship-aware, carbon-constrained fleet intelligence." |
+A winning demo is not “our RL policy makes more money in its simulator.” It is **“we can make, rescue, trade, and honor a cargo delivery promise—and show exactly when we cannot.”**
