@@ -2,6 +2,12 @@
 
 *Written for a fresh Devin session. Read `plan.md` first (source of truth), then this file for current state.*
 
+> **2026-09-25 update:** the Next.js app (`src/`) described below has been
+> retired. The frontend is now two static sites — `customers/` and
+> `drafts/cargo-ship/` — served by the backend and wired to the live API per
+> `docs/INTEGRATION_PLAN.md`. The rest of this file is historical context on
+> the backend/RL work and is otherwise still accurate.
+
 ## Mission right now
 
 Backend is **complete and verified**. The full PPO curriculum ran on the
@@ -43,7 +49,7 @@ they do not replace it.
 - Root: `/Users/abhinav/Projects/Dock`
 - `plan.md` — full product spec. Obey its P0 scope; no P1–P3 creep.
 - `README.md` — already rewritten for the hackathon pitch.
-- Frontend: Next.js 16 / React 19 / Tailwind v4 / MapLibre — feature-complete live dashboard in `src/` (`docs/FRONTEND.md`); `/` is the original ops mock, `/(dock)` route group is the live product. `AGENTS.md` says: read `node_modules/next/dist/docs/` before touching Next code (breaking changes).
+- Frontend: retired Next.js app superseded by `customers/` and `drafts/cargo-ship/` (see the 2026-09-25 note above and `docs/INTEGRATION_PLAN.md`).
 - Backend: Python under `backend/` + a live FastAPI server (`backend/server/`, see `api.md`).
 
 ## Backend layout (all implemented, all tested)
