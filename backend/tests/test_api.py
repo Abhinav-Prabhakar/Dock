@@ -3,6 +3,15 @@
 Runs a real episode on a daemon thread via TestClient — static policy +
 small horizon + speed_days_per_sec=0 (flat out) keeps it fast and needs
 no model artifacts.
+
+Needs a reachable, migrated Postgres (create_app() -> init_orders_db()
+checks the `orders` table exists on startup, even though nothing here
+exercises /orders):
+    docker compose up -d db        # from the repo root
+    cd backend && .venv/bin/alembic upgrade head
+    .venv/bin/pytest -q
+(server/db.py's DATABASE_URL default already matches the compose db's
+exposed port/user/db, so no env var is needed unless you changed .env.)
 """
 
 from __future__ import annotations
