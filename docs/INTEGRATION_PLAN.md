@@ -1,6 +1,6 @@
 # Integration & containerisation plan
 
-Status: **agreed, not started** · 2026-09-25
+Status: **in progress** · checkpoint 2026-09-25 · branch `integration/live-backend` (PR #2 already merged to `main`)
 
 Goal: connect both sites to the real backend. Customers get **live quotes and counter-offers
 from the model** when they submit a booking, and the operator site shows **every booking in real
@@ -9,7 +9,7 @@ time**. Remove every mock-data fallback, and run the whole stack locally as thre
 
 ---
 
-## 1. Current state
+## 1. Starting point (before this work — see §5 for where things are now)
 
 | Piece | Talks to backend? | Mock data today |
 |---|---|---|
@@ -76,66 +76,102 @@ db   Postgres 16            named volume · healthcheck · api waits for healthy
 5. **Precomputed compare artifacts** live in `public/demo/` (a Next.js folder) and need to move
    under `backend/` when Next.js is removed.
 
-## 5. Execution order
+## 5. Progress
 
-1. ✅ Retire Next.js: removed `src/`, the Node toolchain files, `public/map/`; relocated
-   `public/demo/*.json` → `backend/demo/`. Verified `/health`, `/compare/summary`, `/orders`.
-2. ✅ Docker Compose (`ui` / `api` / `db`) + Alembic; `orders` off SQLite onto Postgres via
-   SQLAlchemy Core (`backend/server/orders.py`, `backend/server/db.py`); `_SEED` removed —
-   a fresh DB starts with an empty `orders` table. `backend/alembic/versions/0001_orders.py`.
-   `backend/docker-entrypoint.sh` runs `alembic upgrade head` + generates `data/generated/`
-   on every start (idempotent). `ui/nginx.conf` proxies `/api/*` to `api:8000` (incl.
-   WebSocket upgrade) — not yet used by either frontend (that's step 4).
-   Verified: `docker compose up --build`, all 3 healthy; POST/GET `/orders` round-trips
-   through real Postgres; order survives a full `down`/`up` cycle (named volume); `alembic
-   upgrade head` / `downgrade base` both idempotent and clean; both sites + `/api` proxy
-   reachable through nginx on :8080.
-   Known gap: `test_api.py` now needs a reachable, migrated Postgres to even import the app
-   (`create_app()` → `init_orders_db()`) — documented in its docstring and in `README.md`.
-3. Persist episodes / events / deals; local-only seed.
-4. nginx same-origin `/api`; strip customer-site fallbacks (`FALLBACK`, localStorage caches).
-5. Live episode + customer bookings (§6): always-on episode, quote/accept/decline endpoints,
-   `offers` table, `order.*` events.
-6. Customer site: booking form shows the offer menu + recommendation; accept/decline;
-   dashboard reads real orders/statuses.
-7. Backend additions for the operator UI: `policy.decision` event, stowage endpoint.
-8. Wire operator screens (live bookings feed → Stowage → Vessel → Statistics → Model) to
-   `/live`; delete `statsData.js` / `engine.js` mocks.
-9. Refresh `api.md`, `plan.md` and the `docs/` pages; run end-to-end locally
-   (customer books → operator sees it live → deal settles).
+### Done
 
-## 6. Customer bookings: quote → counter-offer → accept
+| # | Step | Where | Verified by |
+|---|---|---|---|
+| 1 | Retire Next.js; demo artifacts → `backend/demo/` | `main` (PR #2) | app boots; `/compare/*` 200 |
+| 2 | Compose `ui`/`api`/`db`, Postgres + Alembic, orders off SQLite, no seed rows | `main` (PR #2) | `docker compose up --build`; restart persistence; migrations up/down |
+| R | **Review fixes** on #1–2: concurrent-order id race (sequence, migration 0002); nginx served the homepage for missing files; silent migrations; DB connect at import time; hard-coded DB port; stale README; tests writing ledgers into git | `6750f35` | race regression test; 16/16 parallel POSTs |
+| T | **Tests + CI**: API tests on an isolated `<db>_test` DB rebuilt from migrations each run; `scripts/smoke.sh` end-to-end through nginx; GitHub Actions (backend pytest + Postgres, frontend `node --check`, full Docker stack + smoke) on every push/PR | `6750f35` | first CI run green on all 3 jobs |
+| 5 | **Live simulation + customer quotes (backend)**: always-on PPO episode; `POST /orders` → offer menu from the policy's own action space + mask, priced by the bid-price engine, never below the bid-price floor (else `NO OFFER`); PPO recommendation with π, V(s), attributions; accept/decline; order status follows the cargo; migration 0003 | `738127f` | `test_quotes.py` (real PPO episode), smoke |
+| 7 | **Operator endpoints**: `/live`, `/live/events`, `/live/policy` (real network view per decision — matches `model.predict` 400/400), `/live/policy/network` (real weight slice), `/live/vessels/{id}/stowage` | `738127f` | `test_quotes.py`, smoke |
+| 6a | **Customer booking page** on the shared client `customers/shared/api.js` (same-origin, no fallbacks) + the offer slip `customers/shared/offers.js`/`.css` (`DockOffers.review`) | `c35a475` | `node --check`; smoke 23/23 |
 
-The simulator already separates pricing (`sim.quote()`), feasibility (`sim.feasible()`) and
-commit (`sim._book()`). Only `_customer_accepts()` is simulated (hidden WTP dice); for a real
-customer the human's click replaces it.
+Current numbers: 145 backend tests · smoke 23/23 · CI green through `6750f35` (later commits pushed; check
+the Actions tab).
 
-1. **Always-on live episode.** At API start, run one live episode (PPO, baseline, slow
-   real-time pace) and restart it when the horizon ends. A lock serialises the episode thread
-   with quote/accept calls.
-2. **`POST /orders`** builds a `BookingRequest` in the live sim, generates its options (incl.
-   alt hub), and returns synchronously:
-   `{order, offers: [{id, kind, vessel, board_day, eta, price_per_teu, total, discount}],
-   recommended_offer_id, recommendation: {action, prob}}`.
-   Offers are accept / flex-window / alt-hub / split, priced by the bid-price engine and
-   filtered by the stowage mask. The recommendation is PPO's pick for this request (obs + mask
-   built for it).
-3. **`POST /orders/{id}/accept {offer_id}`** re-checks feasibility, then `_book()`s. Counters
-   register a settlement deal as today. A stale offer returns `409 offer no longer available`.
-   **`POST /orders/{id}/decline`** records the decline.
-4. **Events:** `order.created`, `order.quoted`, `order.accepted`, `order.declined` join the
-   live stream; customer bookings carry `source: "customer"` on `booking.decision` /
-   `cargo.booked`.
-5. **Schema:** `orders` gains `status` (`quoted → accepted | declined | expired`, then voyage
-   statuses), `episode_id`, `request_id`, `deal_id`; new `offers` table.
-6. **Live endpoints:** `GET /live` (current episode snapshot), `WS /live/stream`.
-   Sim day ↔ calendar date: day 0 = the episode's start date, shown as dates in the UI.
+**Descoped:** step 3 (persisting episodes/events/deals to Postgres). The durable records are Postgres
+orders/offers plus the hash-chained ledger on the `dock_ledger` volume; episodes themselves stay in
+memory. Revisit only if restarts losing the live world becomes a problem.
+
+### In progress — step 6: customer site
+
+Done: booking page (`customers/index.html`, `script.js`). Remaining:
+
+1. **Dashboard** (`customers/dashboard/script.js`): replace `const API = … localhost:8399` with
+   `DockAPI` (add `../shared/api.js` + `offers.js`/`.css` to `dashboard/index.html`); delete the
+   `CACHE_KEY` localStorage fallback around lines 1313–1320 (show an error band instead); add
+   statuses to the `ST` registry (~line 55): `QUOTED`, `NO OFFER`, `DECLINED`, `EXPIRED`; clicking a
+   `QUOTED` order opens `DockOffers.review([{order, offers}])` using `DockAPI.order(id)`.
+   Keep the `ml.view` localStorage key (a UI preference, not data).
+2. **intake-a…d** (`customers/intake-*/script.js`): same swap to `DockAPI`; delete `ORDERS_KEY`
+   caches and intake-a's embedded `FALLBACK` port list (use `DockAPI.ports()`; on failure show an
+   error, not stale ports); on submit call `DockAPI.quote` per cargo kind then
+   `DockOffers.review(results)` then go to `../dashboard/`. Each needs the three `shared/` tags.
+3. Booking page leftover: `PORT_G` in `customers/script.js` is an embedded port/OD table merged with
+   `GET /ports` — build it from `/ports` + `/routes` instead.
+4. Once no page references `localhost:8399`, delete the temporary `8399:8000` port mapping in
+   `docker-compose.yml` (and its header note).
+5. Tests: extend `scripts/smoke.sh` to check each intake page and `dashboard/` load their `shared/`
+   assets; `grep -r "localhost:8399\|localStorage.setItem(.ml.orders" customers/` must be empty.
+
+### Next — step 8: operator console (`drafts/cargo-ship`), one screen at a time
+
+Add a small `js/live.js` (poll `/api/live` + `/api/live/events?after_seq=` every ~2 s; no WS
+needed) shared by all screens; show an explicit "live simulation unavailable" state on error.
+
+1. **Live bookings feed** — a panel/ticker of `booking.decision` + `order.*` events, customer ones
+   (`source: "customer"`) highlighted. This is "port side sees bookings in real time".
+2. **Stowage + Vessel** — replace `cargo.fillAll()` with a load from
+   `/api/live/vessels/{id}/stowage` (default `VES1`, add a vessel select): map the 64 logical bays
+   onto the 23 physical bays in order, fill each physical bay hold-first bottom-up in the returned
+   stacking order (latest discharge at the bottom); colour-by-port uses `discharge`. Profit panel
+   → `/api/live` `metrics.cum_profit`; vessel name/telemetry from `/api/live` vessels.
+3. **Statistics** — replace `pages/statsData.js` with `/api/compare/{summary,timeline,offers,shock}`
+   (5-policy comparison) + `/api/live` metrics + `/api/orders`; delete `statsData.js`.
+4. **Model** — replace `pages/engine.js` (`MockEngine`) with `/api/live/policy/network` (once) and
+   `/api/live/policy` (poll; replay the latest decision through the existing stage animation).
+   The shapes already match (112 obs, 44 actions, 28 units per layer); action labels come from the
+   network endpoint. Delete `engine.js`.
+5. Tests: `node --check` (already in CI); extend smoke with the operator's data endpoints.
+
+### After that — step 9
+
+Refresh `api.md` (new endpoints above, `/orders` contract: `req_dep_day` is days-from-now, response
+is `{order, offers, recommendation}`), `plan.md` §2.9, `frontend.md`, `technical.md`; final
+end-to-end run: customer books → operator sees it live → deal settles.
+
+## 6. Customer bookings: quote → counter-offer → accept (as built)
+
+- **Live world:** `EpisodeManager.start_live()` runs from the API's startup hook: PPO, `baseline`,
+  1 sim-day per minute (`DOCK_LIVE_SPEED`), 90-day horizon, restarted at the end. `DOCK_LIVE=0`
+  disables it (tests do). It doesn't block ad-hoc `POST /episodes` runs.
+- **Concurrency:** one `RLock` per episode (`ep.sim_lock`), held by the episode thread per sim-day
+  (per env step for PPO) and by quote/accept.
+- **`POST /orders`** (`req_dep_day` = days from now) → `{order, offers[], recommendation}`.
+  Offers = the policy's booking actions allowed by `env.fleet_env.booking_mask` (shared with the
+  env), one per kind (the tier the policy rates highest), priced by `sim.quote`; below-floor offers
+  are withheld; none left → status `NO OFFER` + a customer `booking.decision` (rejected).
+  Recommendation = PPO argmax on the request's own observation, with π, V(s), attributions.
+- **Accept** books at the quoted price through `sim._book` (stowage, departure, delivery,
+  settlement, ledger); re-checks feasibility; 409 if the sailing left, the space is gone, the quote
+  is > 15 min old, or the live world restarted. **Decline** records it.
+- **Status:** `QUOTED → CONFIRMED → IN TRANSIT → DELIVERED` (+ `NO OFFER`, `DECLINED`, `EXPIRED`);
+  `LOADING`, `AT PORT`, progress and ETA (`D+n`) are derived on read from the live clock.
+- **Schema:** migrations `0001` orders · `0002` id sequence · `0003` offers table + order links.
 
 ## 7. Open questions
 
-- **AI chat:** `src/app/api/chat` (the LLM proxy behind `AiChat` / `SparkleButton`) is removed
-  along with Next.js. Drop the feature, or port it to a FastAPI endpoint?
-- **Customer intake variants:** `customers/intake-a…d` are four designs of the same form.
-  Keep all four, or pick one before stripping their fallbacks?
-- **Stale docs:** `docs/FRONTEND.md` and `docs/TESTING.md` describe the Next.js app. Rewrite
-  them, or remove them?
+Resolved: AI chat dropped with Next.js · the Next.js docs deleted · the four intake variants are kept
+and made swappable via `customers/shared/` (the offer slip is design-independent).
+
+Open:
+- **Which intake is the front door?** `customers/` (badge design) is canonical today. Switching
+  later = point nginx's `/customers/` at another variant once step 6 converts it.
+- **Live pace:** 1 sim-day/minute gives customers time to accept and shows a steady booking feed.
+  Faster makes the operator views livelier but quotes expire sooner. Set `DOCK_LIVE_SPEED` to taste.
+- **Episode persistence** (descoped step 3): only needed if losing the in-memory live world on an
+  API restart matters for the demo.
