@@ -9,38 +9,38 @@
     "cargo_type": "hazmat",
     "req_dep_day": 6.9,
     "flex_days": 0,
-    "decision_kind": "accept",
+    "decision_kind": "reject",
     "option_idx": 0,
     "discount_pct": 0.0,
-    "outcome": "booked:accept",
-    "price": 1160.03,
+    "outcome": "rejected:policy",
+    "price": 1299.16,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1160.03,
-      "bid_price_per_teu": 533.51,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1299.16,
+      "bid_price_per_teu": 750.72,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
           "remaining_teu": 3168.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.399,
-          "market_rate": 264.53,
-          "bid_price": 90.03
+          "expected_teu": 1476.7,
+          "pressure": 0.466,
+          "market_rate": 310.66,
+          "bid_price": 123.51
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
           "remaining_teu": 3168.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.615,
-          "market_rate": 844.85,
-          "bid_price": 443.48
+          "expected_teu": 2424.9,
+          "pressure": 0.765,
+          "market_rate": 960.69,
+          "bid_price": 627.21
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $534/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1160/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $751/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1299/TEU [market_uplift]."
     }
   },
   {
@@ -57,34 +57,34 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "booked:accept",
-    "price": 1335.73,
+    "price": 1516.73,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1335.73,
-      "bid_price_per_teu": 533.68,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1516.73,
+      "bid_price_per_teu": 750.72,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3167.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.399,
-          "market_rate": 264.53,
-          "bid_price": 90.06
+          "remaining_teu": 3168.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.466,
+          "market_rate": 310.66,
+          "bid_price": 123.51
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3167.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.616,
-          "market_rate": 844.85,
-          "bid_price": 443.62
+          "remaining_teu": 3168.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.765,
+          "market_rate": 960.69,
+          "bid_price": 627.21
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $534/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1336/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $751/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1517/TEU [market_uplift]."
     }
   },
   {
@@ -101,34 +101,34 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "booked:accept",
-    "price": 1160.03,
+    "price": 1299.16,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1160.03,
-      "bid_price_per_teu": 534.18,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1299.16,
+      "bid_price_per_teu": 751.44,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3164.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.4,
-          "market_rate": 264.53,
-          "bid_price": 90.14
+          "remaining_teu": 3165.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.467,
+          "market_rate": 310.66,
+          "bid_price": 123.63
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3164.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.616,
-          "market_rate": 844.85,
-          "bid_price": 444.04
+          "remaining_teu": 3165.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.766,
+          "market_rate": 960.69,
+          "bid_price": 627.81
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $534/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1160/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $751/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1299/TEU [market_uplift]."
     }
   },
   {
@@ -141,38 +141,38 @@
     "cargo_type": "hazmat",
     "req_dep_day": 4.5,
     "flex_days": 5,
-    "decision_kind": "accept",
+    "decision_kind": "reject",
     "option_idx": 0,
     "discount_pct": 0.0,
-    "outcome": "booked:accept",
-    "price": 1126.25,
+    "outcome": "rejected:policy",
+    "price": 1261.32,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1126.25,
-      "bid_price_per_teu": 534.86,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1261.32,
+      "bid_price_per_teu": 752.38,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3160.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.4,
-          "market_rate": 264.53,
-          "bid_price": 90.26
+          "remaining_teu": 3161.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.467,
+          "market_rate": 310.66,
+          "bid_price": 123.78
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3160.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.617,
-          "market_rate": 844.85,
-          "bid_price": 444.6
+          "remaining_teu": 3161.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.767,
+          "market_rate": 960.69,
+          "bid_price": 628.6
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $535/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1126/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $752/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1261/TEU [market_uplift]."
     }
   },
   {
@@ -188,35 +188,35 @@
     "decision_kind": "accept",
     "option_idx": 0,
     "discount_pct": 0.0,
-    "outcome": "booked:accept",
-    "price": 1335.73,
+    "outcome": "price_reject",
+    "price": 1516.73,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1335.73,
-      "bid_price_per_teu": 536.9,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1516.73,
+      "bid_price_per_teu": 752.38,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3148.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.402,
-          "market_rate": 264.53,
-          "bid_price": 90.6
+          "remaining_teu": 3161.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.467,
+          "market_rate": 310.66,
+          "bid_price": 123.78
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3148.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.619,
-          "market_rate": 844.85,
-          "bid_price": 446.3
+          "remaining_teu": 3161.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.767,
+          "market_rate": 960.69,
+          "bid_price": 628.6
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $537/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1336/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $752/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1517/TEU [market_uplift]."
     }
   },
   {
@@ -233,34 +233,34 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "booked:accept",
-    "price": 1335.73,
+    "price": 1516.73,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1335.73,
-      "bid_price_per_teu": 557.99,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1516.73,
+      "bid_price_per_teu": 752.38,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3029.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.417,
-          "market_rate": 264.53,
-          "bid_price": 94.16
+          "remaining_teu": 3161.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.467,
+          "market_rate": 310.66,
+          "bid_price": 123.78
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3029.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.644,
-          "market_rate": 844.85,
-          "bid_price": 463.83
+          "remaining_teu": 3161.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.767,
+          "market_rate": 960.69,
+          "bid_price": 628.6
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $558/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1336/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $752/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1517/TEU [market_uplift]."
     }
   },
   {
@@ -277,34 +277,34 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "booked:accept",
-    "price": 1160.03,
+    "price": 1299.16,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1160.03,
-      "bid_price_per_teu": 558.92,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1299.16,
+      "bid_price_per_teu": 753.58,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3024.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.418,
-          "market_rate": 264.53,
-          "bid_price": 94.32
+          "remaining_teu": 3156.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.468,
+          "market_rate": 310.66,
+          "bid_price": 123.98
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3024.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.645,
-          "market_rate": 844.85,
-          "bid_price": 464.6
+          "remaining_teu": 3156.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.768,
+          "market_rate": 960.69,
+          "bid_price": 629.6
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $559/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1160/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $754/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1299/TEU [market_uplift]."
     }
   },
   {
@@ -321,34 +321,122 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "price_reject",
-    "price": 1160.03,
+    "price": 1299.16,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1160.03,
-      "bid_price_per_teu": 559.29,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1299.16,
+      "bid_price_per_teu": 754.06,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3022.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.418,
-          "market_rate": 264.53,
-          "bid_price": 94.38
+          "remaining_teu": 3154.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.468,
+          "market_rate": 310.66,
+          "bid_price": 124.06
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3022.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.645,
-          "market_rate": 844.85,
-          "bid_price": 464.91
+          "remaining_teu": 3154.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.769,
+          "market_rate": 960.69,
+          "bid_price": 630.0
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $559/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1160/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $754/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1299/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 8,
+    "day": 0,
+    "origin": "CNSHA",
+    "dest": "NLRTM",
+    "teu": 3,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 6.0,
+    "flex_days": 1,
+    "decision_kind": "accept",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "booked:accept",
+    "price": 1299.16,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1299.16,
+      "bid_price_per_teu": 754.06,
+      "market_rate_per_teu": 1261.32,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 0,
+          "dep_day": 6.140901056965853,
+          "remaining_teu": 3154.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.468,
+          "market_rate": 310.66,
+          "bid_price": 124.06
+        },
+        {
+          "leg_idx": 1,
+          "dep_day": 13.39194272363252,
+          "remaining_teu": 3154.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.769,
+          "market_rate": 960.69,
+          "bid_price": 630.0
+        }
+      ],
+      "text": "Bid price VES1 legs [0, 1]: $754/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1299/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 9,
+    "day": 0,
+    "origin": "CNSHA",
+    "dest": "NLRTM",
+    "teu": 1,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 6.7,
+    "flex_days": 2,
+    "decision_kind": "accept",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "booked:accept",
+    "price": 1299.16,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1299.16,
+      "bid_price_per_teu": 754.78,
+      "market_rate_per_teu": 1261.32,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 0,
+          "dep_day": 6.140901056965853,
+          "remaining_teu": 3151.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.469,
+          "market_rate": 310.66,
+          "bid_price": 124.18
+        },
+        {
+          "leg_idx": 1,
+          "dep_day": 13.39194272363252,
+          "remaining_teu": 3151.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.77,
+          "market_rate": 960.69,
+          "bid_price": 630.6
+        }
+      ],
+      "text": "Bid price VES1 legs [0, 1]: $755/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1299/TEU [market_uplift]."
     }
   },
   {
@@ -365,34 +453,34 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "price_reject",
-    "price": 1126.25,
+    "price": 1261.32,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1126.25,
-      "bid_price_per_teu": 561.14,
-      "market_rate_per_teu": 1126.25,
+      "quote_per_teu": 1261.32,
+      "bid_price_per_teu": 756.45,
+      "market_rate_per_teu": 1261.32,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 3012.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.42,
-          "market_rate": 264.53,
-          "bid_price": 94.69
+          "remaining_teu": 3144.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.47,
+          "market_rate": 310.66,
+          "bid_price": 124.45
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 3012.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.647,
-          "market_rate": 844.85,
-          "bid_price": 466.45
+          "remaining_teu": 3144.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.771,
+          "market_rate": 960.69,
+          "bid_price": 632.0
         }
       ],
-      "text": "Bid price VES1 legs [0, 1]: $561/TEU opportunity cost (remaining capacity vs forecast demand); market $1126/TEU; quote $1126/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1]: $756/TEU opportunity cost (remaining capacity vs forecast demand); market $1261/TEU; quote $1261/TEU [market_uplift]."
     }
   },
   {
@@ -409,43 +497,43 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "price_reject",
-    "price": 1238.65,
+    "price": 1523.65,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1238.65,
-      "bid_price_per_teu": 601.15,
-      "market_rate_per_teu": 1202.57,
+      "quote_per_teu": 1523.65,
+      "bid_price_per_teu": 802.28,
+      "market_rate_per_teu": 1479.27,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 2998.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.422,
-          "market_rate": 264.53,
-          "bid_price": 95.13
+          "remaining_teu": 3130.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.472,
+          "market_rate": 310.66,
+          "bid_price": 125.01
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 2998.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.65,
-          "market_rate": 844.85,
-          "bid_price": 468.63
+          "remaining_teu": 3130.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.775,
+          "market_rate": 960.69,
+          "bid_price": 634.83
         },
         {
           "leg_idx": 2,
           "dep_day": 36.88048439029919,
           "remaining_teu": 3168.0,
-          "expected_teu": 1933.9,
-          "pressure": 0.61,
-          "market_rate": 24.93,
-          "bid_price": 37.39
+          "expected_teu": 2449.3,
+          "pressure": 0.773,
+          "market_rate": 28.3,
+          "bid_price": 42.44
         }
       ],
-      "text": "Bid price VES1 legs [0, 1, 2]: $601/TEU opportunity cost (remaining capacity vs forecast demand); market $1203/TEU; quote $1239/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1, 2]: $802/TEU opportunity cost (remaining capacity vs forecast demand); market $1479/TEU; quote $1524/TEU [market_uplift]."
     }
   },
   {
@@ -462,43 +550,43 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "price_reject",
-    "price": 1436.17,
+    "price": 1766.62,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1436.17,
-      "bid_price_per_teu": 619.8,
-      "market_rate_per_teu": 1202.57,
+      "quote_per_teu": 1766.62,
+      "bid_price_per_teu": 826.33,
+      "market_rate_per_teu": 1479.27,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 2902.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.436,
-          "market_rate": 264.53,
-          "bid_price": 98.28
+          "remaining_teu": 3034.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.487,
+          "market_rate": 310.66,
+          "bid_price": 128.97
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 2902.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.672,
-          "market_rate": 844.85,
-          "bid_price": 484.13
+          "remaining_teu": 3034.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.799,
+          "market_rate": 960.69,
+          "bid_price": 654.92
         },
         {
           "leg_idx": 2,
           "dep_day": 36.88048439029919,
           "remaining_teu": 3072.0,
-          "expected_teu": 1933.9,
-          "pressure": 0.63,
-          "market_rate": 24.93,
-          "bid_price": 37.39
+          "expected_teu": 2449.3,
+          "pressure": 0.797,
+          "market_rate": 28.3,
+          "bid_price": 42.44
         }
       ],
-      "text": "Bid price VES1 legs [0, 1, 2]: $620/TEU opportunity cost (remaining capacity vs forecast demand); market $1203/TEU; quote $1436/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1, 2]: $826/TEU opportunity cost (remaining capacity vs forecast demand); market $1479/TEU; quote $1767/TEU [market_uplift]."
     }
   },
   {
@@ -515,43 +603,43 @@
     "option_idx": 0,
     "discount_pct": 0.0,
     "outcome": "price_reject",
-    "price": 1202.57,
+    "price": 1479.27,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1202.57,
-      "bid_price_per_teu": 619.8,
-      "market_rate_per_teu": 1202.57,
+      "quote_per_teu": 1479.27,
+      "bid_price_per_teu": 826.33,
+      "market_rate_per_teu": 1479.27,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 0,
           "dep_day": 6.140901056965853,
-          "remaining_teu": 2902.0,
-          "expected_teu": 1264.1,
-          "pressure": 0.436,
-          "market_rate": 264.53,
-          "bid_price": 98.28
+          "remaining_teu": 3034.0,
+          "expected_teu": 1476.7,
+          "pressure": 0.487,
+          "market_rate": 310.66,
+          "bid_price": 128.97
         },
         {
           "leg_idx": 1,
           "dep_day": 13.39194272363252,
-          "remaining_teu": 2902.0,
-          "expected_teu": 1949.7,
-          "pressure": 0.672,
-          "market_rate": 844.85,
-          "bid_price": 484.13
+          "remaining_teu": 3034.0,
+          "expected_teu": 2424.9,
+          "pressure": 0.799,
+          "market_rate": 960.69,
+          "bid_price": 654.92
         },
         {
           "leg_idx": 2,
           "dep_day": 36.88048439029919,
           "remaining_teu": 3072.0,
-          "expected_teu": 1933.9,
-          "pressure": 0.63,
-          "market_rate": 24.93,
-          "bid_price": 37.39
+          "expected_teu": 2449.3,
+          "pressure": 0.797,
+          "market_rate": 28.3,
+          "bid_price": 42.44
         }
       ],
-      "text": "Bid price VES1 legs [0, 1, 2]: $620/TEU opportunity cost (remaining capacity vs forecast demand); market $1203/TEU; quote $1203/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [0, 1, 2]: $826/TEU opportunity cost (remaining capacity vs forecast demand); market $1479/TEU; quote $1479/TEU [market_uplift]."
     }
   },
   {
@@ -559,43 +647,113 @@
     "day": 0,
     "origin": "CNSHA",
     "dest": "USLAX",
-    "teu": 24,
+    "teu": 4,
     "segment": "standard",
     "cargo_type": "dry",
-    "req_dep_day": 42.7,
-    "flex_days": 1,
-    "decision_kind": "accept",
+    "req_dep_day": 43.8,
+    "flex_days": 0,
+    "decision_kind": "reject",
     "option_idx": 0,
     "discount_pct": 0.0,
-    "outcome": "price_reject",
-    "price": 1474.86,
+    "outcome": "rejected:policy",
+    "price": 1407.23,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1474.86,
-      "bid_price_per_teu": 1423.8,
-      "market_rate_per_teu": 1216.68,
+      "quote_per_teu": 1407.23,
+      "bid_price_per_teu": 1373.56,
+      "market_rate_per_teu": 1102.07,
       "reason": "bid_price_floor",
       "legs": [
         {
           "leg_idx": 4,
           "dep_day": 42.09981914188567,
           "remaining_teu": 2178.0,
-          "expected_teu": 7593.9,
-          "pressure": 3.487,
-          "market_rate": 99.48,
-          "bid_price": 116.82
+          "expected_teu": 9672.3,
+          "pressure": 4.441,
+          "market_rate": 89.34,
+          "bid_price": 113.59
         },
         {
           "leg_idx": 5,
           "dep_day": 44.77586080855233,
           "remaining_teu": 2178.0,
-          "expected_teu": 8922.1,
-          "pressure": 4.096,
-          "market_rate": 1068.79,
-          "bid_price": 1306.98
+          "expected_teu": 11461.9,
+          "pressure": 5.263,
+          "market_rate": 954.52,
+          "bid_price": 1259.97
         }
       ],
-      "text": "Bid price VES2 legs [4, 5]: $1424/TEU opportunity cost (remaining capacity vs forecast demand); market $1217/TEU; quote $1475/TEU [bid_price_floor]."
+      "text": "Bid price VES2 legs [4, 5]: $1374/TEU opportunity cost (remaining capacity vs forecast demand); market $1102/TEU; quote $1407/TEU [bid_price_floor]."
+    }
+  },
+  {
+    "request_id": 26,
+    "day": 0,
+    "origin": "KRPUS",
+    "dest": "USLAX",
+    "teu": 3,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 43.7,
+    "flex_days": 2,
+    "decision_kind": "reject",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "rejected:policy",
+    "price": 1280.45,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1280.45,
+      "bid_price_per_teu": 1259.97,
+      "market_rate_per_teu": 890.68,
+      "reason": "bid_price_floor",
+      "legs": [
+        {
+          "leg_idx": 5,
+          "dep_day": 44.77586080855233,
+          "remaining_teu": 2178.0,
+          "expected_teu": 11461.9,
+          "pressure": 5.263,
+          "market_rate": 954.52,
+          "bid_price": 1259.97
+        }
+      ],
+      "text": "Bid price VES2 legs [5]: $1260/TEU opportunity cost (remaining capacity vs forecast demand); market $891/TEU; quote $1280/TEU [bid_price_floor]."
+    }
+  },
+  {
+    "request_id": 27,
+    "day": 0,
+    "origin": "KRPUS",
+    "dest": "USLAX",
+    "teu": 1,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 39.4,
+    "flex_days": 2,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "declined",
+    "price": 1024.36,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1280.45,
+      "bid_price_per_teu": 1259.97,
+      "market_rate_per_teu": 890.68,
+      "reason": "bid_price_floor",
+      "legs": [
+        {
+          "leg_idx": 5,
+          "dep_day": 44.77586080855233,
+          "remaining_teu": 2178.0,
+          "expected_teu": 11461.9,
+          "pressure": 5.263,
+          "market_rate": 954.52,
+          "bid_price": 1259.97
+        }
+      ],
+      "text": "Bid price VES2 legs [5]: $1260/TEU opportunity cost (remaining capacity vs forecast demand); market $891/TEU; quote $1280/TEU [bid_price_floor]."
     }
   },
   {
@@ -603,204 +761,170 @@
     "day": 0,
     "origin": "NLRTM",
     "dest": "CNSHA",
-    "teu": 1,
+    "teu": 4,
     "segment": "flexible",
-    "cargo_type": "hazmat",
-    "req_dep_day": 37.6,
-    "flex_days": 3,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.1143,
-    "outcome": "booked:flex_window",
-    "price": 471.96,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 532.87,
-      "bid_price_per_teu": 491.3,
-      "market_rate_per_teu": 509.93,
-      "reason": "market_uplift",
-      "legs": [
-        {
-          "leg_idx": 4,
-          "dep_day": 43.06798439029919,
-          "remaining_teu": 3168.0,
-          "expected_teu": 3536.1,
-          "pressure": 1.116,
-          "market_rate": 366.27,
-          "bid_price": 341.15
-        },
-        {
-          "leg_idx": 5,
-          "dep_day": 66.25652605696585,
-          "remaining_teu": 3168.0,
-          "expected_teu": 4738.6,
-          "pressure": 1.496,
-          "market_rate": 145.98,
-          "bid_price": 150.15
-        }
-      ],
-      "text": "Bid price VES1 legs [4, 5]: $491/TEU opportunity cost (remaining capacity vs forecast demand); market $510/TEU; quote $533/TEU [market_uplift]."
-    }
-  },
-  {
-    "request_id": 42,
-    "day": 0,
-    "origin": "NLRTM",
-    "dest": "CNSHA",
-    "teu": 18,
-    "segment": "standard",
     "cargo_type": "dry",
-    "req_dep_day": 37.0,
-    "flex_days": 0,
+    "req_dep_day": 36.3,
+    "flex_days": 6,
     "decision_kind": "flex_window",
     "option_idx": 1,
-    "discount_pct": 0.1143,
+    "discount_pct": 0.2,
     "outcome": "declined",
-    "price": 484.16,
+    "price": 484.64,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 546.64,
-      "bid_price_per_teu": 491.3,
-      "market_rate_per_teu": 509.93,
-      "reason": "market_uplift",
+      "quote_per_teu": 605.8,
+      "bid_price_per_teu": 570.55,
+      "market_rate_per_teu": 555.56,
+      "reason": "bid_price_floor",
       "legs": [
         {
           "leg_idx": 4,
           "dep_day": 43.06798439029919,
-          "remaining_teu": 3164.0,
-          "expected_teu": 3536.1,
-          "pressure": 1.118,
-          "market_rate": 366.27,
-          "bid_price": 341.15
+          "remaining_teu": 3168.0,
+          "expected_teu": 4610.5,
+          "pressure": 1.455,
+          "market_rate": 417.16,
+          "bid_price": 422.03
         },
         {
           "leg_idx": 5,
           "dep_day": 66.25652605696585,
-          "remaining_teu": 3164.0,
-          "expected_teu": 4738.6,
-          "pressure": 1.498,
-          "market_rate": 145.98,
-          "bid_price": 150.15
+          "remaining_teu": 3168.0,
+          "expected_teu": 5337.0,
+          "pressure": 1.685,
+          "market_rate": 144.4,
+          "bid_price": 148.52
         }
       ],
-      "text": "Bid price VES1 legs [4, 5]: $491/TEU opportunity cost (remaining capacity vs forecast demand); market $510/TEU; quote $547/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [4, 5]: $571/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $606/TEU [bid_price_floor]."
     }
   },
   {
-    "request_id": 43,
+    "request_id": 39,
     "day": 0,
     "origin": "NLRTM",
-    "dest": "CNSHA",
-    "teu": 3,
+    "dest": "SGSIN",
+    "teu": 2,
     "segment": "flexible",
     "cargo_type": "dry",
     "req_dep_day": 37.3,
-    "flex_days": 5,
+    "flex_days": 0,
     "decision_kind": "flex_window",
     "option_idx": 1,
-    "discount_pct": 0.1143,
-    "outcome": "declined",
-    "price": 471.96,
+    "discount_pct": 0.2,
+    "outcome": "booked:flex_window",
+    "price": 383.47,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 532.87,
-      "bid_price_per_teu": 491.3,
-      "market_rate_per_teu": 509.93,
+      "quote_per_teu": 479.34,
+      "bid_price_per_teu": 422.03,
+      "market_rate_per_teu": 479.34,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 4,
           "dep_day": 43.06798439029919,
-          "remaining_teu": 3164.0,
-          "expected_teu": 3536.1,
-          "pressure": 1.118,
-          "market_rate": 366.27,
-          "bid_price": 341.15
+          "remaining_teu": 3168.0,
+          "expected_teu": 4610.5,
+          "pressure": 1.455,
+          "market_rate": 417.16,
+          "bid_price": 422.03
+        }
+      ],
+      "text": "Bid price VES1 legs [4]: $422/TEU opportunity cost (remaining capacity vs forecast demand); market $479/TEU; quote $479/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 40,
+    "day": 0,
+    "origin": "NLRTM",
+    "dest": "SGSIN",
+    "teu": 56,
+    "segment": "flexible",
+    "cargo_type": "dry",
+    "req_dep_day": 35.4,
+    "flex_days": 6,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "declined",
+    "price": 383.47,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 479.34,
+      "bid_price_per_teu": 422.29,
+      "market_rate_per_teu": 479.34,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3166.0,
+          "expected_teu": 4610.5,
+          "pressure": 1.456,
+          "market_rate": 417.16,
+          "bid_price": 422.29
+        }
+      ],
+      "text": "Bid price VES1 legs [4]: $422/TEU opportunity cost (remaining capacity vs forecast demand); market $479/TEU; quote $479/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 41,
+    "day": 0,
+    "origin": "DEHAM",
+    "dest": "CNSHA",
+    "teu": 4,
+    "segment": "urgent",
+    "cargo_type": "hazmat",
+    "req_dep_day": 40.4,
+    "flex_days": 0,
+    "decision_kind": "reject",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "rejected:policy",
+    "price": 799.75,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 799.75,
+      "bid_price_per_teu": 601.26,
+      "market_rate_per_teu": 618.4,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 3,
+          "dep_day": 40.07423439029919,
+          "remaining_teu": 3168.0,
+          "expected_teu": 2999.3,
+          "pressure": 0.947,
+          "market_rate": 20.3,
+          "bid_price": 30.45
+        },
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3166.0,
+          "expected_teu": 4610.5,
+          "pressure": 1.456,
+          "market_rate": 417.16,
+          "bid_price": 422.29
         },
         {
           "leg_idx": 5,
           "dep_day": 66.25652605696585,
-          "remaining_teu": 3164.0,
-          "expected_teu": 4738.6,
-          "pressure": 1.498,
-          "market_rate": 145.98,
-          "bid_price": 150.15
+          "remaining_teu": 3168.0,
+          "expected_teu": 5337.0,
+          "pressure": 1.685,
+          "market_rate": 144.4,
+          "bid_price": 148.52
         }
       ],
-      "text": "Bid price VES1 legs [4, 5]: $491/TEU opportunity cost (remaining capacity vs forecast demand); market $510/TEU; quote $533/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [3, 4, 5]: $601/TEU opportunity cost (remaining capacity vs forecast demand); market $618/TEU; quote $800/TEU [market_uplift]."
     }
   },
   {
-    "request_id": 55,
-    "day": 0,
-    "origin": "NLRTM",
-    "dest": "BEANR",
-    "teu": 22,
-    "segment": "flexible",
-    "cargo_type": "dry",
-    "req_dep_day": 26.2,
-    "flex_days": 5,
-    "decision_kind": "reject",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:below_floor_or_full",
-    "price": 226.4,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 226.4,
-      "bid_price_per_teu": 70.4,
-      "market_rate_per_teu": 226.4,
-      "reason": "market_uplift",
-      "legs": [
-        {
-          "leg_idx": 1,
-          "dep_day": 27.570690011414758,
-          "remaining_teu": 964.0,
-          "expected_teu": 540.6,
-          "pressure": 0.561,
-          "market_rate": 147.17,
-          "bid_price": 70.4
-        }
-      ],
-      "text": "Bid price VES4 legs [1]: $70/TEU opportunity cost (remaining capacity vs forecast demand); market $226/TEU; quote $226/TEU [market_uplift]."
-    }
-  },
-  {
-    "request_id": 66,
-    "day": 1,
-    "origin": "CNSHA",
-    "dest": "NLRTM",
-    "teu": 1,
-    "segment": "urgent",
-    "cargo_type": "dry",
-    "req_dep_day": 9.2,
-    "flex_days": 0,
-    "decision_kind": "reject",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:below_floor_or_full",
-    "price": null,
-    "explain": null
-  },
-  {
-    "request_id": 76,
-    "day": 1,
-    "origin": "SGSIN",
-    "dest": "BEANR",
-    "teu": 4,
-    "segment": "standard",
-    "cargo_type": "dry",
-    "req_dep_day": 19.9,
-    "flex_days": 0,
-    "decision_kind": "reject",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:below_floor_or_full",
-    "price": null,
-    "explain": null
-  },
-  {
-    "request_id": 86,
+    "request_id": 87,
     "day": 1,
     "origin": "KRPUS",
     "dest": "USLAX",
@@ -809,33 +933,51 @@
     "cargo_type": "hazmat",
     "req_dep_day": 37.3,
     "flex_days": 6,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.1224,
-    "outcome": "booked:flex_window",
-    "price": 1083.27,
+    "decision_kind": "split",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "counter_declined:split",
+    "price": 1291.48,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1234.35,
-      "bid_price_per_teu": 1189.32,
-      "market_rate_per_teu": 1027.24,
-      "reason": "bid_price_floor",
+      "quote_per_teu": 1291.48,
+      "bid_price_per_teu": 1383.61,
+      "market_rate_per_teu": 890.68,
+      "reason": "competitiveness_guard",
       "legs": [
+        {
+          "leg_idx": 3,
+          "dep_day": 38.623777475219,
+          "remaining_teu": 2154.0,
+          "expected_teu": 1846.1,
+          "pressure": 0.857,
+          "market_rate": 65.41,
+          "bid_price": 60.0
+        },
+        {
+          "leg_idx": 4,
+          "dep_day": 42.09981914188567,
+          "remaining_teu": 2178.0,
+          "expected_teu": 8197.3,
+          "pressure": 3.764,
+          "market_rate": 89.4,
+          "bid_price": 109.33
+        },
         {
           "leg_idx": 5,
           "dep_day": 44.77586080855233,
-          "remaining_teu": 2175.0,
-          "expected_teu": 6192.6,
-          "pressure": 2.847,
-          "market_rate": 1056.51,
-          "bid_price": 1189.32
+          "remaining_teu": 2178.0,
+          "expected_teu": 9719.2,
+          "pressure": 4.462,
+          "market_rate": 955.05,
+          "bid_price": 1214.28
         }
       ],
-      "text": "Bid price VES2 legs [5]: $1189/TEU opportunity cost (remaining capacity vs forecast demand); market $1027/TEU; quote $1234/TEU [bid_price_floor]."
+      "text": "Bid price VES2 legs [3, 4, 5]: $1384/TEU opportunity cost (remaining capacity vs forecast demand); market $891/TEU; quote $1291/TEU [competitiveness_guard]."
     }
   },
   {
-    "request_id": 93,
+    "request_id": 94,
     "day": 1,
     "origin": "NLRTM",
     "dest": "CNSHA",
@@ -844,42 +986,122 @@
     "cargo_type": "dry",
     "req_dep_day": 36.3,
     "flex_days": 3,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.109,
-    "outcome": "declined",
-    "price": 459.45,
+    "decision_kind": "split",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "counter_declined:split",
+    "price": 676.07,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 515.66,
-      "bid_price_per_teu": 463.82,
-      "market_rate_per_teu": 509.93,
-      "reason": "market_uplift",
+      "quote_per_teu": 676.07,
+      "bid_price_per_teu": 653.22,
+      "market_rate_per_teu": 555.56,
+      "reason": "bid_price_floor",
       "legs": [
+        {
+          "leg_idx": 2,
+          "dep_day": 36.88048439029919,
+          "remaining_teu": 3060.0,
+          "expected_teu": 1764.3,
+          "pressure": 0.577,
+          "market_rate": 28.4,
+          "bid_price": 42.59
+        },
+        {
+          "leg_idx": 3,
+          "dep_day": 40.07423439029919,
+          "remaining_teu": 3168.0,
+          "expected_teu": 2413.7,
+          "pressure": 0.762,
+          "market_rate": 22.08,
+          "bid_price": 33.12
+        },
         {
           "leg_idx": 4,
           "dep_day": 43.06798439029919,
-          "remaining_teu": 3136.0,
-          "expected_teu": 3218.7,
-          "pressure": 1.026,
-          "market_rate": 364.22,
-          "bid_price": 318.85
+          "remaining_teu": 3166.0,
+          "expected_teu": 3983.3,
+          "pressure": 1.258,
+          "market_rate": 441.1,
+          "bid_price": 432.28
         },
         {
           "leg_idx": 5,
           "dep_day": 66.25652605696585,
-          "remaining_teu": 3141.0,
-          "expected_teu": 4435.9,
-          "pressure": 1.412,
-          "market_rate": 147.67,
-          "bid_price": 144.97
+          "remaining_teu": 3168.0,
+          "expected_teu": 4421.1,
+          "pressure": 1.396,
+          "market_rate": 148.2,
+          "bid_price": 145.23
         }
       ],
-      "text": "Bid price VES1 legs [4, 5]: $464/TEU opportunity cost (remaining capacity vs forecast demand); market $510/TEU; quote $516/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [2, 3, 4, 5]: $653/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $676/TEU [bid_price_floor]."
     }
   },
   {
     "request_id": 95,
+    "day": 1,
+    "origin": "NLRTM",
+    "dest": "CNSHA",
+    "teu": 4,
+    "segment": "standard",
+    "cargo_type": "reefer",
+    "req_dep_day": 37.2,
+    "flex_days": 0,
+    "decision_kind": "split",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "counter_declined:split",
+    "price": 676.07,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 676.07,
+      "bid_price_per_teu": 653.22,
+      "market_rate_per_teu": 555.56,
+      "reason": "bid_price_floor",
+      "legs": [
+        {
+          "leg_idx": 2,
+          "dep_day": 36.88048439029919,
+          "remaining_teu": 3060.0,
+          "expected_teu": 1764.3,
+          "pressure": 0.577,
+          "market_rate": 28.4,
+          "bid_price": 42.59
+        },
+        {
+          "leg_idx": 3,
+          "dep_day": 40.07423439029919,
+          "remaining_teu": 3168.0,
+          "expected_teu": 2413.7,
+          "pressure": 0.762,
+          "market_rate": 22.08,
+          "bid_price": 33.12
+        },
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3166.0,
+          "expected_teu": 3983.3,
+          "pressure": 1.258,
+          "market_rate": 441.1,
+          "bid_price": 432.28
+        },
+        {
+          "leg_idx": 5,
+          "dep_day": 66.25652605696585,
+          "remaining_teu": 3168.0,
+          "expected_teu": 4421.1,
+          "pressure": 1.396,
+          "market_rate": 148.2,
+          "bid_price": 145.23
+        }
+      ],
+      "text": "Bid price VES1 legs [2, 3, 4, 5]: $653/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $676/TEU [bid_price_floor]."
+    }
+  },
+  {
+    "request_id": 96,
     "day": 1,
     "origin": "NLRTM",
     "dest": "CNSHA",
@@ -888,177 +1110,153 @@
     "cargo_type": "dry",
     "req_dep_day": 36.6,
     "flex_days": 6,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.1088,
-    "outcome": "booked:flex_window",
-    "price": 459.56,
+    "decision_kind": "split",
+    "option_idx": 0,
+    "discount_pct": 0.0,
+    "outcome": "counter_declined:split",
+    "price": 676.07,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 515.66,
-      "bid_price_per_teu": 464.41,
-      "market_rate_per_teu": 509.93,
-      "reason": "market_uplift",
+      "quote_per_teu": 676.07,
+      "bid_price_per_teu": 653.22,
+      "market_rate_per_teu": 555.56,
+      "reason": "bid_price_floor",
       "legs": [
+        {
+          "leg_idx": 2,
+          "dep_day": 36.88048439029919,
+          "remaining_teu": 3060.0,
+          "expected_teu": 1764.3,
+          "pressure": 0.577,
+          "market_rate": 28.4,
+          "bid_price": 42.59
+        },
+        {
+          "leg_idx": 3,
+          "dep_day": 40.07423439029919,
+          "remaining_teu": 3168.0,
+          "expected_teu": 2413.7,
+          "pressure": 0.762,
+          "market_rate": 22.08,
+          "bid_price": 33.12
+        },
         {
           "leg_idx": 4,
           "dep_day": 43.06798439029919,
-          "remaining_teu": 3132.0,
-          "expected_teu": 3218.7,
-          "pressure": 1.028,
-          "market_rate": 364.22,
-          "bid_price": 319.26
+          "remaining_teu": 3166.0,
+          "expected_teu": 3983.3,
+          "pressure": 1.258,
+          "market_rate": 441.1,
+          "bid_price": 432.28
         },
         {
           "leg_idx": 5,
           "dep_day": 66.25652605696585,
-          "remaining_teu": 3137.0,
-          "expected_teu": 4435.9,
-          "pressure": 1.414,
-          "market_rate": 147.67,
-          "bid_price": 145.15
+          "remaining_teu": 3168.0,
+          "expected_teu": 4421.1,
+          "pressure": 1.396,
+          "market_rate": 148.2,
+          "bid_price": 145.23
         }
       ],
-      "text": "Bid price VES1 legs [4, 5]: $464/TEU opportunity cost (remaining capacity vs forecast demand); market $510/TEU; quote $516/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [2, 3, 4, 5]: $653/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $676/TEU [bid_price_floor]."
     }
   },
   {
-    "request_id": 105,
+    "request_id": 97,
     "day": 1,
     "origin": "NLRTM",
-    "dest": "BEANR",
-    "teu": 6,
+    "dest": "SGSIN",
+    "teu": 2,
     "segment": "flexible",
     "cargo_type": "dry",
-    "req_dep_day": 28.4,
+    "req_dep_day": 30.4,
     "flex_days": 2,
-    "decision_kind": "reject",
+    "decision_kind": "split",
     "option_idx": 0,
     "discount_pct": 0.0,
-    "outcome": "rejected:below_floor_or_full",
-    "price": 226.4,
+    "outcome": "counter_declined:split",
+    "price": 594.77,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 226.4,
-      "bid_price_per_teu": 60.0,
-      "market_rate_per_teu": 226.4,
-      "reason": "market_uplift",
+      "quote_per_teu": 594.77,
+      "bid_price_per_teu": 573.5,
+      "market_rate_per_teu": 479.34,
+      "reason": "bid_price_floor",
       "legs": [
         {
           "leg_idx": 1,
           "dep_day": 27.570690011414758,
-          "remaining_teu": 962.0,
-          "expected_teu": 377.6,
-          "pressure": 0.393,
-          "market_rate": 156.71,
-          "bid_price": 60.0
-        }
-      ],
-      "text": "Bid price VES4 legs [1]: $60/TEU opportunity cost (remaining capacity vs forecast demand); market $226/TEU; quote $226/TEU [market_uplift]."
-    }
-  },
-  {
-    "request_id": 123,
-    "day": 2,
-    "origin": "SGSIN",
-    "dest": "BEANR",
-    "teu": 3,
-    "segment": "standard",
-    "cargo_type": "dry",
-    "req_dep_day": 26.0,
-    "flex_days": 0,
-    "decision_kind": "reject",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:below_floor_or_full",
-    "price": null,
-    "explain": null
-  },
-  {
-    "request_id": 136,
-    "day": 2,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 14,
-    "segment": "flexible",
-    "cargo_type": "dry",
-    "req_dep_day": 39.4,
-    "flex_days": 4,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.1238,
-    "outcome": "booked:flex_window",
-    "price": 1088.53,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1242.33,
-      "bid_price_per_teu": 1198.71,
-      "market_rate_per_teu": 1027.24,
-      "reason": "bid_price_floor",
-      "legs": [
+          "remaining_teu": 985.0,
+          "expected_teu": 849.4,
+          "pressure": 0.862,
+          "market_rate": 168.0,
+          "bid_price": 123.57
+        },
         {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 2161.0,
-          "expected_teu": 6253.9,
-          "pressure": 2.894,
-          "market_rate": 1064.84,
-          "bid_price": 1198.71
+          "leg_idx": 2,
+          "dep_day": 29.653428106652854,
+          "remaining_teu": 976.0,
+          "expected_teu": 1137.9,
+          "pressure": 1.166,
+          "market_rate": 483.05,
+          "bid_price": 449.93
         }
       ],
-      "text": "Bid price VES2 legs [5]: $1199/TEU opportunity cost (remaining capacity vs forecast demand); market $1027/TEU; quote $1242/TEU [bid_price_floor]."
+      "text": "Bid price VES4 legs [1, 2]: $574/TEU opportunity cost (remaining capacity vs forecast demand); market $479/TEU; quote $595/TEU [bid_price_floor]."
     }
   },
   {
-    "request_id": 138,
+    "request_id": 146,
     "day": 2,
-    "origin": "CNSHA",
-    "dest": "USNYC",
-    "teu": 3,
+    "origin": "NLRTM",
+    "dest": "SGSIN",
+    "teu": 2,
     "segment": "standard",
     "cargo_type": "reefer",
-    "req_dep_day": 10.0,
+    "req_dep_day": 37.7,
     "flex_days": 1,
-    "decision_kind": "reject",
+    "decision_kind": "split",
     "option_idx": 0,
     "discount_pct": 0.0,
-    "outcome": "rejected:below_floor_or_full",
-    "price": null,
-    "explain": null
-  },
-  {
-    "request_id": 156,
-    "day": 2,
-    "origin": "CNSHA",
-    "dest": "SGSIN",
-    "teu": 28,
-    "segment": "urgent",
-    "cargo_type": "reefer",
-    "req_dep_day": 5.3,
-    "flex_days": 0,
-    "decision_kind": "accept",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:infeasible",
-    "price": 563.81,
+    "outcome": "booked:split",
+    "price": 518.89,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 563.81,
-      "bid_price_per_teu": 60.0,
-      "market_rate_per_teu": 488.99,
+      "quote_per_teu": 518.89,
+      "bid_price_per_teu": 474.06,
+      "market_rate_per_teu": 479.34,
       "reason": "market_uplift",
       "legs": [
         {
-          "leg_idx": 0,
-          "dep_day": 6.140901056965853,
-          "remaining_teu": 2721.0,
-          "expected_teu": 391.3,
-          "pressure": 0.144,
-          "market_rate": 242.09,
-          "bid_price": 60.0
+          "leg_idx": 2,
+          "dep_day": 36.88048439029919,
+          "remaining_teu": 3024.0,
+          "expected_teu": 1472.1,
+          "pressure": 0.487,
+          "market_rate": 25.38,
+          "bid_price": 38.07
+        },
+        {
+          "leg_idx": 3,
+          "dep_day": 40.07423439029919,
+          "remaining_teu": 3168.0,
+          "expected_teu": 2173.6,
+          "pressure": 0.686,
+          "market_rate": 21.47,
+          "bid_price": 32.21
+        },
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3166.0,
+          "expected_teu": 3499.8,
+          "pressure": 1.105,
+          "market_rate": 433.51,
+          "bid_price": 403.78
         }
       ],
-      "text": "Bid price VES1 legs [0]: $60/TEU opportunity cost (remaining capacity vs forecast demand); market $489/TEU; quote $564/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [2, 3, 4]: $474/TEU opportunity cost (remaining capacity vs forecast demand); market $479/TEU; quote $519/TEU [market_uplift]."
     }
   },
   {
@@ -1066,562 +1264,535 @@
     "day": 3,
     "origin": "KRPUS",
     "dest": "USLAX",
-    "teu": 1,
+    "teu": 2,
     "segment": "standard",
     "cargo_type": "dry",
-    "req_dep_day": 38.9,
+    "req_dep_day": 41.1,
     "flex_days": 1,
     "decision_kind": "flex_window",
     "option_idx": 1,
-    "discount_pct": 0.1251,
+    "discount_pct": 0.2,
     "outcome": "declined",
-    "price": 1090.12,
+    "price": 956.71,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1245.99,
-      "bid_price_per_teu": 1203.02,
-      "market_rate_per_teu": 1027.24,
+      "quote_per_teu": 1195.89,
+      "bid_price_per_teu": 1171.99,
+      "market_rate_per_teu": 890.68,
       "reason": "bid_price_floor",
       "legs": [
         {
           "leg_idx": 5,
           "dep_day": 44.77586080855233,
-          "remaining_teu": 2147.0,
-          "expected_teu": 6338.4,
-          "pressure": 2.952,
-          "market_rate": 1068.67,
-          "bid_price": 1203.02
+          "remaining_teu": 2178.0,
+          "expected_teu": 8911.5,
+          "pressure": 4.092,
+          "market_rate": 958.4,
+          "bid_price": 1171.99
         }
       ],
-      "text": "Bid price VES2 legs [5]: $1203/TEU opportunity cost (remaining capacity vs forecast demand); market $1027/TEU; quote $1246/TEU [bid_price_floor]."
+      "text": "Bid price VES2 legs [5]: $1172/TEU opportunity cost (remaining capacity vs forecast demand); market $891/TEU; quote $1196/TEU [bid_price_floor]."
     }
   },
   {
-    "request_id": 188,
-    "day": 3,
+    "request_id": 253,
+    "day": 4,
     "origin": "NLRTM",
-    "dest": "CNSHA",
-    "teu": 17,
-    "segment": "flexible",
-    "cargo_type": "reefer",
-    "req_dep_day": 39.7,
-    "flex_days": 6,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.1184,
-    "outcome": "booked:flex_window",
-    "price": 449.55,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 509.93,
-      "bid_price_per_teu": 420.5,
-      "market_rate_per_teu": 509.93,
-      "reason": "market_uplift",
-      "legs": [
-        {
-          "leg_idx": 4,
-          "dep_day": 43.06798439029919,
-          "remaining_teu": 3118.0,
-          "expected_teu": 2616.0,
-          "pressure": 0.839,
-          "market_rate": 373.34,
-          "bid_price": 267.18
-        },
-        {
-          "leg_idx": 5,
-          "dep_day": 66.25652605696585,
-          "remaining_teu": 3123.0,
-          "expected_teu": 3843.1,
-          "pressure": 1.231,
-          "market_rate": 156.93,
-          "bid_price": 153.32
-        }
-      ],
-      "text": "Bid price VES1 legs [4, 5]: $420/TEU opportunity cost (remaining capacity vs forecast demand); market $510/TEU; quote $510/TEU [market_uplift]."
-    }
-  },
-  {
-    "request_id": 196,
-    "day": 3,
-    "origin": "SGSIN",
-    "dest": "CNSHA",
-    "teu": 5,
-    "segment": "urgent",
-    "cargo_type": "reefer",
-    "req_dep_day": 12.2,
-    "flex_days": 0,
-    "decision_kind": "accept",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:infeasible",
-    "price": 397.59,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 397.59,
-      "bid_price_per_teu": 628.3,
-      "market_rate_per_teu": 274.2,
-      "reason": "competitiveness_guard",
-      "legs": [
-        {
-          "leg_idx": 1,
-          "dep_day": 13.39194272363252,
-          "remaining_teu": 2503.0,
-          "expected_teu": 591.0,
-          "pressure": 0.236,
-          "market_rate": 741.78,
-          "bid_price": 149.38
-        },
-        {
-          "leg_idx": 2,
-          "dep_day": 36.88048439029919,
-          "remaining_teu": 3005.0,
-          "expected_teu": 1120.3,
-          "pressure": 0.373,
-          "market_rate": 19.93,
-          "bid_price": 29.89
-        },
-        {
-          "leg_idx": 3,
-          "dep_day": 40.07423439029919,
-          "remaining_teu": 3129.0,
-          "expected_teu": 1620.5,
-          "pressure": 0.518,
-          "market_rate": 17.73,
-          "bid_price": 26.6
-        },
-        {
-          "leg_idx": 4,
-          "dep_day": 43.06798439029919,
-          "remaining_teu": 3101.0,
-          "expected_teu": 2616.0,
-          "pressure": 0.844,
-          "market_rate": 373.34,
-          "bid_price": 268.64
-        },
-        {
-          "leg_idx": 5,
-          "dep_day": 66.25652605696585,
-          "remaining_teu": 3106.0,
-          "expected_teu": 3843.1,
-          "pressure": 1.237,
-          "market_rate": 156.93,
-          "bid_price": 153.79
-        }
-      ],
-      "text": "Bid price VES1 legs [1, 2, 3, 4, 5]: $628/TEU opportunity cost (remaining capacity vs forecast demand); market $274/TEU; quote $398/TEU [competitiveness_guard]."
-    }
-  },
-  {
-    "request_id": 279,
-    "day": 5,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 2,
-    "segment": "flexible",
-    "cargo_type": "dry",
-    "req_dep_day": 36.4,
-    "flex_days": 2,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.122,
-    "outcome": "declined",
-    "price": 1094.15,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1246.19,
-      "bid_price_per_teu": 1203.25,
-      "market_rate_per_teu": 1027.24,
-      "reason": "bid_price_floor",
-      "legs": [
-        {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 2113.0,
-          "expected_teu": 5904.0,
-          "pressure": 2.794,
-          "market_rate": 1068.87,
-          "bid_price": 1203.25
-        }
-      ],
-      "text": "Bid price VES2 legs [5]: $1203/TEU opportunity cost (remaining capacity vs forecast demand); market $1027/TEU; quote $1246/TEU [bid_price_floor]."
-    }
-  },
-  {
-    "request_id": 322,
-    "day": 6,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 3,
-    "segment": "flexible",
-    "cargo_type": "dry",
-    "req_dep_day": 38.4,
-    "flex_days": 0,
-    "decision_kind": "flex_window",
-    "option_idx": 1,
-    "discount_pct": 0.122,
-    "outcome": "declined",
-    "price": 1093.76,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1245.74,
-      "bid_price_per_teu": 1202.72,
-      "market_rate_per_teu": 1027.24,
-      "reason": "bid_price_floor",
-      "legs": [
-        {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 2111.0,
-          "expected_teu": 5835.6,
-          "pressure": 2.764,
-          "market_rate": 1068.4,
-          "bid_price": 1202.72
-        }
-      ],
-      "text": "Bid price VES2 legs [5]: $1203/TEU opportunity cost (remaining capacity vs forecast demand); market $1027/TEU; quote $1246/TEU [bid_price_floor]."
-    }
-  },
-  {
-    "request_id": 396,
-    "day": 8,
-    "origin": "SGSIN",
-    "dest": "NLRTM",
-    "teu": 2,
-    "segment": "flexible",
-    "cargo_type": "reefer",
-    "req_dep_day": 10.2,
-    "flex_days": 2,
-    "decision_kind": "flex_window",
-    "option_idx": 0,
-    "discount_pct": 0.1,
-    "outcome": "booked:flex_window",
-    "price": 1121.81,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1246.45,
-      "bid_price_per_teu": 60.0,
-      "market_rate_per_teu": 1246.45,
-      "reason": "market_uplift",
-      "legs": [
-        {
-          "leg_idx": 1,
-          "dep_day": 13.39194272363252,
-          "remaining_teu": 1751.0,
-          "expected_teu": 48.5,
-          "pressure": 0.028,
-          "market_rate": 1246.45,
-          "bid_price": 60.0
-        }
-      ],
-      "text": "Bid price VES1 legs [1]: $60/TEU opportunity cost (remaining capacity vs forecast demand); market $1246/TEU; quote $1246/TEU [market_uplift]."
-    }
-  },
-  {
-    "request_id": 410,
-    "day": 8,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 102,
-    "segment": "urgent",
-    "cargo_type": "reefer",
-    "req_dep_day": 43.4,
-    "flex_days": 0,
-    "decision_kind": "accept",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:infeasible",
-    "price": 1383.38,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1383.38,
-      "bid_price_per_teu": 1153.34,
-      "market_rate_per_teu": 1022.04,
-      "reason": "bid_price_floor",
-      "legs": [
-        {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 1999.0,
-          "expected_teu": 4806.2,
-          "pressure": 2.404,
-          "market_rate": 1046.34,
-          "bid_price": 1153.34
-        }
-      ],
-      "text": "Bid price VES2 legs [5]: $1153/TEU opportunity cost (remaining capacity vs forecast demand); market $1022/TEU; quote $1383/TEU [bid_price_floor]."
-    }
-  },
-  {
-    "request_id": 596,
-    "day": 12,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 1,
+    "dest": "SGSIN",
+    "teu": 4,
     "segment": "standard",
     "cargo_type": "dry",
-    "req_dep_day": 38.9,
-    "flex_days": 0,
+    "req_dep_day": 35.6,
+    "flex_days": 2,
     "decision_kind": "flex_window",
     "option_idx": 1,
-    "discount_pct": 0.1258,
+    "discount_pct": 0.2,
     "outcome": "booked:flex_window",
-    "price": 1034.58,
+    "price": 394.98,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1183.46,
-      "bid_price_per_teu": 1130.78,
-      "market_rate_per_teu": 1022.04,
-      "reason": "bid_price_floor",
-      "legs": [
-        {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 1948.0,
-          "expected_teu": 4146.0,
-          "pressure": 2.128,
-          "market_rate": 1049.79,
-          "bid_price": 1130.78
-        }
-      ],
-      "text": "Bid price VES2 legs [5]: $1131/TEU opportunity cost (remaining capacity vs forecast demand); market $1022/TEU; quote $1183/TEU [bid_price_floor]."
-    }
-  },
-  {
-    "request_id": 679,
-    "day": 14,
-    "origin": "SGSIN",
-    "dest": "NLRTM",
-    "teu": 1,
-    "segment": "flexible",
-    "cargo_type": "dry",
-    "req_dep_day": 55.3,
-    "flex_days": 6,
-    "decision_kind": "alt_hub",
-    "option_idx": 0,
-    "discount_pct": 0.08,
-    "outcome": "counter_declined:alt_hub",
-    "price": 1304.02,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1304.02,
-      "bid_price_per_teu": 1244.77,
-      "market_rate_per_teu": 1130.86,
-      "reason": "bid_price_floor",
-      "legs": [
-        {
-          "leg_idx": 3,
-          "dep_day": 55.836761439986184,
-          "remaining_teu": 946.0,
-          "expected_teu": 1266.9,
-          "pressure": 1.339,
-          "market_rate": 1208.95,
-          "bid_price": 1184.77
-        },
-        {
-          "leg_idx": 4,
-          "dep_day": 82.40938048760523,
-          "remaining_teu": 982.0,
-          "expected_teu": 2844.1,
-          "pressure": 2.896,
-          "market_rate": 51.61,
-          "bid_price": 60.0
-        }
-      ],
-      "text": "Bid price VES4 legs [3, 4]: $1245/TEU opportunity cost (remaining capacity vs forecast demand); market $1131/TEU; quote $1304/TEU [bid_price_floor]."
-    }
-  },
-  {
-    "request_id": 680,
-    "day": 14,
-    "origin": "SGSIN",
-    "dest": "NLRTM",
-    "teu": 36,
-    "segment": "flexible",
-    "cargo_type": "dry",
-    "req_dep_day": 55.3,
-    "flex_days": 2,
-    "decision_kind": "alt_hub",
-    "option_idx": 0,
-    "discount_pct": 0.08,
-    "outcome": "counter_declined:alt_hub",
-    "price": 1304.02,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1304.02,
-      "bid_price_per_teu": 1244.77,
-      "market_rate_per_teu": 1130.86,
-      "reason": "bid_price_floor",
-      "legs": [
-        {
-          "leg_idx": 3,
-          "dep_day": 55.836761439986184,
-          "remaining_teu": 946.0,
-          "expected_teu": 1266.9,
-          "pressure": 1.339,
-          "market_rate": 1208.95,
-          "bid_price": 1184.77
-        },
-        {
-          "leg_idx": 4,
-          "dep_day": 82.40938048760523,
-          "remaining_teu": 982.0,
-          "expected_teu": 2844.1,
-          "pressure": 2.896,
-          "market_rate": 51.61,
-          "bid_price": 60.0
-        }
-      ],
-      "text": "Bid price VES4 legs [3, 4]: $1245/TEU opportunity cost (remaining capacity vs forecast demand); market $1131/TEU; quote $1304/TEU [bid_price_floor]."
-    }
-  },
-  {
-    "request_id": 1202,
-    "day": 30,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 4,
-    "segment": "urgent",
-    "cargo_type": "reefer",
-    "req_dep_day": 36.8,
-    "flex_days": 0,
-    "decision_kind": "accept",
-    "option_idx": 0,
-    "discount_pct": 0.0,
-    "outcome": "rejected:infeasible",
-    "price": 1210.1,
-    "explain": {
-      "engine": "bid_price",
-      "quote_per_teu": 1210.1,
-      "bid_price_per_teu": 703.16,
-      "market_rate_per_teu": 992.7,
+      "quote_per_teu": 493.72,
+      "bid_price_per_teu": 395.0,
+      "market_rate_per_teu": 479.34,
       "reason": "market_uplift",
       "legs": [
         {
-          "leg_idx": 3,
-          "dep_day": 38.623777475219,
-          "remaining_teu": 1774.0,
-          "expected_teu": 66.1,
-          "pressure": 0.037,
-          "market_rate": 77.46,
-          "bid_price": 60.0
-        },
-        {
           "leg_idx": 4,
-          "dep_day": 42.09981914188567,
-          "remaining_teu": 1152.0,
-          "expected_teu": 462.6,
-          "pressure": 0.402,
-          "market_rate": 107.23,
-          "bid_price": 60.0
-        },
-        {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 969.0,
-          "expected_teu": 589.5,
-          "pressure": 0.608,
-          "market_rate": 1123.87,
-          "bid_price": 583.16
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3164.0,
+          "expected_teu": 3378.2,
+          "pressure": 1.068,
+          "market_rate": 437.12,
+          "bid_price": 395.0
         }
       ],
-      "text": "Bid price VES2 legs [3, 4, 5]: $703/TEU opportunity cost (remaining capacity vs forecast demand); market $993/TEU; quote $1210/TEU [market_uplift]."
+      "text": "Bid price VES1 legs [4]: $395/TEU opportunity cost (remaining capacity vs forecast demand); market $479/TEU; quote $494/TEU [market_uplift]."
     }
   },
   {
-    "request_id": 1255,
-    "day": 32,
+    "request_id": 313,
+    "day": 5,
+    "origin": "NLRTM",
+    "dest": "CNSHA",
+    "teu": 2,
+    "segment": "flexible",
+    "cargo_type": "reefer",
+    "req_dep_day": 35.0,
+    "flex_days": 0,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "booked:flex_window",
+    "price": 464.45,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 580.56,
+      "bid_price_per_teu": 536.42,
+      "market_rate_per_teu": 555.56,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3160.0,
+          "expected_teu": 3269.8,
+          "pressure": 1.035,
+          "market_rate": 435.49,
+          "bid_price": 384.36
+        },
+        {
+          "leg_idx": 5,
+          "dep_day": 66.25652605696585,
+          "remaining_teu": 3168.0,
+          "expected_teu": 3942.8,
+          "pressure": 1.245,
+          "market_rate": 155.16,
+          "bid_price": 152.06
+        }
+      ],
+      "text": "Bid price VES1 legs [4, 5]: $536/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $581/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 360,
+    "day": 6,
+    "origin": "NLRTM",
+    "dest": "CNSHA",
+    "teu": 1,
+    "segment": "flexible",
+    "cargo_type": "dry",
+    "req_dep_day": 37.1,
+    "flex_days": 1,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "declined",
+    "price": 464.45,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 580.56,
+      "bid_price_per_teu": 532.92,
+      "market_rate_per_teu": 555.56,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3147.0,
+          "expected_teu": 3224.4,
+          "pressure": 1.025,
+          "market_rate": 435.81,
+          "bid_price": 380.86
+        },
+        {
+          "leg_idx": 5,
+          "dep_day": 66.25652605696585,
+          "remaining_teu": 3166.0,
+          "expected_teu": 3918.2,
+          "pressure": 1.238,
+          "market_rate": 155.16,
+          "bid_price": 152.06
+        }
+      ],
+      "text": "Bid price VES1 legs [4, 5]: $533/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $581/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 362,
+    "day": 6,
+    "origin": "NLRTM",
+    "dest": "CNSHA",
+    "teu": 18,
+    "segment": "flexible",
+    "cargo_type": "dry",
+    "req_dep_day": 35.1,
+    "flex_days": 5,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "declined",
+    "price": 464.45,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 580.56,
+      "bid_price_per_teu": 533.16,
+      "market_rate_per_teu": 555.56,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3145.0,
+          "expected_teu": 3224.4,
+          "pressure": 1.025,
+          "market_rate": 435.81,
+          "bid_price": 381.1
+        },
+        {
+          "leg_idx": 5,
+          "dep_day": 66.25652605696585,
+          "remaining_teu": 3164.0,
+          "expected_teu": 3918.2,
+          "pressure": 1.238,
+          "market_rate": 155.16,
+          "bid_price": 152.06
+        }
+      ],
+      "text": "Bid price VES1 legs [4, 5]: $533/TEU opportunity cost (remaining capacity vs forecast demand); market $556/TEU; quote $581/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 366,
+    "day": 6,
+    "origin": "NLRTM",
+    "dest": "SGSIN",
+    "teu": 1,
+    "segment": "flexible",
+    "cargo_type": "dry",
+    "req_dep_day": 37.7,
+    "flex_days": 5,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "booked:flex_window",
+    "price": 383.47,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 479.34,
+      "bid_price_per_teu": 381.1,
+      "market_rate_per_teu": 479.34,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 3145.0,
+          "expected_teu": 3224.4,
+          "pressure": 1.025,
+          "market_rate": 435.81,
+          "bid_price": 381.1
+        }
+      ],
+      "text": "Bid price VES1 legs [4]: $381/TEU opportunity cost (remaining capacity vs forecast demand); market $479/TEU; quote $479/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 506,
+    "day": 9,
+    "origin": "SGSIN",
+    "dest": "NLRTM",
+    "teu": 4,
+    "segment": "flexible",
+    "cargo_type": "dry",
+    "req_dep_day": 55.8,
+    "flex_days": 6,
+    "decision_kind": "alt_hub",
+    "option_idx": 0,
+    "discount_pct": 0.05,
+    "outcome": "counter_declined:alt_hub",
+    "price": 1335.3,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1335.3,
+      "bid_price_per_teu": 1285.68,
+      "market_rate_per_teu": 1114.8,
+      "reason": "bid_price_floor",
+      "legs": [
+        {
+          "leg_idx": 3,
+          "dep_day": 55.836761439986184,
+          "remaining_teu": 950.0,
+          "expected_teu": 2117.0,
+          "pressure": 2.228,
+          "market_rate": 1135.69,
+          "bid_price": 1223.3
+        },
+        {
+          "leg_idx": 4,
+          "dep_day": 82.40938048760523,
+          "remaining_teu": 990.0,
+          "expected_teu": 2347.4,
+          "pressure": 2.371,
+          "market_rate": 57.38,
+          "bid_price": 62.38
+        }
+      ],
+      "text": "Bid price VES4 legs [3, 4]: $1286/TEU opportunity cost (remaining capacity vs forecast demand); market $1115/TEU; quote $1335/TEU [bid_price_floor]."
+    }
+  },
+  {
+    "request_id": 563,
+    "day": 10,
     "origin": "SGSIN",
     "dest": "NLRTM",
     "teu": 10,
     "segment": "flexible",
     "cargo_type": "dry",
-    "req_dep_day": 56.2,
+    "req_dep_day": 57.0,
     "flex_days": 7,
     "decision_kind": "alt_hub",
     "option_idx": 0,
-    "discount_pct": 0.08,
+    "discount_pct": 0.05,
     "outcome": "counter_declined:alt_hub",
-    "price": 1218.53,
+    "price": 1337.05,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1218.53,
-      "bid_price_per_teu": 1181.39,
-      "market_rate_per_teu": 961.11,
+      "quote_per_teu": 1337.05,
+      "bid_price_per_teu": 1287.74,
+      "market_rate_per_teu": 1114.8,
       "reason": "bid_price_floor",
       "legs": [
         {
           "leg_idx": 3,
           "dep_day": 55.836761439986184,
-          "remaining_teu": 422.0,
-          "expected_teu": 597.4,
-          "pressure": 1.416,
-          "market_rate": 1126.68,
-          "bid_price": 1108.76
+          "remaining_teu": 950.0,
+          "expected_teu": 1897.0,
+          "pressure": 1.997,
+          "market_rate": 1135.68,
+          "bid_price": 1223.29
         },
         {
           "leg_idx": 4,
           "dep_day": 82.40938048760523,
-          "remaining_teu": 514.0,
-          "expected_teu": 2100.3,
-          "pressure": 4.086,
-          "market_rate": 59.4,
-          "bid_price": 72.63
+          "remaining_teu": 990.0,
+          "expected_teu": 2205.7,
+          "pressure": 2.228,
+          "market_rate": 59.84,
+          "bid_price": 64.45
         }
       ],
-      "text": "Bid price VES4 legs [3, 4]: $1181/TEU opportunity cost (remaining capacity vs forecast demand); market $961/TEU; quote $1219/TEU [bid_price_floor]."
+      "text": "Bid price VES4 legs [3, 4]: $1288/TEU opportunity cost (remaining capacity vs forecast demand); market $1115/TEU; quote $1337/TEU [bid_price_floor]."
     }
   },
   {
-    "request_id": 1387,
-    "day": 36,
-    "origin": "KRPUS",
-    "dest": "USLAX",
-    "teu": 2,
-    "segment": "flexible",
-    "cargo_type": "reefer",
-    "req_dep_day": 39.7,
-    "flex_days": 1,
-    "decision_kind": "split",
-    "option_idx": 0,
-    "discount_pct": 0.05,
-    "outcome": "booked:split",
-    "price": 981.64,
+    "request_id": 646,
+    "day": 11,
+    "origin": "NLRTM",
+    "dest": "CNSHA",
+    "teu": 6,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 34.7,
+    "flex_days": 0,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "booked:flex_window",
+    "price": 482.64,
     "explain": {
       "engine": "bid_price",
-      "quote_per_teu": 1033.31,
-      "bid_price_per_teu": 642.42,
-      "market_rate_per_teu": 1033.31,
+      "quote_per_teu": 603.3,
+      "bid_price_per_teu": 520.96,
+      "market_rate_per_teu": 574.03,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 2292.0,
+          "expected_teu": 2270.8,
+          "pressure": 0.991,
+          "market_rate": 443.33,
+          "bid_price": 374.64
+        },
+        {
+          "leg_idx": 5,
+          "dep_day": 66.25652605696585,
+          "remaining_teu": 2859.0,
+          "expected_teu": 3116.3,
+          "pressure": 1.09,
+          "market_rate": 158.61,
+          "bid_price": 146.32
+        }
+      ],
+      "text": "Bid price VES1 legs [4, 5]: $521/TEU opportunity cost (remaining capacity vs forecast demand); market $574/TEU; quote $603/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 647,
+    "day": 11,
+    "origin": "NLRTM",
+    "dest": "SGSIN",
+    "teu": 33,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 39.2,
+    "flex_days": 1,
+    "decision_kind": "flex_window",
+    "option_idx": 1,
+    "discount_pct": 0.2,
+    "outcome": "booked:flex_window",
+    "price": 395.78,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 494.72,
+      "bid_price_per_teu": 375.62,
+      "market_rate_per_teu": 480.31,
+      "reason": "market_uplift",
+      "legs": [
+        {
+          "leg_idx": 4,
+          "dep_day": 43.06798439029919,
+          "remaining_teu": 2286.0,
+          "expected_teu": 2270.8,
+          "pressure": 0.993,
+          "market_rate": 443.33,
+          "bid_price": 375.62
+        }
+      ],
+      "text": "Bid price VES1 legs [4]: $376/TEU opportunity cost (remaining capacity vs forecast demand); market $480/TEU; quote $495/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 890,
+    "day": 16,
+    "origin": "SGSIN",
+    "dest": "NLRTM",
+    "teu": 2,
+    "segment": "standard",
+    "cargo_type": "reefer",
+    "req_dep_day": 55.5,
+    "flex_days": 1,
+    "decision_kind": "alt_hub",
+    "option_idx": 0,
+    "discount_pct": 0.05,
+    "outcome": "counter_declined:alt_hub",
+    "price": 1410.94,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1410.94,
+      "bid_price_per_teu": 1359.68,
+      "market_rate_per_teu": 1173.38,
+      "reason": "bid_price_floor",
+      "legs": [
+        {
+          "leg_idx": 3,
+          "dep_day": 55.836761439986184,
+          "remaining_teu": 547.0,
+          "expected_teu": 1450.2,
+          "pressure": 2.651,
+          "market_rate": 1145.46,
+          "bid_price": 1289.46
+        },
+        {
+          "leg_idx": 4,
+          "dep_day": 82.40938048760523,
+          "remaining_teu": 848.0,
+          "expected_teu": 1836.8,
+          "pressure": 2.166,
+          "market_rate": 65.19,
+          "bid_price": 70.22
+        }
+      ],
+      "text": "Bid price VES4 legs [3, 4]: $1360/TEU opportunity cost (remaining capacity vs forecast demand); market $1173/TEU; quote $1411/TEU [bid_price_floor]."
+    }
+  },
+  {
+    "request_id": 2406,
+    "day": 47,
+    "origin": "SGSIN",
+    "dest": "NLRTM",
+    "teu": 1,
+    "segment": "flexible",
+    "cargo_type": "dry",
+    "req_dep_day": 55.9,
+    "flex_days": 2,
+    "decision_kind": "alt_hub",
+    "option_idx": 0,
+    "discount_pct": 0.1,
+    "outcome": "counter_declined:alt_hub",
+    "price": 1130.86,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1130.86,
+      "bid_price_per_teu": 697.96,
+      "market_rate_per_teu": 1130.86,
       "reason": "market_uplift",
       "legs": [
         {
           "leg_idx": 3,
-          "dep_day": 38.623777475219,
-          "remaining_teu": 1617.0,
-          "expected_teu": 17.7,
-          "pressure": 0.011,
-          "market_rate": 80.62,
-          "bid_price": 60.0
+          "dep_day": 55.836761439986184,
+          "remaining_teu": 315.0,
+          "expected_teu": 187.7,
+          "pressure": 0.596,
+          "market_rate": 1209.56,
+          "bid_price": 614.76
         },
         {
           "leg_idx": 4,
-          "dep_day": 42.09981914188567,
-          "remaining_teu": 1015.0,
-          "expected_teu": 347.2,
-          "pressure": 0.342,
-          "market_rate": 110.84,
-          "bid_price": 60.0
-        },
-        {
-          "leg_idx": 5,
-          "dep_day": 44.77586080855233,
-          "remaining_teu": 830.0,
-          "expected_teu": 436.3,
-          "pressure": 0.526,
-          "market_rate": 1165.1,
-          "bid_price": 522.42
+          "dep_day": 82.40938048760523,
+          "remaining_teu": 659.0,
+          "expected_teu": 559.9,
+          "pressure": 0.85,
+          "market_rate": 114.81,
+          "bid_price": 83.2
         }
       ],
-      "text": "Bid price VES2 legs [3, 4, 5]: $642/TEU opportunity cost (remaining capacity vs forecast demand); market $1033/TEU; quote $1033/TEU [market_uplift]."
+      "text": "Bid price VES4 legs [3, 4]: $698/TEU opportunity cost (remaining capacity vs forecast demand); market $1131/TEU; quote $1131/TEU [market_uplift]."
+    }
+  },
+  {
+    "request_id": 2880,
+    "day": 62,
+    "origin": "SGSIN",
+    "dest": "NLRTM",
+    "teu": 1,
+    "segment": "standard",
+    "cargo_type": "dry",
+    "req_dep_day": 110.1,
+    "flex_days": 2,
+    "decision_kind": "alt_hub",
+    "option_idx": 0,
+    "discount_pct": 0.1,
+    "outcome": "counter_declined:alt_hub",
+    "price": 1393.61,
+    "explain": {
+      "engine": "bid_price",
+      "quote_per_teu": 1393.61,
+      "bid_price_per_teu": 1404.15,
+      "market_rate_per_teu": 961.11,
+      "reason": "competitiveness_guard",
+      "legs": [
+        {
+          "leg_idx": 6,
+          "dep_day": 110.67545191617666,
+          "remaining_teu": 990.0,
+          "expected_teu": 4750.5,
+          "pressure": 4.799,
+          "market_rate": 1028.62,
+          "bid_price": 1307.81
+        },
+        {
+          "leg_idx": 7,
+          "dep_day": 137.2480709637957,
+          "remaining_teu": 990.0,
+          "expected_teu": 1985.7,
+          "pressure": 2.006,
+          "market_rate": 89.44,
+          "bid_price": 96.34
+        }
+      ],
+      "text": "Bid price VES4 legs [6, 7]: $1404/TEU opportunity cost (remaining capacity vs forecast demand); market $961/TEU; quote $1394/TEU [competitiveness_guard]."
     }
   }
 ]

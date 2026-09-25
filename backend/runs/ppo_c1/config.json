@@ -1,0 +1,26 @@
+{
+  "phase": 1,
+  "timesteps": 200000,
+  "n_envs": 8,
+  "seed": 42,
+  "pool": [
+    "adversarial-canal-closure",
+    "adversarial-perfect-storm",
+    "baseline",
+    "boom-market",
+    "high-imbalance",
+    "port-strike-season",
+    "seasonal-peak",
+    "steady-growth"
+  ],
+  "horizon_days": 14,
+  "vessel_ids": [
+    "VES4"
+  ],
+  "pricing": "bid_price",
+  "shaping": false,
+  "init_from": null,
+  "git_sha": null,
+  "obs_semantics": "forecaster-v1 (demand slots = BoundDemandForecaster.next_week, lam units)",
+  "forecaster": "/home/abhinav/Dock/backend/models/artifacts/demand_forecaster"
+}
