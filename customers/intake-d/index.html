@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MERIDIAN LINE — Itinerary Strip</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- shared SVG machinery: distressed stamp-ink + brass + punched hole -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- speckled-ink distress — ink coverage erodes like a hand stamp -->
+    <filter id="stampInk" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.42" numOctaves="2" seed="11" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 5.2 -1.5" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+    <!-- tighter distress for small stamps -->
+    <filter id="inkD" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 6 -1.4" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+    <linearGradient id="pinBrass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0"   stop-color="#f0dda4"/>
+      <stop offset=".45" stop-color="#c9a55c"/>
+      <stop offset=".8"  stop-color="#96712f"/>
+      <stop offset="1"   stop-color="#7a5a24"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 20 20" aria-hidden="true">
+      <rect x="2.6" y="5" width="14.8" height="10" rx="1.1"
+            fill="none" stroke="#3a5a44" stroke-width="1.4"/>
+      <path d="M6.2 5v10M9.8 5v10M13.4 5v10M16.2 6.4v7.2"
+            stroke="#3a5a44" stroke-width=".9" fill="none"/>
+    </svg>
+    <div class="org">MERIDIAN LINE<span>PACIFIC FREIGHT SERVICE</span></div>
+  </div>
+  <div class="top-r">
+    <span class="strip-no" id="stripNo">ITINERARY · STRIP 0000</span>
+    <a class="chip" href="../dashboard/">→ DASHBOARD</a>
+  </div>
+</header>
+
+<main class="wall">
+  <div class="stagewrap" id="stagewrap">
+    <!-- ==================== THE STRIP ==================== -->
+    <div class="strip" id="strip">
+      <i class="pin pin-l" aria-hidden="true"></i>
+      <i class="pin pin-r" aria-hidden="true"></i>
+
+      <div class="journey" id="journey">
+        <!-- dashed route spine + travelling seal dot; built + sized by JS.
+             the dot rides on its own layer above the punched elements. -->
+        <svg class="spine" id="spine" aria-hidden="true"></svg>
+        <svg class="spine spine2" id="spine2" aria-hidden="true"></svg>
+
+        <section class="leg leg-a" id="legA" aria-label="Origin port">
+          <h2 class="sec-h"><span>01 · ORIGIN</span><i class="okm" aria-hidden="true"></i></h2>
+          <div class="lane">
+            <button class="pstamp ps-a" id="stampA" type="button"></button>
+          </div>
+        </section>
+
+        <i class="perf" aria-hidden="true"></i>
+
+        <section class="leg leg-b" id="legB" aria-label="Cargo kinds">
+          <h2 class="sec-h"><span>02 · CARGO</span><i class="okm" aria-hidden="true"></i></h2>
+          <div class="lane">
+            <div class="punch-row" id="punchRow"></div>
+          </div>
+        </section>
+
+        <i class="perf" aria-hidden="true"></i>
+
+        <section class="leg leg-c" id="legC" aria-label="Departure window">
+          <h2 class="sec-h"><span>03 · DEPARTURE</span><i class="okm" aria-hidden="true"></i></h2>
+          <div class="lane dep-lane">
+            <div class="dayrow" id="dayRow"></div>
+            <div class="fstep" id="flexStep">
+              <button class="fsb" type="button" data-d="-1" aria-label="fewer flex days"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1 1 5 5 9"/></svg></button>
+              <div class="fsv" id="flexVal" tabindex="0" role="spinbutton"
+                   aria-valuemin="0" aria-valuemax="9" aria-valuenow="2"
+                   aria-label="departure tolerance in days"><b class="gnum" id="flexNum" data-t="2">2</b><span class="u">± DAYS</span></div>
+              <button class="fsb" type="button" data-d="1" aria-label="more flex days"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1 5 5 1 9"/></svg></button>
+            </div>
+          </div>
+        </section>
+
+        <i class="perf" aria-hidden="true"></i>
+
+        <section class="leg leg-d" id="legD" aria-label="Destination port">
+          <h2 class="sec-h"><span>04 · ARRIVAL</span><i class="okm" aria-hidden="true"></i></h2>
+          <div class="lane">
+            <button class="pstamp ps-b" id="stampB" type="button"></button>
+          </div>
+        </section>
+      </div>
+
+      <!-- stub row — service punches + confirm seal -->
+      <div class="stub">
+        <i class="hperf" aria-hidden="true"></i>
+        <div class="segrow" id="segRow" role="radiogroup" aria-label="Service segment"></div>
+        <div class="ledg" id="ledg">— NM</div>
+        <button class="cstamp" id="confirmBtn" type="button" aria-label="Confirm booking"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" id="note" aria-live="polite"></div>
+  <div class="hint">TAP A STAMP&nbsp;&nbsp;·&nbsp;&nbsp;PUNCH A CIRCLE&nbsp;&nbsp;·&nbsp;&nbsp;STAMP A DAY&nbsp;&nbsp;·&nbsp;&nbsp;CONFIRM</div>
+</main>
+
+<!-- stamped popover for the cargo punches (built by JS) -->
+<div class="pop" id="pop" hidden></div>
+
+<script src="script.js"></script>
+</body>
+</html>

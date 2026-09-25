@@ -85,10 +85,6 @@ export class MetricsPanel {
     this.$('#alerts').innerHTML = alerts.map((a) => `<li><i style="background:${levelColor(a.level)}"></i>${a.text}</li>`).join('')
       + `<li class="mut"><i></i>Heaviest deck stack ${stacks.worst.slot ?? '—'}: ${nf(stacks.worst.w || 0, 1)} t / ${HYDRO.deckStackLimit} t</li>`
       + `<li class="mut"><i></i>${nf(counts.hold)} boxes in holds · ${nf(counts.deck)} on deck · ${weights.perTEU.toFixed(1)} t/TEU</li>`;
-    const crit = alerts.filter((a) => a.level === 'crit').length, warn = alerts.filter((a) => a.level === 'warn').length;
-    this.$('#alert-count').textContent = crit ? `${crit} critical` : warn ? `${warn} warning${warn > 1 ? 's' : ''}` : 'OK';
-    this.$('#alert-count').style.color = crit ? CRIT : warn ? WARN : OK;
-    this.$('#metrics-status').style.background = crit ? CRIT : warn ? WARN : OK;
   }
 
   /* ---------------------------------------------------------------- longitudinal */

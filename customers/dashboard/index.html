@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MERIDIAN LINE — Customers · Fleet</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- shared SVG machinery: distressed stamp-ink, paper grain, brass -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- speckled-ink distress — ink coverage erodes like a hand stamp -->
+    <filter id="stampInk" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.42" numOctaves="2" seed="11" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 5.2 -1.5" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+    <filter id="mildInk" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 7 -2.6" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+    <filter id="inkD" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 6 -1.4" result="spek"/>
+      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+    </filter>
+    <filter id="grainF"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.5 0.5 0.5 0 0"/></filter>
+    <linearGradient id="gmBrass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0"   stop-color="#eed9a0"/>
+      <stop offset=".35" stop-color="#b28c46"/>
+      <stop offset=".6"  stop-color="#e4c988"/>
+      <stop offset="1"   stop-color="#84652a"/>
+    </linearGradient>
+    <radialGradient id="gmHole" cx=".5" cy=".42" r=".75">
+      <stop offset="0"   stop-color="#8f8672"/>
+      <stop offset=".55" stop-color="#b7ae9a"/>
+      <stop offset="1"   stop-color="#7d7560"/>
+    </radialGradient>
+    <linearGradient id="rBrass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0"   stop-color="#e8d29a"/>
+      <stop offset=".3"  stop-color="#a8843e"/>
+      <stop offset=".55" stop-color="#e6cb8c"/>
+      <stop offset=".8"  stop-color="#8a682c"/>
+      <stop offset="1"   stop-color="#6b4e1e"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ==================== TOP BAR ==================== -->
+<header class="bar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 20 20" aria-hidden="true">
+      <rect x="2.6" y="5" width="14.8" height="10" rx="1.1"
+            fill="none" stroke="#3a5a44" stroke-width="1.4"/>
+      <path d="M6.2 5v10M9.8 5v10M13.4 5v10M16.2 6.4v7.2"
+            stroke="#3a5a44" stroke-width=".9" fill="none"/>
+    </svg>
+    <div class="org">MERIDIAN LINE<span>CUSTOMER FLEET · PACIFIC SERVICE</span></div>
+    <span class="eyebrow">MERIDIAN LINE&nbsp;·&nbsp;CUSTOMER FLEET</span>
+  </div>
+
+  <!-- view switch — REGISTER ⇄ CREDENTIALS -->
+  <nav class="vseg" aria-label="Fleet view">
+    <button class="vseg-b on" id="vLedger" type="button" data-v="ledger" aria-pressed="true">REGISTER</button>
+    <button class="vseg-b" id="vCreds" type="button" data-v="creds" aria-pressed="false">CREDENTIALS</button>
+  </nav>
+
+  <div class="acts">
+    <a class="chip go" href="../index.html?new">+&nbsp;NEW REQUEST</a>
+  </div>
+</header>
+
+<!-- ==================== BOARD ==================== -->
+<main class="board">
+  <div class="views">
+
+    <!-- VIEW 1 · the waybill register — hairline-ruled paper sheet -->
+    <section class="view register paper" id="viewLedger" aria-label="Waybill register — all bookings">
+      <div class="pin" aria-hidden="true">
+        <svg viewBox="0 0 30 34" width="30" height="34">
+          <defs>
+            <radialGradient id="pinBrass" cx=".38" cy=".3" r=".9">
+              <stop offset="0"   stop-color="#f0dda4"/>
+              <stop offset=".45" stop-color="#c9a55c"/>
+              <stop offset=".8"  stop-color="#96712f"/>
+              <stop offset="1"   stop-color="#7a5a24"/>
+            </radialGradient>
+          </defs>
+          <path d="M15 13 L15 30" stroke="#8a8068" stroke-width="1.3"/>
+          <path d="M15 13 L15 30" stroke="rgba(255,255,255,.4)" stroke-width=".5" transform="translate(-.5 0)"/>
+          <circle cx="15" cy="9" r="7.6" fill="url(#pinBrass)"/>
+          <circle cx="15" cy="9" r="7.6" fill="none" stroke="rgba(52,36,10,.42)" stroke-width=".7"/>
+          <circle cx="15" cy="9" r="4.8" fill="none" stroke="rgba(255,246,214,.32)" stroke-width=".7"/>
+          <circle cx="12.6" cy="6.6" r="1.6" fill="rgba(255,248,220,.75)"/>
+          <ellipse cx="15" cy="30.5" rx="4" ry="1.4" fill="rgba(30,22,12,.18)"/>
+        </svg>
+      </div>
+      <i class="margin-rule" aria-hidden="true"></i>
+
+      <div class="reg-inner">
+        <div class="reg-head">
+          <div class="reg-title">
+            <div class="lbl">MANIFEST OF BOOKINGS · WORLD SERVICE</div>
+            <h1 class="reg-name g" data-t="WAYBILL REGISTER">WAYBILL REGISTER</h1>
+          </div>
+          <svg class="reg-stamp" viewBox="0 0 96 30" aria-hidden="true">
+            <g transform="rotate(3.5 48 15)" filter="url(#stampInk)">
+              <rect x="5" y="5" width="86" height="20" rx="2.2" class="st-o" style="--st-ink:#3a5a44"/>
+              <rect x="7.6" y="7.6" width="80.8" height="14.8" rx="1.2" class="st-i" style="--st-ink:#3a5a44"/>
+              <text x="48" y="17.6" text-anchor="middle" class="st-t" style="--st-ink:#3a5a44" id="regDate">—</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="rule"></div>
+
+        <div class="lgrid lhead" aria-hidden="true">
+          <span>BOOKING</span><span>ROUTE</span><span>CONSIGNMENT</span>
+          <span>VESSEL · VOYAGE</span><span>WINDOW / ETA</span><span class="rh">STATUS</span>
+        </div>
+        <ol class="ledger" id="ledger"></ol>
+
+        <div class="reg-foot">
+          <span id="regCount">— ENTRIES</span>
+          <span id="regTeu">— TEU COMMITTED</span>
+          <span>REGISTER CLOSES 31 DEC 2026</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2 · the credential wall — each booking a laminated badge -->
+    <section class="view view-creds" id="viewCreds" hidden aria-label="Order credentials on the wall">
+      <div class="wall-head">
+        <span class="lbl">CREDENTIALS ON THE WALL — ONE BADGE PER BOOKING</span>
+        <span class="wall-count" id="wallCount">— BADGES</span>
+      </div>
+      <div class="rule"></div>
+      <div class="wall" id="wall"></div>
+    </section>
+
+    <!-- fleet totals — serif counters pinned under the views -->
+    <section class="totals paper" aria-label="Fleet totals">
+      <div class="tot">
+        <div class="lbl">TEU Afloat</div>
+        <div class="tot-line">
+          <svg class="tot-ic" viewBox="0 0 14 14" aria-hidden="true">
+            <rect x="1.8" y="3.4" width="10.4" height="7.2" rx=".6" fill="none" stroke="currentColor" stroke-width="1.15"/>
+            <path d="M4.7 3.4v7.2M7.6 3.4v7.2M10.5 3.4v7.2" stroke="currentColor" stroke-width=".75"/>
+          </svg>
+          <b class="tot-num g" id="totTeu" data-t="—">—</b>
+        </div>
+      </div>
+      <div class="tot">
+        <div class="lbl">Orders Active</div>
+        <div class="tot-line">
+          <svg class="tot-ic" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 6.6 H12.4 L10.9 10.2 H3.5 Z" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"/>
+            <path d="M4.4 6.6V4.4h1.7v2.2M7 6.6V3.6h1.7v3" fill="none" stroke="currentColor" stroke-width=".9"/>
+          </svg>
+          <b class="tot-num g" id="totOrd" data-t="—">—</b>
+        </div>
+      </div>
+      <div class="tot">
+        <div class="lbl">Avg Transit · Days</div>
+        <div class="tot-line">
+          <svg class="tot-ic" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2.2 9.4 A4.9 4.9 0 0 1 11.8 9.4" fill="none" stroke="currentColor" stroke-width="1.1"/>
+            <path d="M7 9.4 L9.8 5.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+            <circle cx="7" cy="9.4" r=".9" fill="currentColor"/>
+          </svg>
+          <b class="tot-num g" id="totDays" data-t="—">—</b>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== THE CHART ==================== -->
+  <div class="chart-col">
+
+    <!-- the pinned tracking chart — near full viewport height -->
+    <section class="chartbox" aria-label="Fleet tracking chart">
+      <div class="cpaper">
+        <div class="mapwrap">
+          <div id="map" role="application" aria-label="Fleet chart — drag to pan, scroll to zoom"></div>
+        </div>
+        <div class="tape tape-tl" aria-hidden="true"></div>
+        <div class="tape tape-tr" aria-hidden="true"></div>
+        <div class="cpin" aria-hidden="true"></div>
+        <div class="ctitle" aria-hidden="true">
+          <div class="ct-org">MERIDIAN LINE</div>
+          <div class="ct-name">FLEET TRACKING CHART</div>
+          <div class="ct-rule"></div>
+          <div class="ct-line">WORLD SERVICE · ASIA — EUROPE — N. AMERICA</div>
+          <div class="ct-line" id="ctDate">CORRECTED —</div>
+        </div>
+        <svg class="rose" id="rose" viewBox="0 0 120 120" aria-hidden="true"></svg>
+
+        <!-- order detail — pinned note on the chart corner -->
+        <div class="dcard" id="dcard" aria-label="Selected order detail">
+          <button class="d-x" id="dClose" type="button" aria-label="Close order detail">
+            <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5 8.5 8.5M8.5 1.5 1.5 8.5"
+              fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </button>
+          <div class="d-top">
+            <div class="d-info">
+              <div class="lbl">BOOKING</div>
+              <div class="d-id" id="dId" data-t="—">—</div>
+              <div class="d-pair"><b id="dFrom">—</b>
+                <svg viewBox="0 0 14 8" aria-hidden="true"><path d="M1 4h10M8.4 1.2 11.2 4l-2.8 2.8"
+                  fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <b id="dTo">—</b></div>
+              <div class="d-cities" id="dCities">—</div>
+            </div>
+            <svg class="d-stamp" id="dStamp" viewBox="0 0 96 96" aria-hidden="true"></svg>
+          </div>
+          <div class="d-miles" id="dMiles"></div>
+          <div class="d-man" id="dMan" tabindex="0" aria-label="Container manifest">
+            <span class="lbl">MANIFEST</span>
+            <span class="d-man-chips" id="dManChips"></span>
+            <span class="tip" id="dTip" aria-hidden="true"></span>
+          </div>
+          <div class="d-rows" id="dRows"></div>
+        </div>
+
+        <svg class="grain" aria-hidden="true"><rect width="100%" height="100%" filter="url(#grainF)"/></svg>
+      </div>
+    </section>
+
+    <div class="micro" aria-hidden="true">MERIDIAN LINE · CUSTOMER FLEET REGISTER · VERIFY AT OPS.MERIDIANLINE.COM · MERIDIAN LINE · CUSTOMER FLEET REGISTER · VERIFY AT OPS.MERIDIANLINE.COM · MERIDIAN LINE</div>
+  </div>
+</main>
+
+<!-- ==================== MANIFEST SHEET (credential view) ==================== -->
+<div class="msheet-wrap" id="msheet" hidden>
+  <div class="msheet-back" data-close></div>
+  <article class="msheet" id="msheetCard" role="dialog" aria-modal="true" aria-label="Order manifest"></article>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

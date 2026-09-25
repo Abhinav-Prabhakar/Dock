@@ -1,0 +1,942 @@
+/* ============================================================
+   MERIDIAN LINE — WAYBILL DESK (intake variant A)
+   A cream waybill pinned to the plaster wall; the customer inks
+   it like a shipping clerk. The laminated booking credential on
+   the right RE-INKS live — port stamps slam in, the barcode
+   re-seeds, stats flicker with misregistration ghosts.
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --wall: #f4f0e4;
+  --ink: #1d1a14;
+  --ink2: #45423a;
+  --faint: #908d81;
+  --hair: #d9d3c1;
+  --accent: #3a5a44;          /* deep sage */
+  --terra: #b96f4b;           /* terracotta */
+  --paper: linear-gradient(172deg, #fdfbf3 0%, #f9f5e8 55%, #f2edd9 100%);
+}
+
+html { min-height: 100%; }
+
+body {
+  min-height: 100vh;
+  background-color: var(--wall);
+  background-image:
+    radial-gradient(60% 42% at 50% 26%, rgba(255,252,236,.55), rgba(255,252,236,0) 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.35 0.35 0.35 0 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  font-family: "Helvetica Neue", Helvetica, -apple-system, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* soft room vignette */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(130% 105% at 50% 24%, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%),
+    radial-gradient(120% 110% at 50% 45%, rgba(0,0,0,0) 58%, rgba(112,98,72,.17) 100%);
+  pointer-events: none;
+  z-index: 60;
+}
+
+/* mono micro-label register (shared) */
+.fl, .fnote, .kh, .lbl, .s-sub, .cap, .band-t, .sec-h,
+.wb-form, .wb-meta, .err-tag, .hint, .dash-chip, .add-kind,
+.stamp-btn, .seg, .tot-r span {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+/* letterpress rule — hairline + 1px white highlight */
+.rule {
+  height: 1px;
+  margin: 10px 26px 0;
+  background: rgba(217, 211, 193, .8);
+  box-shadow: 0 1px 0 rgba(255,255,255,.75);
+}
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.bar {
+  position: relative; z-index: 3;
+  display: flex; align-items: center;
+  padding: 16px clamp(18px, 3.4vw, 44px) 0;
+}
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand .mark { width: 19px; height: 19px; flex: none; }
+.b-name {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .20em;
+  color: var(--ink);
+  line-height: 1;
+}
+.b-name i {
+  display: block;
+  font-style: normal;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.4px; font-weight: 600;
+  letter-spacing: .3em;
+  color: var(--accent);
+  margin-top: 3px;
+}
+.dash-chip {
+  margin-left: auto;
+  text-decoration: none;
+  font-size: 7.6px; font-weight: 700;
+  letter-spacing: .2em;
+  color: #f4f1e4;
+  background: var(--accent);
+  padding: 5px 9px 4px 10px;
+  border-radius: 2px;
+  box-shadow: 0 .5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
+  transition: background .15s ease, transform .15s ease;
+}
+.dash-chip:hover { background: var(--terra); transform: translateX(2px); }
+
+/* ============================================================
+   DESK LAYOUT — waybill left, hanging credential right
+   ============================================================ */
+.desk {
+  position: relative; z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(520px, 640px) 330px;
+  gap: clamp(24px, 4.5vw, 70px);
+  justify-content: center;
+  align-items: start;
+  padding: clamp(14px, 2.6vh, 30px) clamp(14px, 3vw, 44px) 48px;
+}
+
+/* ============================================================
+   THE WAYBILL — big cream sheet, taped to the wall
+   ============================================================ */
+.waybill {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid #d8d1bc;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.75) inset,
+    0 2px 3px rgba(58,48,32,.10),
+    0 14px 34px rgba(58,48,32,.16),
+    0 30px 60px rgba(58,48,32,.10);
+  transform: rotate(-.45deg);
+  padding: 20px 0 26px;
+}
+/* folded top edge — the "deckle" of the form */
+.waybill::before {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 7px;
+  background: linear-gradient(180deg, rgba(58,48,32,.12), rgba(255,255,255,0));
+}
+/* tape corners */
+.tape {
+  position: absolute; top: -12px;
+  width: 86px; height: 26px;
+  background: linear-gradient(180deg, rgba(240,234,214,.85), rgba(226,219,196,.75));
+  box-shadow: 0 1px 2px rgba(58,48,32,.18), inset 0 0 0 .5px rgba(255,255,255,.6);
+  opacity: .92;
+}
+.tape-l { left: 8%;  transform: rotate(-4deg); }
+.tape-r { right: 8%; transform: rotate(3deg); }
+
+/* head — form identity */
+.wb-head {
+  display: flex; align-items: flex-end; gap: 14px;
+  padding: 4px 26px 0;
+}
+.wb-form {
+  display: block;
+  font-size: 6.8px; font-weight: 700;
+  letter-spacing: .26em;
+  color: var(--accent);
+}
+.wb-no {
+  display: block;
+  margin-top: 5px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px; font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink);
+  line-height: 1;
+}
+.wb-meta {
+  margin-left: auto;
+  display: flex; flex-direction: column; gap: 4px;
+  text-align: right;
+  font-size: 6.4px; font-weight: 600;
+  letter-spacing: .22em;
+  color: var(--faint);
+}
+.wb-meta span:last-child {
+  color: var(--terra);
+  border: .8px solid rgba(185,111,75,.5);
+  padding: 2px 5px 1.5px;
+  align-self: flex-end;
+}
+
+/* misregistration ghosts — any dynamic serif numeral */
+.gnum { position: relative; display: inline-block; }
+.gnum::before, .gnum::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.gnum::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.gnum::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+
+/* ---------------- sections ---------------- */
+.wb-sec { padding: 0 26px; margin-top: 20px; }
+.sec-h {
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .24em;
+  color: var(--ink);
+}
+.sec-h i {
+  flex: 1;
+  height: 1px;
+  background: var(--hair);
+  box-shadow: 0 1px 0 rgba(255,255,255,.65);
+}
+
+/* field rows */
+.frow { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.farrow { flex: none; width: 30px; height: 10px; color: var(--accent); margin-top: 14px; }
+
+/* a stamped field block — dashed clerk's box, mono micro label */
+.fld {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 11px 9px;
+  border: .9px dashed rgba(28,24,16,.30);
+  background: rgba(255,255,255,.22);
+  transition: border-color .18s ease, background .18s ease;
+}
+.fld:focus-within { border-style: solid; border-color: rgba(58,90,68,.55); }
+.fl {
+  display: block;
+  font-size: 6.4px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--faint);
+}
+.fval { position: relative; margin-top: 5px; }
+.fval select {
+  appearance: none; -webkit-appearance: none;
+  width: 100%;
+  background: none; border: none; outline: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px; font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink);
+  cursor: pointer;
+  padding-right: 18px;
+}
+.fval select option { font-size: 13px; font-family: Georgia, serif; }
+.fchev {
+  position: absolute; right: 1px; top: 50%;
+  width: 10px; height: 6px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.fchev path {
+  fill: none; stroke: #96907e;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+/* invalid — terracotta clerk's mark, minimal text */
+.fld.bad {
+  border-style: solid;
+  border-color: rgba(185,111,75,.75);
+  background: rgba(185,111,75,.055);
+}
+.fld.bad::after {
+  content: "✕";
+  position: absolute; right: 7px; top: 6px;
+  font-size: 9px; font-weight: 700;
+  color: var(--terra);
+}
+.fnote {
+  margin-top: 9px;
+  font-size: 6.4px; font-weight: 600;
+  letter-spacing: .2em;
+  color: #b2ab98;
+}
+
+/* ---------------- consignment lines ---------------- */
+.khead {
+  display: grid;
+  grid-template-columns: 56px 1.25fr 1.25fr 20px;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0 4px;
+}
+.kh { font-size: 6px; font-weight: 700; letter-spacing: .18em; color: #b2ab98; }
+
+.kind {
+  display: grid;
+  grid-template-columns: 30px 26px 1.25fr 1.25fr 20px;
+  gap: 10px; align-items: center;
+  margin-top: 10px;
+  padding: 9px 4px 10px 6px;
+  border-top: .8px solid var(--hair);
+  border-left: 2.5px solid var(--cc, rgba(28,24,16,.2));  /* livery paint tab */
+  box-shadow: 0 -1px 0 rgba(255,255,255,.55) inset;
+  animation: k-in .28s cubic-bezier(.22,.8,.3,1) both;
+}
+@keyframes k-in { from { opacity: 0; transform: translateY(7px); } }
+.kind .k-ln {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6.2px; font-weight: 700; letter-spacing: .12em;
+  color: var(--faint);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  justify-self: center;
+}
+
+
+/* cargo chip — cycles DRY → HAZMAT → REEFER */
+.k-cargo {
+  flex: none;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  color: #8a8577;
+  background: rgba(138,133,119,.10);
+  box-shadow: inset 0 0 0 .7px rgba(28,22,14,.25);
+  transition: color .2s ease, background .2s ease, transform .15s ease;
+}
+.k-cargo:hover { box-shadow: inset 0 0 0 .9px rgba(28,22,14,.45); }
+.k-cargo:active { transform: scale(.9); }
+.k-cargo:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.k-cargo[data-cargo="hazmat"] { color: #c98f1f; background: rgba(201,143,31,.16); }
+.k-cargo[data-cargo="reefer"] { color: #4a7f9e; background: rgba(74,127,158,.16); }
+.k-cargo svg { display: block; width: 13px; height: 13px; }
+.cg-ic { display: flex; align-items: center; justify-content: center; animation: cg-pop .22s cubic-bezier(.3,1.35,.45,1) both; }
+@keyframes cg-pop { from { transform: scale(.68); opacity: .4; } }
+
+/* TEU field — bucket chips + stepper */
+.k-teu .btq { display: flex; gap: 4px; margin-bottom: 5px; }
+.btq button {
+  flex: 1;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6.6px; font-weight: 700; letter-spacing: .12em;
+  padding: 2.5px 0 2px;
+  background: none;
+  border: .8px solid rgba(28,24,16,.26);
+  border-radius: 1.5px;
+  color: var(--ink2);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.btq button:hover { color: var(--terra); border-color: rgba(185,111,75,.55); }
+.btq button.on {
+  background: var(--accent); color: #f4f1e4;
+  border-color: rgba(20,30,24,.4);
+}
+.k-teu .fld, .k-wt .fld { padding: 6px 9px 7px; }
+
+/* horizontal mini stepper (used for teu + dep + flex) */
+.stepper.st-h {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 5px;
+}
+.st-h .sbtn {
+  width: 20px; height: 16px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: #96907e;
+  transition: color .15s, transform .15s;
+}
+.st-h .sbtn:hover { color: var(--terra); }
+.st-h .sbtn:active { transform: scale(.84); }
+.st-h .sbtn svg { width: 10px; height: 6px; display: block; }
+.st-h .sbtn svg path {
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.st-h .sval {
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--ink);
+  line-height: 1;
+  min-width: 2.4ch;
+  text-align: center;
+  cursor: ns-resize;
+  opacity: .94;
+}
+.st-h .sval:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+
+/* weight input — hand-inked entry */
+.wt-in {
+  display: flex; align-items: baseline; gap: 5px;
+  margin-top: 4px;
+}
+.wt-in input {
+  appearance: none; -webkit-appearance: none;
+  width: 6ch;
+  background: none; border: none; outline: none;
+  border-bottom: .8px solid rgba(28,24,16,.28);
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 19px; font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+  opacity: .94;
+  padding-bottom: 1px;
+}
+.wt-in input::-webkit-outer-spin-button,
+.wt-in input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.wt-in input:focus { border-bottom-color: rgba(58,90,68,.6); }
+.wt-in .u {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6.8px; font-weight: 700; letter-spacing: .14em;
+  color: #a49e8d;
+}
+.wt-hint { margin-top: 4px; font-size: 5.8px; letter-spacing: .16em; color: #b2ab98;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+.k-del {
+  width: 18px; height: 18px; padding: 0;
+  border: none; background: none; cursor: pointer;
+  color: #b2ab98;
+  font-size: 10px; line-height: 1;
+  justify-self: center;
+  transition: color .15s;
+}
+.k-del:hover { color: var(--terra); }
+
+.add-kind {
+  margin-top: 13px;
+  padding: 0 0 2.5px;
+  background: none; border: none; cursor: pointer;
+  font-size: 8.4px; font-weight: 700;
+  letter-spacing: .24em;
+  color: var(--accent);
+  border-bottom: .8px solid rgba(58,90,68,.45);
+  transition: color .15s, border-color .15s;
+}
+.add-kind:hover:not([disabled]) { color: var(--terra); border-bottom-color: rgba(185,111,75,.55); }
+.add-kind[disabled] { color: #b2ab98; border-bottom-color: transparent; cursor: default; }
+
+/* ---------------- schedule & tier ---------------- */
+.frow-sched { align-items: stretch; gap: 12px; }
+.segbox {
+  flex: 1.25 1 0;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.seg {
+  flex: 1;
+  padding: 7px 0 6px;
+  background: none;
+  border: 1.4px solid rgba(28,24,16,.30);
+  border-radius: 2px;
+  font-size: 8.2px; font-weight: 700;
+  letter-spacing: .26em;
+  color: #96907e;
+  cursor: pointer;
+  transition: color .16s, border-color .16s, background .16s, transform .12s;
+}
+.seg:hover { color: var(--ink2); border-color: rgba(28,24,16,.5); }
+.seg:active { transform: scale(.97); }
+.seg:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.seg.on {
+  color: var(--accent);
+  border: 2.2px solid var(--accent);
+  background: rgba(58,90,68,.06);
+  filter: url(#mildInk);
+}
+.seg[data-seg="urgent"].on { color: var(--terra); border-color: var(--terra); background: rgba(185,111,75,.06); }
+.fld-step { flex: 1 1 0; }
+.fld-step .st-h { justify-content: space-between; }
+.fld-step .sval { flex: 1; }
+
+/* ---------------- clerk's error note ---------------- */
+.wb-err {
+  display: flex; align-items: baseline; gap: 10px;
+  margin: 18px 26px 0;
+  padding: 8px 12px 7px;
+  border: 1.6px solid rgba(185,111,75,.8);
+  transform: rotate(-.5deg);
+  background: rgba(185,111,75,.045);
+  filter: url(#mildInk);
+}
+.err-tag { flex: none; font-size: 6.4px; font-weight: 700; letter-spacing: .22em; color: var(--terra); }
+.err-txt {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 8px; font-weight: 600; letter-spacing: .06em;
+  color: #8a4a30; text-transform: none;
+}
+
+/* ---------------- footer ---------------- */
+.wb-foot {
+  display: flex; align-items: center; gap: 18px;
+  margin: 20px 26px 0;
+  padding-top: 15px;
+  border-top: 1px solid rgba(217,211,193,.8);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+}
+.wb-tot { display: flex; gap: 22px; }
+.tot-r span { display: block; font-size: 6.2px; font-weight: 700; letter-spacing: .2em; color: var(--faint); }
+.tot-r b {
+  display: block; margin-top: 3px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 700;
+  color: var(--ink); opacity: .94;
+}
+
+/* the big sage rubber-stamp confirm — slams down */
+.stamp-btn {
+  margin-left: auto;
+  position: relative;
+  padding: 0;
+  background: none; border: none; cursor: pointer;
+  transform: rotate(-1.6deg);
+  transition: transform .12s ease;
+}
+.stamp-btn .sb-in {
+  display: block;
+  padding: 13px 26px 11px;
+  border: 3px solid var(--accent);
+  border-radius: 3px;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .34em;
+  color: var(--accent);
+  background: rgba(58,90,68,.045);
+  box-shadow:
+    inset 0 0 0 1px rgba(58,90,68,.3),
+    inset 0 0 12px rgba(58,90,68,.08);
+  filter: url(#mildInk);
+}
+.stamp-btn:hover .sb-in { background: rgba(58,90,68,.10); }
+.stamp-btn:active { transform: rotate(-1.6deg) scale(.94); }
+.stamp-btn:focus-visible { outline: .9px solid rgba(58,90,68,.6); outline-offset: 4px; }
+.stamp-btn.slam { animation: sb-slam .34s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes sb-slam {
+  0%   { transform: rotate(-1.6deg) scale(1.5); }
+  60%  { transform: rotate(-1.6deg) scale(.93); }
+  100% { transform: rotate(-1.6deg) scale(1); }
+}
+.stamp-btn[disabled] { opacity: .45; cursor: default; }
+
+/* the giant FILED stamp that lands on the waybill */
+.filed {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 6;
+}
+.filed-in {
+  filter: url(#stampInk);
+  padding: 16px 34px 13px;
+  border: 5px solid var(--accent);
+  border-radius: 5px;
+  text-align: center;
+  transform: rotate(-7deg);
+  background: rgba(58,90,68,.05);
+}
+.fd-t {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 44px; font-weight: 700;
+  letter-spacing: .18em;
+  color: var(--accent);
+}
+.fd-s {
+  display: block; margin-top: 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 8px; font-weight: 700; letter-spacing: .3em;
+  color: var(--accent);
+}
+.filed.landed { animation: filed-in .42s cubic-bezier(.2,1.25,.4,1) both; }
+@keyframes filed-in {
+  0%   { opacity: 0; transform: scale(1.9) rotate(2deg); }
+  55%  { opacity: 1; transform: scale(.94) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* paper ink grain */
+.grain {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: .13;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* ============================================================
+   THE CREDENTIAL — laminated card hanging off a brass hook
+   ============================================================ */
+.credwrap {
+  position: sticky;
+  top: 12px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.hook { filter: drop-shadow(2px 4px 4px rgba(58,48,32,.32)); }
+.drop { margin-top: -24px; }
+.cred-hang {
+  margin-top: -6px;
+  transform-origin: 50% 0%;
+  animation: cred-sway 7.5s ease-in-out infinite;
+}
+@keyframes cred-sway {
+  0%, 100% { transform: rotate(.5deg); }
+  50%      { transform: rotate(-.7deg); }
+}
+/* jolt when the card re-inks */
+.cred-hang.kick { animation: cred-kick .55s cubic-bezier(.2,1.1,.4,1) both; }
+@keyframes cred-kick {
+  0%   { transform: rotate(2.6deg); }
+  60%  { transform: rotate(-1.4deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.cred {
+  position: relative;
+  width: 300px; height: 468px;
+  transform-style: preserve-3d;
+}
+.edge {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ddd6c2, #bcb298);
+  transform: translateZ(-3px);
+  box-shadow: inset 0 -3px 5px rgba(40,34,22,.25),
+              inset 0 2px 3px rgba(255,255,255,.5),
+              8px 16px 26px rgba(58,48,32,.28),
+              2px 4px 8px rgba(58,48,32,.18);
+}
+.edge::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: 12px;
+  background: #e9e3d0;
+  transform: translateZ(1.5px);
+  box-shadow: inset 0 0 0 1px rgba(30,26,18,.10);
+}
+.cred .face {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px rgba(28,24,16,.14);
+}
+.cred .grommet {
+  position: absolute; top: 5px; left: 50%;
+  width: 26px; height: 26px; margin-left: -13px;
+  filter: drop-shadow(0 .8px 1px rgba(40,30,12,.28));
+}
+.cred .guilloche {
+  position: absolute;
+  left: 50%; top: 96px;
+  width: 300px; height: 188px;
+  margin-left: -150px;
+  opacity: .5;
+}
+.cred .uv {
+  position: absolute;
+  left: 50%; top: 108px;
+  width: 200px; height: 200px;
+  margin-left: -100px;
+  opacity: .06;
+}
+.c-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 30px 16px 0;
+}
+.c-head .mark { width: 17px; height: 17px; flex: none; }
+.org {
+  font-size: 9.4px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--ink);
+  line-height: 1;
+}
+.org span {
+  display: block;
+  font-size: 5.6px; font-weight: 600;
+  letter-spacing: .3em;
+  color: var(--accent);
+  margin-top: 2.5px;
+}
+.tag {
+  margin-left: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6.6px; font-weight: 700;
+  letter-spacing: .22em;
+  color: #f4f1e4;
+  background: var(--accent);
+  padding: 3.5px 6px 3px 7px;
+  border-radius: 2px;
+  box-shadow: 0 .5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
+}
+.cred .rule { margin: 9px 16px 0; }
+
+.c-mid { padding: 8px 16px 0; }
+.lbl {
+  font-size: 6.6px; font-weight: 600;
+  letter-spacing: .24em;
+  color: #9a9587;
+}
+.c-id {
+  margin-top: 4px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px; font-weight: 700;
+  letter-spacing: .015em;
+  color: var(--ink);
+  line-height: 1.1;
+  opacity: .94;
+}
+.c-route {
+  margin-top: 5px;
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .05em;
+  color: var(--ink2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.c-dept {
+  margin-top: 3px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6.8px; font-weight: 600;
+  letter-spacing: .17em;
+  color: var(--faint);
+}
+.rows { margin-top: 8px; display: grid; gap: 3.5px; }
+.rows .r {
+  display: flex; align-items: baseline;
+  border-bottom: .5px solid rgba(28,24,16,.08);
+  padding-bottom: 2.5px;
+}
+.rows .r span {
+  width: 48px; flex: none;
+  font-size: 6.2px; font-weight: 600;
+  letter-spacing: .18em;
+  color: #a19d90;
+  text-transform: uppercase;
+}
+.rows .r b {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 8.6px; font-weight: 600;
+  letter-spacing: .08em;
+  color: #26241e;
+}
+
+/* ---------------- port datestamps on the card ---------------- */
+.c-ports { margin: 6px 8px 0; }
+.c-ports-svg { display: block; width: 100%; height: auto; }
+.c-alt {
+  fill: none; stroke: var(--terra);
+  stroke-width: .9; stroke-dasharray: 2.6 3;
+  opacity: .5;
+}
+.c-leg {
+  fill: none; stroke: var(--accent);
+  stroke-width: 1.1; stroke-dasharray: 3.4 3;
+}
+.c-leg.pp-run { animation: c-dash .7s ease; }
+@keyframes c-dash { from { stroke-dashoffset: 13; } to { stroke-dashoffset: 0; } }
+
+.cstamp {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: rotate(var(--cs-rot));
+}
+.cstamp-o { --cs-ink: var(--accent); --cs-ghost: var(--terra); --cs-rot: -3.5deg; }
+.cstamp-d { --cs-ink: var(--terra);  --cs-ghost: var(--accent); --cs-rot:  2.5deg; }
+.cstamp.slam { animation: cs-slam .3s cubic-bezier(.2,1.35,.4,1) both; }
+@keyframes cs-slam {
+  0%   { transform: rotate(var(--cs-rot)) scale(1.7); opacity: 0; }
+  55%  { transform: rotate(var(--cs-rot)) scale(.93); opacity: 1; }
+  100% { transform: rotate(var(--cs-rot)) scale(1); }
+}
+.cs-out   { fill: none; stroke: var(--cs-ink); stroke-width: 2; }
+.cs-in    { fill: none; stroke: var(--cs-ink); stroke-width: .7; opacity: .85; }
+.cs-dot   { fill: var(--cs-ink); opacity: .85; }
+.cs-ghost { fill: none; stroke: var(--cs-ghost); stroke-width: 2; opacity: .14; }
+.cs-code {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12.5px; font-weight: 700;
+  letter-spacing: .04em;
+  fill: var(--cs-ink);
+}
+.cs-city {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6.8px; font-weight: 700;
+  letter-spacing: .18em;
+  fill: var(--cs-ink);
+}
+.cs-role {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 6px; font-weight: 700;
+  letter-spacing: .26em;
+  fill: var(--cs-ink);
+  opacity: .88;
+}
+.cs-date {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 5.6px; font-weight: 600;
+  letter-spacing: .12em;
+  fill: var(--cs-ink);
+  opacity: .88;
+}
+
+/* ---------------- stats strip ---------------- */
+.stats {
+  display: flex;
+  margin: 4px 16px 0;
+  border-top: 1px solid rgba(217,211,193,.8);
+  border-bottom: 1px solid rgba(217,211,193,.8);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.stat { flex: 1 1 0; min-width: 0; padding: 5px 0 6px; }
+.stat + .stat {
+  border-left: .5px solid rgba(28,24,16,.08);
+  padding-left: 10px;
+  margin-left: 10px;
+}
+.s-num {
+  margin-top: 3px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 17.5px; font-weight: 700;
+  line-height: .95;
+  color: var(--ink);
+  opacity: .94;
+}
+.s-sub {
+  margin-top: 3px;
+  font-size: 5.8px; font-weight: 700;
+  letter-spacing: .18em;
+  color: #a49e8d;
+}
+
+/* cargo chips on the card — one disc per consignment line */
+.c-cargo {
+  display: flex; gap: 5px;
+  margin: 8px 16px 0;
+  min-height: 14px;
+}
+.c-cargo .chip {
+  width: 13px; height: 13px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  color: #8a8577;
+  background: rgba(138,133,119,.12);
+  box-shadow: inset 0 0 0 .7px rgba(28,22,14,.25);
+  animation: cg-pop .22s cubic-bezier(.3,1.35,.45,1) both;
+}
+.c-cargo .chip[data-cargo="hazmat"] { color: #c98f1f; background: rgba(201,143,31,.18); }
+.c-cargo .chip[data-cargo="reefer"] { color: #4a7f9e; background: rgba(74,127,158,.18); }
+.c-cargo .chip svg { width: 8px; height: 8px; }
+
+.micro {
+  margin: 7px 16px 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 5px;
+  letter-spacing: .06em;
+  color: #b2ab98;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cbottom {
+  margin: 7px 16px 0;
+  padding-top: 7px;
+  border-top: 1px solid rgba(217,211,193,.8);
+}
+.bar-wrap canvas { display: block; width: 150px; height: 34px; }
+.cap {
+  margin-top: 3px;
+  font-size: 6.4px;
+  letter-spacing: .26em;
+  color: #77756c;
+}
+
+.band {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 32px;
+  display: flex; align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0) 40%),
+    #2c4234;
+  box-shadow: inset 0 2px 0 rgba(198,120,86,.9), inset 0 1px 0 rgba(0,0,0,.4);
+}
+.band .dot {
+  width: 6px; height: 6px; flex: none;
+  border-radius: 50%;
+  background: #d08358;
+  box-shadow: 0 0 5px rgba(208,131,88,.8), inset 0 0 1px rgba(0,0,0,.4);
+}
+.band-t {
+  font-size: 7.4px; font-weight: 700;
+  letter-spacing: .22em;
+  color: #eae6d6;
+}
+.band-mark { margin-left: auto; width: 14px; height: 14px; opacity: .8; }
+
+.laminate {
+  position: absolute; inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.02) 26%, rgba(255,255,255,0) 40%),
+    linear-gradient(335deg, rgba(255,255,255,.055) 0%, rgba(255,255,255,0) 30%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 1px 0 0 rgba(255,255,255,.28),
+    inset -1px 0 0 rgba(20,16,10,.06),
+    inset 0 -1px 0 rgba(20,16,10,.10),
+    inset 0 0 0 1px rgba(26,22,14,.10);
+}
+.clip {
+  position: absolute;
+  left: 50%; top: -16px;
+  width: 60px; height: 40px;
+  margin-left: -30px;
+  transform: translateZ(2px);
+  filter: drop-shadow(0 2px 1.6px rgba(30,24,14,.30));
+  pointer-events: none;
+}
+
+.hint {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 7.4px;
+  letter-spacing: .3em;
+  color: #a49e8d;
+}
+
+/* ============================================================
+   RESPONSIVE — stack the credential under the waybill
+   ============================================================ */
+@media (max-width: 980px) {
+  .desk {
+    grid-template-columns: minmax(0, 640px);
+    gap: 34px;
+  }
+  .credwrap { position: static; }
+}
+
+@media (max-width: 720px) {
+  .desk { padding-left: 12px; padding-right: 12px; }
+  .frow { flex-wrap: wrap; }
+  .frow-route .fld { flex: 1 1 100%; }
+  .farrow { transform: rotate(90deg); margin: 0 auto; }
+  .frow-sched { flex-direction: column; }
+  .segbox { flex-direction: row; }
+  .wb-foot { flex-wrap: wrap; }
+  .stamp-btn { margin-left: 0; width: 100%; }
+  .stamp-btn .sb-in { text-align: center; }
+}

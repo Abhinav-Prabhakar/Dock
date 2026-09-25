@@ -39,6 +39,12 @@
     </div>
   </header>
 
+  <aside class="hud panel profit-panel" id="profit-panel">
+    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="p-profit">1,284,500</span>
+    <span class="delta" id="p-profit-delta" title="vs greedy baseline">▲ +12.4%</span>
+  </aside>
+
   <aside class="hud panel cargo-panel" id="cargo-panel">
     <div class="panel-head">
       <span>Stowage</span>
@@ -98,7 +104,7 @@
   <div class="hint-bar">Drag to orbit · Right-drag to pan · Scroll to zoom · <kbd>N</kbd> day/night · <kbd>M</kbd> metrics · <kbd>H</kbd> hide UI</div>
 
   <section class="hud metrics open" id="metrics">
-    <button class="drawer-tab" id="metrics-tab"><span class="dot" id="metrics-status"></span>Load metrics <em id="alert-count">OK</em><svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+    <button class="drawer-tab" id="metrics-tab">Metrics<svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
     <div class="kpis" id="kpis"></div>
     <div class="cards">
       <div class="card span-4">
@@ -123,10 +129,18 @@
   <button data-screen="stowage">
     <svg viewBox="0 0 24 24" width="15" height="15"><rect x="3" y="5" width="18" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M9 5v14M15 5v14" stroke="currentColor" stroke-width="1.4"/></svg>
     Stowage</button>
+  <button data-screen="stats">
+    <svg viewBox="0 0 24 24" width="15" height="15"><path d="M3 17c2 0 2-1.6 4.5-1.6S10 17 12 17s2-1.6 4.5-1.6S19 17 21 17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6 13V9M10 13V5M14 13V8M18 13V6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    Statistics</button>
+  <button data-screen="model">
+    <svg viewBox="0 0 24 24" width="15" height="15"><circle cx="12" cy="12" r="6.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M12 2.5v3.3M12 18.2v3.3M2.5 12h3.3M18.2 12h3.3M5.3 5.3l2.3 2.3M16.4 16.4l2.3 2.3M5.3 18.7l2.3-2.3M16.4 7.6l2.3-2.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    Model</button>
   <i class="glider"></i>
 </nav>
 
 <div id="stowage" class="stowage"></div>
+<div id="stats" class="page page-chart"></div>
+<div id="model" class="page page-bridge"></div>
 
 <div id="tooltip" class="tooltip"></div>
 

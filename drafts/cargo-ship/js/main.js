@@ -15,6 +15,8 @@ import { computeMetrics, staticAttitude } from './metrics.js';
 import { MetricsPanel } from './metricsPanel.js';
 import { COLOR_MODES, legendFor, boxColor } from './colors.js';
 import { StowageView } from './stowage/view.js';
+import { StatsPage } from './pages/stats.js';
+import { ModelPage } from './pages/model.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -53,6 +55,7 @@ controls.update();
 const waves = new WaveField({ windDirDeg: ENV.windDirDeg, seaState: ENV.seaState });
 const sky = new SkySystem(renderer, scene);
 let ship, cargo, ocean, motion, metrics, panel, stowage;
+const pages = {};
 let render3D = true;
 let screen = 'vessel';
 let busy = false;
@@ -88,6 +91,8 @@ async function build() {
     onColorMode: setColorMode,
     onExit: () => switchScreen('vessel'),
   });
+  pages.stats = new StatsPage($('stats'));
+  pages.model = new ModelPage($('model'));
   setupUI();
   onResize();
   if (params.has('night')) setTimeOfDay(ENV.nightTime);
@@ -95,7 +100,8 @@ async function build() {
   renderer.compile(scene, camera);
   requestAnimationFrame(() => $('loader').classList.add('done'));
   if (params.get('screen') === 'stowage') setTimeout(() => switchScreen('stowage').then(() => params.has('play') && stowage.action('play')), 400);
-  window.dock = { THREE, scene, camera, controls, renderer, ship, cargo, ocean, sky, motion, waves, stowage, setTimeOfDay, goDay, goNight, switchScreen, get metrics() { return metrics; } };
+  if (params.get('screen') in pages) setTimeout(() => switchScreen(params.get('screen')), 400);
+  window.dock = { THREE, scene, camera, controls, renderer, ship, cargo, ocean, sky, motion, waves, stowage, pages, setTimeOfDay, goDay, goNight, switchScreen, get metrics() { return metrics; } };
   loop();
 }
 
@@ -287,30 +293,78 @@ function stepCamTween(dt) {
 }
 
 let savedView = null;
+let camFlat = false; // camera parked in the broadside elevation that the stowage drawing cross-fades from
+let pageZ = 35;
+
+// Aim at the drawing's centre, offset by the hull's current sinkage so 3D and 2D line up at the cross-fade.
+function flatCameraArgs(layout) {
+  return { toTarget: new THREE.Vector3(layout.cx, layout.cy + ship.group.position.y, 0), toTheta: 0, toPhi: Math.PI / 2, toFov: 5, toPpm: layout.ppm };
+}
+function snapCamera(args) { tweenCamera({ ...args, dur: 1e-3 }); stepCamTween(1); }
+function restoreCameraInstant() {
+  const back = savedView || { pos: DEFAULT_CAM, target: DEFAULT_TARGET };
+  camera.fov = 36; camera.updateProjectionMatrix();
+  camera.position.copy(back.pos); controls.target.copy(back.target); camera.lookAt(back.target);
+  camFlat = false;
+}
+const saveView = () => { savedView = { pos: camera.position.clone(), target: controls.target.clone(), drawer: panel.open }; };
+const setMode = (m) => ['stowage', 'stats', 'model'].forEach((k) => document.body.classList.toggle(`mode-${k}`, k === m));
+
 async function switchScreen(to) {
   if (busy || to === screen) return;
   busy = true;
+  const from = screen;
   $('screen-switch').classList.add('busy');
   document.querySelectorAll('#screen-switch button').forEach((b) => b.classList.toggle('active', b.dataset.screen === to));
   placeGlider();
-  $('tooltip').classList.remove('show');
+  $('tooltip').classList.remove('show', 'light');
   cargo.setHighlight(null);
-  if (to === 'stowage') {
-    savedView = { pos: camera.position.clone(), target: controls.target.clone(), drawer: panel.open };
+  const toPage = pages[to], fromPage = pages[from];
+
+  if (toPage) {
+    // a DOM page fades in over whatever is showing; the screen underneath is then parked
+    if (from === 'vessel') { saveView(); controls.enabled = false; $('ui').classList.add('away'); }
+    toPage.root.style.zIndex = ++pageZ;
+    setMode(to);
+    screen = to;
+    await toPage.show();
+    if (from === 'vessel') render3D = false;
+    if (from === 'stowage') stowage.suspend();
+    if (fromPage) await fromPage.hide({ instant: true });
+  } else if (fromPage) {
+    screen = to;
+    if (to === 'vessel') {
+      if (camFlat) restoreCameraInstant();
+      render3D = true; clock.getDelta();
+      setMode(null);
+      await fromPage.hide();
+      $('ui').classList.remove('away');
+      controls.enabled = true;
+      controls.update();
+    } else {
+      // resume the drawing under the page; park the 3D camera in elevation so a later exit cross-fades cleanly
+      if (!camFlat) { snapCamera(flatCameraArgs(stowage.startLayout(window.innerWidth, window.innerHeight))); camFlat = true; }
+      stowage.resume();
+      setMode('stowage');
+      await fromPage.hide();
+    }
+  } else if (to === 'stowage') {
+    saveView();
     controls.enabled = false;
     $('ui').classList.add('away');
     const layout = stowage.startLayout(window.innerWidth, window.innerHeight);
-    // aim at the drawing's centre, offset by the hull's current sinkage so 3D and 2D line up at the cross-fade
-    await tweenCamera({ toTarget: new THREE.Vector3(layout.cx, layout.cy + ship.group.position.y, 0), toTheta: 0, toPhi: Math.PI / 2, toFov: 5, toPpm: layout.ppm, dur: 2.3 });
+    await tweenCamera({ ...flatCameraArgs(layout), dur: 2.3 });
+    camFlat = true;
     screen = 'stowage';
-    await stowage.enter({ from: layout, onCovered: () => { render3D = false; document.body.classList.add('mode-stowage'); } });
+    await stowage.enter({ from: layout, onCovered: () => { render3D = false; setMode('stowage'); } });
   } else {
-    await stowage.exit({ onUncover: () => { render3D = true; clock.getDelta(); document.body.classList.remove('mode-stowage'); } });
+    await stowage.exit({ onUncover: () => { render3D = true; clock.getDelta(); setMode(null); } });
     screen = 'vessel';
     const back = savedView || { pos: DEFAULT_CAM, target: DEFAULT_TARGET };
     const off = back.pos.clone().sub(back.target);
     sph.setFromVector3(off);
     await tweenCamera({ toTarget: back.target.clone(), toTheta: sph.theta, toPhi: sph.phi, toFov: 36, toDist: sph.radius, dur: 2.3 });
+    camFlat = false;
     $('ui').classList.remove('away');
     controls.enabled = true;
     controls.update();

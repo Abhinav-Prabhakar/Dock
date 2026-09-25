@@ -347,6 +347,26 @@ export class StowageView {
       .then(() => { this.active = false; this.root.classList.remove('active'); });
   }
 
+  // Park the drawing while a DOM page covers it, and bring it straight back (no 3D cross-fade).
+  suspend() {
+    this.playing = false; this.syncButtons();
+    this.audio.sleep();
+    this.hover(null);
+    this.active = false;
+    this.root.classList.remove('active');
+  }
+
+  resume() {
+    this.active = true;
+    this.root.classList.add('active');
+    this.resize();
+    this.refresh();
+    this.anim = { k: 1, running: false };
+    this.syncMode();
+    this.audio.wake();
+    this.loop();
+  }
+
   animate(k0, k1, ms, onStep) {
     return new Promise((resolve) => {
       this.anim = { k: k0, running: true };
