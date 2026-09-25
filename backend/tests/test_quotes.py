@@ -100,6 +100,33 @@ def test_accept_books_on_the_live_world(live):
     assert again.status_code == 409                   # decided orders are closed
 
 
+def test_accepted_counter_offer_registers_a_deal_on_the_order(live):
+    """Counter-offers become settlement contracts. _book emits
+    settlement.deal_registered synchronously, so the order must already be
+    known to the tracker then, or it never gets its deal_id."""
+    c, ep = live
+    lanes = [(r["origin"], r["dest"]) for r in c.get("/routes").json()]
+    for dep in (4, 8, 12, 16):
+        for o, d in lanes:
+            body = c.post("/orders", json={**BASE, "origin": o, "dest": d, "teu": 4,
+                                           "weight_t": 40.0, "flex_days": 0,
+                                           "req_dep_day": dep}).json()
+            counter = next((f for f in body["offers"]
+                            if f["kind"] in ("flex_window", "alt_hub", "split")), None)
+            if counter:
+                break
+        if counter:
+            break
+    else:
+        pytest.fail("no counter-offer on any lane")
+    oid = body["order"]["id"]
+    r = c.post(f"/orders/{oid}/accept", json={"offer_id": counter["id"]})
+    assert r.status_code == 200, r.text
+    deal_id = c.get(f"/orders/{oid}").json()["deal_id"]
+    assert deal_id and ep.deals[deal_id]["kind"] == counter["kind"]
+    assert ep.deals[deal_id]["request_id"] == body["order"]["request_id"]
+
+
 def test_decline(live):
     c, _ = live
     body = _quote_with_offers(c)

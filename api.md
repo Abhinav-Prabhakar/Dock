@@ -250,7 +250,7 @@ QUOTED ──accept──> CONFIRMED ──(near sailing)──> LOADING
 | Method | Path | Returns |
 |---|---|---|
 | GET | `/live` | episode snapshot (as above) plus `live: true, speed_days_per_sec, n_events, last_seq` |
-| GET | `/live/events?after_seq=0&limit=200&types=` | events after `after_seq`; `types` is a comma-separated filter (e.g. `booking.decision,order.accepted`); `limit` clamped to [1, 1000] |
+| GET | `/live/events?after_seq=0&limit=200&types=` | the **latest** `limit` events after `after_seq` (a live tail: older matches beyond `limit` are skipped, and `next_seq` is the newest event's seq); `types` is a comma-separated filter (e.g. `booking.decision,order.accepted`); `limit` clamped to [1, 1000] |
 | GET | `/live/policy?limit=20` | recent policy decisions as the network saw them (below); `limit` clamped to [1, 60] |
 | GET | `/live/policy/network` | static weight slice for drawing the network; `404` if the live policy isn't a neural net (e.g. `heuristic`) |
 | GET | `/live/vessels/{id}/stowage` | one vessel's current stowage (below) |

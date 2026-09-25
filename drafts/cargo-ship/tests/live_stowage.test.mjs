@@ -13,7 +13,7 @@ globalThis.DOCK_API_BASE = process.env.DOCK_API_BASE || 'http://localhost:8080/a
 
 const { API } = await import('../js/api.js');
 const { layoutFromStowage } = await import('../js/stowage/fromLive.js');
-const { describeEvent } = await import('../js/live.js');
+const { describeEvent, trackCustomer, seedCustomers, CUSTOMER_EVENT_TYPES, live } = await import('../js/live.js');
 
 /* ------------------------------------------------------------------ synthetic ship fixture */
 
@@ -224,11 +224,18 @@ test('layoutFromStowage: reefer pairs become 40HC, hazmat maps to imdg category'
 
 /* ------------------------------------------------------------------ describeEvent */
 
-test('describeEvent: real booking.decision events from /live/events', async () => {
-  const res = await API.liveEvents(0, 'booking.decision,order.quoted,order.accepted,order.declined', 500);
+test('describeEvent: real events from /live/events with the panel\'s own type filter', async () => {
+  const res = await API.liveEvents(0, CUSTOMER_EVENT_TYPES, 1000);
   assert.ok(Array.isArray(res.events));
+  const reqs = new Map();
   for (const ev of res.events) {
-    const d = describeEvent(ev);
+    trackCustomer(ev, reqs);
+    const d = describeEvent(ev, reqs);
+    if (ev.type.startsWith('settlement.')) {
+      const known = ev.request_id != null && reqs.has(String(ev.request_id));
+      assert.equal(d === null, !known, `${ev.type} for request ${ev.request_id}`);
+      if (!d) continue;
+    }
     assert.equal(typeof d.day, 'number');
     assert.equal(typeof d.text, 'string');
     assert.ok(d.text.length > 0);
@@ -281,4 +288,71 @@ test('describeEvent: synthetic events cover booked/rejected/declined/order tones
   const declinedOrder = describeEvent({ type: 'order.declined', day: 5, order_id: 'BK-2422-TC' });
   assert.equal(declinedOrder.text, 'BK-2422-TC declined');
   assert.equal(declinedOrder.tone, 'order');
+});
+
+const SETTLEMENT_EVENTS = (rid) => [
+  { type: 'settlement.deal_registered', day: 5.2, request_id: rid, deal_id: 'd1', kind: 'flex_window' },
+  { type: 'settlement.departure_recorded', day: 9.1, request_id: rid, deal_id: 'd1', actual_day: 9.1 },
+  { type: 'settlement.delivery_recorded', day: 31.6, request_id: rid, deal_id: 'd1', actual_day: 31.6 },
+  { type: 'settlement.settled', day: 31.6, request_id: rid, deal_id: 'd1', outcome: 'settled_full', amount_usd: 9313.26, tx_hash: '0xabc' },
+];
+
+test('describeEvent: settlement lines only for customer requests (matched on request_id)', () => {
+  const reqs = new Map();
+  // order.quoted (always first) and the customer's booking.decision carry request_id + order_id
+  trackCustomer({ type: 'order.quoted', request_id: 4242, order_id: 'BK-2490-TC', offers: [] }, reqs);
+  trackCustomer({ type: 'booking.decision', source: 'customer', request_id: 4243, order_id: 'BK-2491-TC', outcome: 'booked' }, reqs);
+  trackCustomer({ type: 'booking.decision', request_id: 7, outcome: 'booked' }, reqs);   // simulated cargo
+  assert.deepEqual([...reqs], [['4242', 'BK-2490-TC'], ['4243', 'BK-2491-TC']]);
+
+  const lines = SETTLEMENT_EVENTS(4242).map((ev) => describeEvent(ev, reqs));
+  assert.deepEqual(lines.map((l) => l.text), [
+    'BK-2490-TC deal registered · flex_window',
+    'BK-2490-TC departed',
+    'BK-2490-TC delivered',
+    'BK-2490-TC settled · settled_full · $9,313',
+  ]);
+  assert.ok(lines.every((l) => l.customer && l.tone === 'order'));
+  assert.deepEqual(lines.map((l) => l.day), [5, 9, 31, 31]);
+
+  // string request ids match too
+  assert.equal(describeEvent({ ...SETTLEMENT_EVENTS('4242')[3] }, reqs).text, lines[3].text);
+  // simulated deals and unknown requests produce no line
+  for (const ev of [...SETTLEMENT_EVENTS(7), ...SETTLEMENT_EVENTS(999)]) assert.equal(describeEvent(ev, reqs), null);
+  assert.equal(describeEvent(SETTLEMENT_EVENTS(4242)[0]), null);   // no map -> nothing known
+});
+
+test('live poller filter includes every settlement step; episode change forgets customer requests', () => {
+  for (const t of ['booking.decision', 'order.quoted', 'order.accepted', 'order.declined',
+    'settlement.deal_registered', 'settlement.departure_recorded', 'settlement.delivery_recorded', 'settlement.settled']) {
+    assert.ok(CUSTOMER_EVENT_TYPES.split(',').includes(t), t);
+  }
+  live.customerReqs.set('1', 'BK-1');
+  live._afterSeq = 50;
+  live._seededFor = 'ep-old';
+  live._resetEpisode();
+  assert.equal(live.customerReqs.size, 0);
+  assert.equal(live._afterSeq, 0);
+  assert.equal(live._seededFor, null);
+});
+
+test('seedCustomers: orders quoted before the page opened, current episode only', () => {
+  const reqs = new Map();
+  seedCustomers([
+    { id: 'BK-1', episode_id: 'ep-live', request_id: 11 },
+    { id: 'BK-2', episode_id: 'ep-old', request_id: 12 },
+    { id: 'BK-3', episode_id: 'ep-live', request_id: null },
+  ], 'ep-live', reqs);
+  assert.deepEqual([...reqs], [['11', 'BK-1']]);
+  assert.equal(describeEvent({ type: 'settlement.settled', day: 40, request_id: 11, outcome: 'refunded', amount_usd: 0 }, reqs).text,
+    'BK-1 settled · refunded · $0');
+});
+
+test('seedCustomers: real /orders rows for the live episode carry request ids', async () => {
+  const [snap, orders] = await Promise.all([API.live(), API.orders()]);
+  const reqs = new Map();
+  seedCustomers(orders, snap.id, reqs);
+  const mine = orders.filter((o) => o.episode_id === snap.id && o.request_id != null);
+  assert.equal(reqs.size, new Set(mine.map((o) => String(o.request_id))).size);
+  for (const o of mine) assert.equal(reqs.get(String(o.request_id)), o.id);
 });
