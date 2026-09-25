@@ -1,0 +1,41 @@
+{
+  "model": "demand",
+  "method": "closed-form ridge on climatology residual log1p(teu)-log1p(clim[route,woy]), np.linalg.solve normal equations",
+  "l2": 1.0,
+  "n_rows": 14976,
+  "n_features": 29,
+  "features": [
+    "intercept",
+    "route_one_hot[18]",
+    "woy_sin",
+    "woy_cos",
+    "seas12_sin",
+    "seas12_cos",
+    "trend=min(w,103)/104",
+    "resid_lag1",
+    "resid_lag2",
+    "resid_lag4",
+    "rolling_mean_resid_lags",
+    "shock_indicator"
+  ],
+  "scenarios": [
+    "adversarial-canal-closure",
+    "adversarial-perfect-storm",
+    "baseline",
+    "boom-market",
+    "high-imbalance",
+    "port-strike-season",
+    "seasonal-peak",
+    "steady-growth"
+  ],
+  "fit_timestamp_utc": "2026-09-15T14:04:01.178845+00:00",
+  "eval_metrics": {
+    "mape": 0.5794967335251905,
+    "mae_teu": 117.97973929331341,
+    "n": 3744,
+    "per_scenario": {
+      "depressed-demand": 0.6505616904304564,
+      "volatile-shocks": 0.5080114999930652
+    }
+  }
+}

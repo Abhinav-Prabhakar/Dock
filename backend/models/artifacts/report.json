@@ -1,0 +1,77 @@
+{
+  "seed": 42,
+  "timestamp_utc": "2026-09-15T14:04:01.358966+00:00",
+  "split": {
+    "train": [
+      "adversarial-canal-closure",
+      "adversarial-perfect-storm",
+      "baseline",
+      "boom-market",
+      "high-imbalance",
+      "port-strike-season",
+      "seasonal-peak",
+      "steady-growth"
+    ],
+    "holdout": [
+      "depressed-demand",
+      "volatile-shocks"
+    ]
+  },
+  "models": {
+    "demand": {
+      "mape": 0.5794967335251905,
+      "mae_teu": 117.97973929331341,
+      "n": 3744,
+      "per_scenario": {
+        "depressed-demand": 0.6505616904304564,
+        "volatile-shocks": 0.5080114999930652
+      }
+    },
+    "elasticity": {
+      "per_segment": {
+        "flexible": {
+          "estimated": 1.7973075536942291,
+          "true": 1.8000000000000005,
+          "abs_err": 0.0026924463057713677
+        },
+        "standard": {
+          "estimated": 1.105843517372153,
+          "true": 1.0999999999999999,
+          "abs_err": 0.005843517372153162
+        },
+        "urgent": {
+          "estimated": 0.5533439218867067,
+          "true": 0.5499999999999999,
+          "abs_err": 0.0033439218867067355
+        }
+      },
+      "max_abs_err": 0.005843517372153162
+    },
+    "wtp": {
+      "per_segment": {
+        "flexible": {
+          "mu": 0.0002921049117765335,
+          "sigma": 0.08997956295999394,
+          "implied_mult": 1.0002921475785707,
+          "true_mult": 1.0,
+          "abs_err": 0.0002921475785706562
+        },
+        "standard": {
+          "mu": 0.07652668147976781,
+          "sigma": 0.07008281149686242,
+          "implied_mult": 1.0795309934372692,
+          "true_mult": 1.08,
+          "abs_err": 0.00046900656273085595
+        },
+        "urgent": {
+          "mu": 0.3223968235364898,
+          "sigma": 0.12006010748715827,
+          "implied_mult": 1.3804324553728446,
+          "true_mult": 1.38,
+          "abs_err": 0.00043245537284475333
+        }
+      },
+      "max_abs_err": 0.00046900656273085595
+    }
+  }
+}

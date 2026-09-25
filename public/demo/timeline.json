@@ -1,0 +1,2172 @@
+{
+  "policies": {
+    "static": [
+      {
+        "day": 1,
+        "cum_revenue": 949802.0,
+        "cum_profit": 910731.0,
+        "utilization": 0.0,
+        "teu_booked": 760.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 2,
+        "cum_revenue": 1915638.0,
+        "cum_profit": 1821494.0,
+        "utilization": 0.0,
+        "teu_booked": 1553.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 3,
+        "cum_revenue": 3084255.0,
+        "cum_profit": 2877108.0,
+        "utilization": 0.0,
+        "teu_booked": 2388.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 4,
+        "cum_revenue": 3891162.0,
+        "cum_profit": 3610340.0,
+        "utilization": 0.0,
+        "teu_booked": 2992.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 5,
+        "cum_revenue": 4520098.0,
+        "cum_profit": 4113790.0,
+        "utilization": 0.0,
+        "teu_booked": 3451.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 6,
+        "cum_revenue": 5207670.0,
+        "cum_profit": 4715186.0,
+        "utilization": 0.1017,
+        "teu_booked": 3985.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 7,
+        "cum_revenue": 5859152.0,
+        "cum_profit": 5095860.0,
+        "utilization": 0.1017,
+        "teu_booked": 4501.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 8,
+        "cum_revenue": 6179505.0,
+        "cum_profit": 5279312.0,
+        "utilization": 0.2305,
+        "teu_booked": 4804.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 9,
+        "cum_revenue": 6568720.0,
+        "cum_profit": 5448434.0,
+        "utilization": 0.2305,
+        "teu_booked": 5165.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 10,
+        "cum_revenue": 7018580.0,
+        "cum_profit": 5734340.0,
+        "utilization": 0.2305,
+        "teu_booked": 5544.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 11,
+        "cum_revenue": 7375810.0,
+        "cum_profit": 5927617.0,
+        "utilization": 0.2305,
+        "teu_booked": 5842.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 12,
+        "cum_revenue": 7919418.0,
+        "cum_profit": 6285460.0,
+        "utilization": 0.2801,
+        "teu_booked": 6235.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 13,
+        "cum_revenue": 8345602.0,
+        "cum_profit": 6443315.0,
+        "utilization": 0.265,
+        "teu_booked": 6565.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 14,
+        "cum_revenue": 8813735.0,
+        "cum_profit": 6669672.0,
+        "utilization": 0.265,
+        "teu_booked": 6933.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 15,
+        "cum_revenue": 9243940.0,
+        "cum_profit": 6884706.0,
+        "utilization": 0.265,
+        "teu_booked": 7247.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 16,
+        "cum_revenue": 9537645.0,
+        "cum_profit": 6963240.0,
+        "utilization": 0.265,
+        "teu_booked": 7492.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 17,
+        "cum_revenue": 9726968.0,
+        "cum_profit": 6937391.0,
+        "utilization": 0.265,
+        "teu_booked": 7666.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 18,
+        "cum_revenue": 9820715.0,
+        "cum_profit": 6815967.0,
+        "utilization": 0.265,
+        "teu_booked": 7778.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 19,
+        "cum_revenue": 10071452.0,
+        "cum_profit": 6851533.0,
+        "utilization": 0.265,
+        "teu_booked": 7996.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 20,
+        "cum_revenue": 10346602.0,
+        "cum_profit": 6921770.0,
+        "utilization": 0.241,
+        "teu_booked": 8250.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 21,
+        "cum_revenue": 10676540.0,
+        "cum_profit": 7062192.0,
+        "utilization": 0.241,
+        "teu_booked": 8574.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 22,
+        "cum_revenue": 10731245.0,
+        "cum_profit": 6931283.0,
+        "utilization": 0.241,
+        "teu_booked": 8629.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 23,
+        "cum_revenue": 11023058.0,
+        "cum_profit": 6972049.0,
+        "utilization": 0.241,
+        "teu_booked": 8881.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 24,
+        "cum_revenue": 11455650.0,
+        "cum_profit": 7195000.0,
+        "utilization": 0.241,
+        "teu_booked": 9169.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 25,
+        "cum_revenue": 11689462.0,
+        "cum_profit": 7222792.0,
+        "utilization": 0.2102,
+        "teu_booked": 9318.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 26,
+        "cum_revenue": 11922035.0,
+        "cum_profit": 7265800.0,
+        "utilization": 0.1615,
+        "teu_booked": 9455.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 27,
+        "cum_revenue": 12112038.0,
+        "cum_profit": 7260819.0,
+        "utilization": 0.1882,
+        "teu_booked": 9609.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 28,
+        "cum_revenue": 12292870.0,
+        "cum_profit": 7224060.0,
+        "utilization": 0.1885,
+        "teu_booked": 9745.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 29,
+        "cum_revenue": 12452520.0,
+        "cum_profit": 7212756.0,
+        "utilization": 0.1885,
+        "teu_booked": 9864.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 30,
+        "cum_revenue": 12616645.0,
+        "cum_profit": 7153746.0,
+        "utilization": 0.2781,
+        "teu_booked": 9988.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 31,
+        "cum_revenue": 13015365.0,
+        "cum_profit": 7381068.0,
+        "utilization": 0.2781,
+        "teu_booked": 10228.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 32,
+        "cum_revenue": 13427992.0,
+        "cum_profit": 7556955.0,
+        "utilization": 0.2781,
+        "teu_booked": 10477.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 33,
+        "cum_revenue": 13614632.0,
+        "cum_profit": 7557962.0,
+        "utilization": 0.2782,
+        "teu_booked": 10596.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 34,
+        "cum_revenue": 14039915.0,
+        "cum_profit": 7837636.0,
+        "utilization": 0.3203,
+        "teu_booked": 10860.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 35,
+        "cum_revenue": 14152550.0,
+        "cum_profit": 7765323.0,
+        "utilization": 0.3203,
+        "teu_booked": 10957.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 36,
+        "cum_revenue": 14311688.0,
+        "cum_profit": 7718345.0,
+        "utilization": 0.3423,
+        "teu_booked": 11095.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 37,
+        "cum_revenue": 14452455.0,
+        "cum_profit": 7698006.0,
+        "utilization": 0.3418,
+        "teu_booked": 11214.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 38,
+        "cum_revenue": 14546562.0,
+        "cum_profit": 7603633.0,
+        "utilization": 0.3431,
+        "teu_booked": 11309.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 39,
+        "cum_revenue": 14790020.0,
+        "cum_profit": 7616175.0,
+        "utilization": 0.3431,
+        "teu_booked": 11469.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 40,
+        "cum_revenue": 15109930.0,
+        "cum_profit": 7732332.0,
+        "utilization": 0.3446,
+        "teu_booked": 11706.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 41,
+        "cum_revenue": 15327045.0,
+        "cum_profit": 7805250.0,
+        "utilization": 0.346,
+        "teu_booked": 11904.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 42,
+        "cum_revenue": 15610040.0,
+        "cum_profit": 7824551.0,
+        "utilization": 0.346,
+        "teu_booked": 12090.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 43,
+        "cum_revenue": 15978220.0,
+        "cum_profit": 7986798.0,
+        "utilization": 0.3459,
+        "teu_booked": 12356.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 44,
+        "cum_revenue": 16263660.0,
+        "cum_profit": 8039015.0,
+        "utilization": 0.3289,
+        "teu_booked": 12545.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 45,
+        "cum_revenue": 16573515.0,
+        "cum_profit": 8152776.0,
+        "utilization": 0.3291,
+        "teu_booked": 12730.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 46,
+        "cum_revenue": 16787782.0,
+        "cum_profit": 8144744.0,
+        "utilization": 0.3291,
+        "teu_booked": 12899.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 47,
+        "cum_revenue": 17198370.0,
+        "cum_profit": 8294968.0,
+        "utilization": 0.3291,
+        "teu_booked": 13146.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 48,
+        "cum_revenue": 17289488.0,
+        "cum_profit": 8182448.0,
+        "utilization": 0.3305,
+        "teu_booked": 13219.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 49,
+        "cum_revenue": 17558888.0,
+        "cum_profit": 8192690.0,
+        "utilization": 0.3305,
+        "teu_booked": 13378.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 50,
+        "cum_revenue": 17820535.0,
+        "cum_profit": 8228691.0,
+        "utilization": 0.3305,
+        "teu_booked": 13550.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 51,
+        "cum_revenue": 17910268.0,
+        "cum_profit": 8092777.0,
+        "utilization": 0.3305,
+        "teu_booked": 13616.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 52,
+        "cum_revenue": 18004995.0,
+        "cum_profit": 7964494.0,
+        "utilization": 0.3315,
+        "teu_booked": 13675.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 53,
+        "cum_revenue": 18206668.0,
+        "cum_profit": 7922698.0,
+        "utilization": 0.3315,
+        "teu_booked": 13844.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 54,
+        "cum_revenue": 18450268.0,
+        "cum_profit": 7942546.0,
+        "utilization": 0.3401,
+        "teu_booked": 14003.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 55,
+        "cum_revenue": 18519608.0,
+        "cum_profit": 7764242.0,
+        "utilization": 0.3559,
+        "teu_booked": 14049.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 56,
+        "cum_revenue": 18977180.0,
+        "cum_profit": 8022020.0,
+        "utilization": 0.3559,
+        "teu_booked": 14324.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 57,
+        "cum_revenue": 19106705.0,
+        "cum_profit": 7954216.0,
+        "utilization": 0.3559,
+        "teu_booked": 14407.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 58,
+        "cum_revenue": 19267115.0,
+        "cum_profit": 7874358.0,
+        "utilization": 0.3559,
+        "teu_booked": 14560.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 59,
+        "cum_revenue": 19321918.0,
+        "cum_profit": 7733209.0,
+        "utilization": 0.3769,
+        "teu_booked": 14626.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 60,
+        "cum_revenue": 19390980.0,
+        "cum_profit": 7620590.0,
+        "utilization": 0.3769,
+        "teu_booked": 14712.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      }
+    ],
+    "greedy": [
+      {
+        "day": 1,
+        "cum_revenue": 1868960.0,
+        "cum_profit": 1829879.0,
+        "utilization": 0.0,
+        "teu_booked": 1437.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 2,
+        "cum_revenue": 3372676.0,
+        "cum_profit": 3278290.0,
+        "utilization": 0.0,
+        "teu_booked": 2644.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 3,
+        "cum_revenue": 5160136.0,
+        "cum_profit": 4918790.0,
+        "utilization": 0.0,
+        "teu_booked": 4014.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 4,
+        "cum_revenue": 6258606.0,
+        "cum_profit": 5943583.0,
+        "utilization": 0.0,
+        "teu_booked": 4875.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 5,
+        "cum_revenue": 7261842.0,
+        "cum_profit": 6823587.0,
+        "utilization": 0.0,
+        "teu_booked": 5624.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 6,
+        "cum_revenue": 8124690.0,
+        "cum_profit": 7600258.0,
+        "utilization": 0.0993,
+        "teu_booked": 6259.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 7,
+        "cum_revenue": 8889662.0,
+        "cum_profit": 8022824.0,
+        "utilization": 0.0993,
+        "teu_booked": 6919.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 8,
+        "cum_revenue": 9354938.0,
+        "cum_profit": 8351457.0,
+        "utilization": 0.3164,
+        "teu_booked": 7293.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 9,
+        "cum_revenue": 9970072.0,
+        "cum_profit": 8746086.0,
+        "utilization": 0.3164,
+        "teu_booked": 7793.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 10,
+        "cum_revenue": 10546058.0,
+        "cum_profit": 9158118.0,
+        "utilization": 0.3164,
+        "teu_booked": 8232.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 11,
+        "cum_revenue": 11102386.0,
+        "cum_profit": 9550492.0,
+        "utilization": 0.3164,
+        "teu_booked": 8692.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 12,
+        "cum_revenue": 11685142.0,
+        "cum_profit": 9894126.0,
+        "utilization": 0.5163,
+        "teu_booked": 9124.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 13,
+        "cum_revenue": 12453382.0,
+        "cum_profit": 10334630.0,
+        "utilization": 0.5141,
+        "teu_booked": 9694.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 14,
+        "cum_revenue": 12993526.0,
+        "cum_profit": 10643262.0,
+        "utilization": 0.5141,
+        "teu_booked": 10092.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 15,
+        "cum_revenue": 13453672.0,
+        "cum_profit": 10888237.0,
+        "utilization": 0.5141,
+        "teu_booked": 10468.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 16,
+        "cum_revenue": 13663379.0,
+        "cum_profit": 10882772.0,
+        "utilization": 0.5141,
+        "teu_booked": 10649.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 17,
+        "cum_revenue": 13817028.0,
+        "cum_profit": 10821249.0,
+        "utilization": 0.5141,
+        "teu_booked": 10792.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 18,
+        "cum_revenue": 14148189.0,
+        "cum_profit": 10937239.0,
+        "utilization": 0.5141,
+        "teu_booked": 11108.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 19,
+        "cum_revenue": 14698273.0,
+        "cum_profit": 11272152.0,
+        "utilization": 0.5141,
+        "teu_booked": 11479.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 20,
+        "cum_revenue": 14882446.0,
+        "cum_profit": 11250532.0,
+        "utilization": 0.4224,
+        "teu_booked": 11634.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 21,
+        "cum_revenue": 15339847.0,
+        "cum_profit": 11518416.0,
+        "utilization": 0.4224,
+        "teu_booked": 12030.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 22,
+        "cum_revenue": 15517947.0,
+        "cum_profit": 11510904.0,
+        "utilization": 0.4224,
+        "teu_booked": 12173.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 23,
+        "cum_revenue": 16125608.0,
+        "cum_profit": 11885900.0,
+        "utilization": 0.4224,
+        "teu_booked": 12647.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 24,
+        "cum_revenue": 16807788.0,
+        "cum_profit": 12358438.0,
+        "utilization": 0.4224,
+        "teu_booked": 13062.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 25,
+        "cum_revenue": 17311174.0,
+        "cum_profit": 12655795.0,
+        "utilization": 0.368,
+        "teu_booked": 13430.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 26,
+        "cum_revenue": 17619635.0,
+        "cum_profit": 12774688.0,
+        "utilization": 0.278,
+        "teu_booked": 13632.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 27,
+        "cum_revenue": 18039601.0,
+        "cum_profit": 12996086.0,
+        "utilization": 0.3416,
+        "teu_booked": 13957.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 28,
+        "cum_revenue": 18407676.0,
+        "cum_profit": 13142322.0,
+        "utilization": 0.3417,
+        "teu_booked": 14234.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 29,
+        "cum_revenue": 18642608.0,
+        "cum_profit": 13206299.0,
+        "utilization": 0.3417,
+        "teu_booked": 14414.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 30,
+        "cum_revenue": 18971468.0,
+        "cum_profit": 13307189.0,
+        "utilization": 0.435,
+        "teu_booked": 14678.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 31,
+        "cum_revenue": 19450828.0,
+        "cum_profit": 13615150.0,
+        "utilization": 0.435,
+        "teu_booked": 14963.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 32,
+        "cum_revenue": 19930049.0,
+        "cum_profit": 13855602.0,
+        "utilization": 0.435,
+        "teu_booked": 15230.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 33,
+        "cum_revenue": 20266592.0,
+        "cum_profit": 14005768.0,
+        "utilization": 0.4343,
+        "teu_booked": 15449.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 34,
+        "cum_revenue": 20688154.0,
+        "cum_profit": 14277225.0,
+        "utilization": 0.524,
+        "teu_booked": 15689.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 35,
+        "cum_revenue": 20966941.0,
+        "cum_profit": 14368498.0,
+        "utilization": 0.524,
+        "teu_booked": 15963.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 36,
+        "cum_revenue": 21449364.0,
+        "cum_profit": 14641696.0,
+        "utilization": 0.5279,
+        "teu_booked": 16350.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 37,
+        "cum_revenue": 21781873.0,
+        "cum_profit": 14808199.0,
+        "utilization": 0.5277,
+        "teu_booked": 16599.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 38,
+        "cum_revenue": 22105273.0,
+        "cum_profit": 14942929.0,
+        "utilization": 0.5284,
+        "teu_booked": 16850.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 39,
+        "cum_revenue": 22492090.0,
+        "cum_profit": 15112487.0,
+        "utilization": 0.5284,
+        "teu_booked": 17120.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 40,
+        "cum_revenue": 22795396.0,
+        "cum_profit": 15174350.0,
+        "utilization": 0.5683,
+        "teu_booked": 17357.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 41,
+        "cum_revenue": 23264764.0,
+        "cum_profit": 15499522.0,
+        "utilization": 0.5702,
+        "teu_booked": 17764.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 42,
+        "cum_revenue": 23555097.0,
+        "cum_profit": 15508518.0,
+        "utilization": 0.5702,
+        "teu_booked": 17985.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 43,
+        "cum_revenue": 24112043.0,
+        "cum_profit": 15860072.0,
+        "utilization": 0.5565,
+        "teu_booked": 18342.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 44,
+        "cum_revenue": 24337520.0,
+        "cum_profit": 15854161.0,
+        "utilization": 0.5359,
+        "teu_booked": 18507.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 45,
+        "cum_revenue": 24565440.0,
+        "cum_profit": 15884433.0,
+        "utilization": 0.5352,
+        "teu_booked": 18672.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 46,
+        "cum_revenue": 24811958.0,
+        "cum_profit": 15910488.0,
+        "utilization": 0.5352,
+        "teu_booked": 18817.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 47,
+        "cum_revenue": 25063518.0,
+        "cum_profit": 15869408.0,
+        "utilization": 0.5352,
+        "teu_booked": 18997.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 48,
+        "cum_revenue": 25167174.0,
+        "cum_profit": 15769425.0,
+        "utilization": 0.537,
+        "teu_booked": 19080.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 49,
+        "cum_revenue": 25448666.0,
+        "cum_profit": 15813090.0,
+        "utilization": 0.537,
+        "teu_booked": 19271.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 50,
+        "cum_revenue": 25796398.0,
+        "cum_profit": 15935175.0,
+        "utilization": 0.537,
+        "teu_booked": 19545.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 51,
+        "cum_revenue": 26097134.0,
+        "cum_profit": 16010265.0,
+        "utilization": 0.537,
+        "teu_booked": 19766.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 52,
+        "cum_revenue": 26220197.0,
+        "cum_profit": 15908514.0,
+        "utilization": 0.545,
+        "teu_booked": 19858.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 53,
+        "cum_revenue": 26312779.0,
+        "cum_profit": 15744583.0,
+        "utilization": 0.545,
+        "teu_booked": 19945.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 54,
+        "cum_revenue": 26430092.0,
+        "cum_profit": 15637115.0,
+        "utilization": 0.5503,
+        "teu_booked": 20053.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 55,
+        "cum_revenue": 26498622.0,
+        "cum_profit": 15448556.0,
+        "utilization": 0.5781,
+        "teu_booked": 20109.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 56,
+        "cum_revenue": 26976081.0,
+        "cum_profit": 15726218.0,
+        "utilization": 0.5781,
+        "teu_booked": 20392.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 57,
+        "cum_revenue": 27184358.0,
+        "cum_profit": 15737168.0,
+        "utilization": 0.5781,
+        "teu_booked": 20532.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 58,
+        "cum_revenue": 27332071.0,
+        "cum_profit": 15641504.0,
+        "utilization": 0.5781,
+        "teu_booked": 20631.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 59,
+        "cum_revenue": 27489120.0,
+        "cum_profit": 15602382.0,
+        "utilization": 0.6012,
+        "teu_booked": 20742.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      },
+      {
+        "day": 60,
+        "cum_revenue": 27656480.0,
+        "cum_profit": 15588062.0,
+        "utilization": 0.6012,
+        "teu_booked": 20875.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": null
+      }
+    ],
+    "heuristic": [
+      {
+        "day": 1,
+        "cum_revenue": 1868960.0,
+        "cum_profit": 1829879.0,
+        "utilization": 0.0,
+        "teu_booked": 1437.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.658
+      },
+      {
+        "day": 2,
+        "cum_revenue": 3374826.0,
+        "cum_profit": 3280440.0,
+        "utilization": 0.0,
+        "teu_booked": 2648.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.719
+      },
+      {
+        "day": 3,
+        "cum_revenue": 5163547.0,
+        "cum_profit": 4931296.0,
+        "utilization": 0.0,
+        "teu_booked": 4018.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.787
+      },
+      {
+        "day": 4,
+        "cum_revenue": 6262076.0,
+        "cum_profit": 5960742.0,
+        "utilization": 0.0,
+        "teu_booked": 4879.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.911
+      },
+      {
+        "day": 5,
+        "cum_revenue": 7265335.0,
+        "cum_profit": 6857401.0,
+        "utilization": 0.0,
+        "teu_booked": 5628.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 3.077
+      },
+      {
+        "day": 6,
+        "cum_revenue": 8131325.0,
+        "cum_profit": 7646310.0,
+        "utilization": 0.0993,
+        "teu_booked": 6265.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 3.636
+      },
+      {
+        "day": 7,
+        "cum_revenue": 8896444.0,
+        "cum_profit": 8092409.0,
+        "utilization": 0.0993,
+        "teu_booked": 6925.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 89.671
+      },
+      {
+        "day": 8,
+        "cum_revenue": 9360338.0,
+        "cum_profit": 8427359.0,
+        "utilization": 0.0993,
+        "teu_booked": 7297.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.103
+      },
+      {
+        "day": 9,
+        "cum_revenue": 9977542.0,
+        "cum_profit": 8925184.0,
+        "utilization": 0.3164,
+        "teu_booked": 7799.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.104
+      },
+      {
+        "day": 10,
+        "cum_revenue": 10533438.0,
+        "cum_profit": 9268459.0,
+        "utilization": 0.3164,
+        "teu_booked": 8229.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.177
+      },
+      {
+        "day": 11,
+        "cum_revenue": 11089971.0,
+        "cum_profit": 9690112.0,
+        "utilization": 0.3164,
+        "teu_booked": 8689.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.383
+      },
+      {
+        "day": 12,
+        "cum_revenue": 11672778.0,
+        "cum_profit": 10050431.0,
+        "utilization": 0.3164,
+        "teu_booked": 9121.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 3.636
+      },
+      {
+        "day": 13,
+        "cum_revenue": 12436800.0,
+        "cum_profit": 10548717.0,
+        "utilization": 0.5143,
+        "teu_booked": 9689.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.367
+      },
+      {
+        "day": 14,
+        "cum_revenue": 13010451.0,
+        "cum_profit": 10911432.0,
+        "utilization": 0.5143,
+        "teu_booked": 10109.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.575
+      },
+      {
+        "day": 15,
+        "cum_revenue": 13507371.0,
+        "cum_profit": 11231504.0,
+        "utilization": 0.5143,
+        "teu_booked": 10511.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 3.732
+      },
+      {
+        "day": 16,
+        "cum_revenue": 13755969.0,
+        "cum_profit": 11298753.0,
+        "utilization": 0.5143,
+        "teu_booked": 10726.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 5.248
+      },
+      {
+        "day": 17,
+        "cum_revenue": 14010827.0,
+        "cum_profit": 11376762.0,
+        "utilization": 0.5143,
+        "teu_booked": 10942.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 5.897
+      },
+      {
+        "day": 18,
+        "cum_revenue": 14343747.0,
+        "cum_profit": 11532833.0,
+        "utilization": 0.5143,
+        "teu_booked": 11253.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 6.575
+      },
+      {
+        "day": 19,
+        "cum_revenue": 14912754.0,
+        "cum_profit": 11918241.0,
+        "utilization": 0.5143,
+        "teu_booked": 11627.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 5.982
+      },
+      {
+        "day": 20,
+        "cum_revenue": 15092210.0,
+        "cum_profit": 11920849.0,
+        "utilization": 0.5143,
+        "teu_booked": 11774.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 6.636
+      },
+      {
+        "day": 21,
+        "cum_revenue": 15410214.0,
+        "cum_profit": 12062004.0,
+        "utilization": 0.5143,
+        "teu_booked": 12020.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 7.634
+      },
+      {
+        "day": 22,
+        "cum_revenue": 15576536.0,
+        "cum_profit": 12054482.0,
+        "utilization": 0.4225,
+        "teu_booked": 12148.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 8.197
+      },
+      {
+        "day": 23,
+        "cum_revenue": 16051399.0,
+        "cum_profit": 12374028.0,
+        "utilization": 0.4225,
+        "teu_booked": 12564.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 12.821
+      },
+      {
+        "day": 24,
+        "cum_revenue": 16725562.0,
+        "cum_profit": 12892874.0,
+        "utilization": 0.4225,
+        "teu_booked": 12970.5,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 6.118
+      },
+      {
+        "day": 25,
+        "cum_revenue": 17206970.0,
+        "cum_profit": 13187692.0,
+        "utilization": 0.3681,
+        "teu_booked": 13315.8,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 5.79
+      },
+      {
+        "day": 26,
+        "cum_revenue": 17651705.0,
+        "cum_profit": 13480212.0,
+        "utilization": 0.278,
+        "teu_booked": 13572.0,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 5.527
+      },
+      {
+        "day": 27,
+        "cum_revenue": 18066063.0,
+        "cum_profit": 13728935.0,
+        "utilization": 0.2778,
+        "teu_booked": 13885.0,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 4.514
+      },
+      {
+        "day": 28,
+        "cum_revenue": 18347850.0,
+        "cum_profit": 13797555.0,
+        "utilization": 0.2784,
+        "teu_booked": 14095.8,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 4.478
+      },
+      {
+        "day": 29,
+        "cum_revenue": 18602998.0,
+        "cum_profit": 13892678.0,
+        "utilization": 0.3398,
+        "teu_booked": 14304.5,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 5.669
+      },
+      {
+        "day": 30,
+        "cum_revenue": 18933282.0,
+        "cum_profit": 14050257.0,
+        "utilization": 0.3398,
+        "teu_booked": 14578.2,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 9.781
+      },
+      {
+        "day": 31,
+        "cum_revenue": 19170195.0,
+        "cum_profit": 14123168.0,
+        "utilization": 0.3398,
+        "teu_booked": 14758.8,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 16.874
+      },
+      {
+        "day": 32,
+        "cum_revenue": 19407938.0,
+        "cum_profit": 14167936.0,
+        "utilization": 0.3398,
+        "teu_booked": 14924.2,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 6.649
+      },
+      {
+        "day": 33,
+        "cum_revenue": 19617969.0,
+        "cum_profit": 14203083.0,
+        "utilization": 0.3398,
+        "teu_booked": 15070.2,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 7.678
+      },
+      {
+        "day": 34,
+        "cum_revenue": 19738442.0,
+        "cum_profit": 14156072.0,
+        "utilization": 0.4471,
+        "teu_booked": 15194.2,
+        "empty_teu_nm": 1218000.0,
+        "mean_bid_pressure": 7.205
+      },
+      {
+        "day": 35,
+        "cum_revenue": 19979917.0,
+        "cum_profit": 14261930.0,
+        "utilization": 0.4471,
+        "teu_booked": 15411.5,
+        "empty_teu_nm": 1218000.0,
+        "mean_bid_pressure": 8.576
+      },
+      {
+        "day": 36,
+        "cum_revenue": 20331733.0,
+        "cum_profit": 14403494.0,
+        "utilization": 0.4471,
+        "teu_booked": 15678.0,
+        "empty_teu_nm": 1218000.0,
+        "mean_bid_pressure": 4.556
+      },
+      {
+        "day": 37,
+        "cum_revenue": 20532282.0,
+        "cum_profit": 14438391.0,
+        "utilization": 0.4466,
+        "teu_booked": 15811.0,
+        "empty_teu_nm": 1281000.0,
+        "mean_bid_pressure": 5.165
+      },
+      {
+        "day": 38,
+        "cum_revenue": 20818072.0,
+        "cum_profit": 14582950.0,
+        "utilization": 0.5323,
+        "teu_booked": 15994.8,
+        "empty_teu_nm": 1281000.0,
+        "mean_bid_pressure": 6.807
+      },
+      {
+        "day": 39,
+        "cum_revenue": 21182232.0,
+        "cum_profit": 14775370.0,
+        "utilization": 0.5323,
+        "teu_booked": 16250.0,
+        "empty_teu_nm": 1281000.0,
+        "mean_bid_pressure": 2.702
+      },
+      {
+        "day": 40,
+        "cum_revenue": 21492160.0,
+        "cum_profit": 14903078.0,
+        "utilization": 0.5647,
+        "teu_booked": 16484.0,
+        "empty_teu_nm": 1574250.0,
+        "mean_bid_pressure": 3.199
+      },
+      {
+        "day": 41,
+        "cum_revenue": 22133802.0,
+        "cum_profit": 15410928.0,
+        "utilization": 0.5647,
+        "teu_booked": 16920.8,
+        "empty_teu_nm": 1590000.0,
+        "mean_bid_pressure": 4.03
+      },
+      {
+        "day": 42,
+        "cum_revenue": 22460937.0,
+        "cum_profit": 15552965.0,
+        "utilization": 0.5648,
+        "teu_booked": 17163.8,
+        "empty_teu_nm": 1626750.0,
+        "mean_bid_pressure": 5.494
+      },
+      {
+        "day": 43,
+        "cum_revenue": 23058090.0,
+        "cum_profit": 15962809.0,
+        "utilization": 0.5648,
+        "teu_booked": 17543.0,
+        "empty_teu_nm": 1626750.0,
+        "mean_bid_pressure": 24.846
+      },
+      {
+        "day": 44,
+        "cum_revenue": 23336074.0,
+        "cum_profit": 16026676.0,
+        "utilization": 0.546,
+        "teu_booked": 17736.8,
+        "empty_teu_nm": 1674000.0,
+        "mean_bid_pressure": 23.331
+      },
+      {
+        "day": 45,
+        "cum_revenue": 23648506.0,
+        "cum_profit": 16204448.0,
+        "utilization": 0.5483,
+        "teu_booked": 17958.2,
+        "empty_teu_nm": 1674000.0,
+        "mean_bid_pressure": 3.927
+      },
+      {
+        "day": 46,
+        "cum_revenue": 24087212.0,
+        "cum_profit": 16385725.0,
+        "utilization": 0.5483,
+        "teu_booked": 18276.8,
+        "empty_teu_nm": 1674000.0,
+        "mean_bid_pressure": 23.184
+      },
+      {
+        "day": 47,
+        "cum_revenue": 24403685.0,
+        "cum_profit": 16528020.0,
+        "utilization": 0.5329,
+        "teu_booked": 18493.2,
+        "empty_teu_nm": 2469000.0,
+        "mean_bid_pressure": 4.395
+      },
+      {
+        "day": 48,
+        "cum_revenue": 24565528.0,
+        "cum_profit": 16490217.0,
+        "utilization": 0.5329,
+        "teu_booked": 18604.2,
+        "empty_teu_nm": 2469000.0,
+        "mean_bid_pressure": 4.35
+      },
+      {
+        "day": 49,
+        "cum_revenue": 24864561.0,
+        "cum_profit": 16612699.0,
+        "utilization": 0.5321,
+        "teu_booked": 18804.8,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.444
+      },
+      {
+        "day": 50,
+        "cum_revenue": 25231602.0,
+        "cum_profit": 16813069.0,
+        "utilization": 0.5321,
+        "teu_booked": 19091.5,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.786
+      },
+      {
+        "day": 51,
+        "cum_revenue": 25603702.0,
+        "cum_profit": 16942189.0,
+        "utilization": 0.5321,
+        "teu_booked": 19364.2,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.506
+      },
+      {
+        "day": 52,
+        "cum_revenue": 25757804.0,
+        "cum_profit": 16917952.0,
+        "utilization": 0.5424,
+        "teu_booked": 19480.2,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.283
+      },
+      {
+        "day": 53,
+        "cum_revenue": 25997224.0,
+        "cum_profit": 16917862.0,
+        "utilization": 0.5424,
+        "teu_booked": 19638.2,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 9.716
+      },
+      {
+        "day": 54,
+        "cum_revenue": 26139911.0,
+        "cum_profit": 16876200.0,
+        "utilization": 0.5453,
+        "teu_booked": 19780.2,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 11.84
+      },
+      {
+        "day": 55,
+        "cum_revenue": 26223464.0,
+        "cum_profit": 16739748.0,
+        "utilization": 0.5453,
+        "teu_booked": 19843.2,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 26.654
+      },
+      {
+        "day": 56,
+        "cum_revenue": 26432624.0,
+        "cum_profit": 16763414.0,
+        "utilization": 0.5453,
+        "teu_booked": 20003.8,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.132
+      },
+      {
+        "day": 57,
+        "cum_revenue": 26569732.0,
+        "cum_profit": 16716517.0,
+        "utilization": 0.5453,
+        "teu_booked": 20094.8,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 3.736
+      },
+      {
+        "day": 58,
+        "cum_revenue": 26619917.0,
+        "cum_profit": 16582696.0,
+        "utilization": 0.5453,
+        "teu_booked": 20141.8,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 3.741
+      },
+      {
+        "day": 59,
+        "cum_revenue": 26736702.0,
+        "cum_profit": 16515474.0,
+        "utilization": 0.5453,
+        "teu_booked": 20226.0,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.331
+      },
+      {
+        "day": 60,
+        "cum_revenue": 26809209.0,
+        "cum_profit": 16403975.0,
+        "utilization": 0.5453,
+        "teu_booked": 20288.8,
+        "empty_teu_nm": 2542500.0,
+        "mean_bid_pressure": 4.509
+      }
+    ],
+    "heuristic_bid": [
+      {
+        "day": 1,
+        "cum_revenue": 1686058.0,
+        "cum_profit": 1646977.0,
+        "utilization": 0.0,
+        "teu_booked": 1207.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.63
+      },
+      {
+        "day": 2,
+        "cum_revenue": 2950736.0,
+        "cum_profit": 2856350.0,
+        "utilization": 0.0,
+        "teu_booked": 2130.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.653
+      },
+      {
+        "day": 3,
+        "cum_revenue": 4430693.0,
+        "cum_profit": 4198474.0,
+        "utilization": 0.0,
+        "teu_booked": 3142.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.667
+      },
+      {
+        "day": 4,
+        "cum_revenue": 5316230.0,
+        "cum_profit": 5014930.0,
+        "utilization": 0.0,
+        "teu_booked": 3768.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.691
+      },
+      {
+        "day": 5,
+        "cum_revenue": 6181366.0,
+        "cum_profit": 5773895.0,
+        "utilization": 0.0,
+        "teu_booked": 4352.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.692
+      },
+      {
+        "day": 6,
+        "cum_revenue": 7063658.0,
+        "cum_profit": 6579105.0,
+        "utilization": 0.0978,
+        "teu_booked": 4963.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.732
+      },
+      {
+        "day": 7,
+        "cum_revenue": 7795375.0,
+        "cum_profit": 6982595.0,
+        "utilization": 0.0978,
+        "teu_booked": 5508.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.771
+      },
+      {
+        "day": 8,
+        "cum_revenue": 8230921.0,
+        "cum_profit": 7289198.0,
+        "utilization": 0.0978,
+        "teu_booked": 5844.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.77
+      },
+      {
+        "day": 9,
+        "cum_revenue": 8901730.0,
+        "cum_profit": 7840626.0,
+        "utilization": 0.3148,
+        "teu_booked": 6329.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.894
+      },
+      {
+        "day": 10,
+        "cum_revenue": 9389230.0,
+        "cum_profit": 8132336.0,
+        "utilization": 0.3148,
+        "teu_booked": 6656.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.094
+      },
+      {
+        "day": 11,
+        "cum_revenue": 9806215.0,
+        "cum_profit": 8414441.0,
+        "utilization": 0.3148,
+        "teu_booked": 7000.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.316
+      },
+      {
+        "day": 12,
+        "cum_revenue": 10362539.0,
+        "cum_profit": 8750026.0,
+        "utilization": 0.3148,
+        "teu_booked": 7401.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.774
+      },
+      {
+        "day": 13,
+        "cum_revenue": 10995520.0,
+        "cum_profit": 9117457.0,
+        "utilization": 0.5323,
+        "teu_booked": 7855.8,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.823
+      },
+      {
+        "day": 14,
+        "cum_revenue": 11652170.0,
+        "cum_profit": 9560771.0,
+        "utilization": 0.5323,
+        "teu_booked": 8275.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.879
+      },
+      {
+        "day": 15,
+        "cum_revenue": 12054436.0,
+        "cum_profit": 9786189.0,
+        "utilization": 0.5323,
+        "teu_booked": 8583.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.192
+      },
+      {
+        "day": 16,
+        "cum_revenue": 12284961.0,
+        "cum_profit": 9835365.0,
+        "utilization": 0.5323,
+        "teu_booked": 8820.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.205
+      },
+      {
+        "day": 17,
+        "cum_revenue": 12580457.0,
+        "cum_profit": 9954012.0,
+        "utilization": 0.5323,
+        "teu_booked": 9069.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.131
+      },
+      {
+        "day": 18,
+        "cum_revenue": 12876283.0,
+        "cum_profit": 10072989.0,
+        "utilization": 0.5323,
+        "teu_booked": 9348.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.088
+      },
+      {
+        "day": 19,
+        "cum_revenue": 13367412.0,
+        "cum_profit": 10378270.0,
+        "utilization": 0.5323,
+        "teu_booked": 9662.5,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 2.081
+      },
+      {
+        "day": 20,
+        "cum_revenue": 13690500.0,
+        "cum_profit": 10524510.0,
+        "utilization": 0.5323,
+        "teu_booked": 9931.0,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.937
+      },
+      {
+        "day": 21,
+        "cum_revenue": 14011798.0,
+        "cum_profit": 10668958.0,
+        "utilization": 0.5323,
+        "teu_booked": 10192.2,
+        "empty_teu_nm": 0.0,
+        "mean_bid_pressure": 1.901
+      },
+      {
+        "day": 22,
+        "cum_revenue": 14269958.0,
+        "cum_profit": 10751066.0,
+        "utilization": 0.4284,
+        "teu_booked": 10375.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 1.654
+      },
+      {
+        "day": 23,
+        "cum_revenue": 14700578.0,
+        "cum_profit": 11026370.0,
+        "utilization": 0.4284,
+        "teu_booked": 10760.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 1.78
+      },
+      {
+        "day": 24,
+        "cum_revenue": 14990967.0,
+        "cum_profit": 11161441.0,
+        "utilization": 0.4284,
+        "teu_booked": 10979.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 1.773
+      },
+      {
+        "day": 25,
+        "cum_revenue": 15359521.0,
+        "cum_profit": 11337444.0,
+        "utilization": 0.372,
+        "teu_booked": 11239.5,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 1.761
+      },
+      {
+        "day": 26,
+        "cum_revenue": 15884520.0,
+        "cum_profit": 11710228.0,
+        "utilization": 0.2823,
+        "teu_booked": 11576.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 1.736
+      },
+      {
+        "day": 27,
+        "cum_revenue": 16482518.0,
+        "cum_profit": 12143059.0,
+        "utilization": 0.282,
+        "teu_booked": 11946.2,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 1.822
+      },
+      {
+        "day": 28,
+        "cum_revenue": 16813119.0,
+        "cum_profit": 12259138.0,
+        "utilization": 0.2825,
+        "teu_booked": 12189.8,
+        "empty_teu_nm": 198750.0,
+        "mean_bid_pressure": 2.257
+      },
+      {
+        "day": 29,
+        "cum_revenue": 17303047.0,
+        "cum_profit": 12589002.0,
+        "utilization": 0.3447,
+        "teu_booked": 12524.0,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 2.289
+      },
+      {
+        "day": 30,
+        "cum_revenue": 17741684.0,
+        "cum_profit": 12854809.0,
+        "utilization": 0.3447,
+        "teu_booked": 12865.2,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 2.462
+      },
+      {
+        "day": 31,
+        "cum_revenue": 18033627.0,
+        "cum_profit": 12982750.0,
+        "utilization": 0.3447,
+        "teu_booked": 13082.2,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 2.436
+      },
+      {
+        "day": 32,
+        "cum_revenue": 18382952.0,
+        "cum_profit": 13138468.0,
+        "utilization": 0.3447,
+        "teu_booked": 13298.5,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 2.609
+      },
+      {
+        "day": 33,
+        "cum_revenue": 18650407.0,
+        "cum_profit": 13231039.0,
+        "utilization": 0.3447,
+        "teu_booked": 13473.8,
+        "empty_teu_nm": 596250.0,
+        "mean_bid_pressure": 2.59
+      },
+      {
+        "day": 34,
+        "cum_revenue": 18909766.0,
+        "cum_profit": 13320027.0,
+        "utilization": 0.4323,
+        "teu_booked": 13683.2,
+        "empty_teu_nm": 1218000.0,
+        "mean_bid_pressure": 2.472
+      },
+      {
+        "day": 35,
+        "cum_revenue": 19269042.0,
+        "cum_profit": 13543688.0,
+        "utilization": 0.4323,
+        "teu_booked": 13969.5,
+        "empty_teu_nm": 1218000.0,
+        "mean_bid_pressure": 2.535
+      },
+      {
+        "day": 36,
+        "cum_revenue": 19649653.0,
+        "cum_profit": 13714976.0,
+        "utilization": 0.4323,
+        "teu_booked": 14210.0,
+        "empty_teu_nm": 1218000.0,
+        "mean_bid_pressure": 2.202
+      },
+      {
+        "day": 37,
+        "cum_revenue": 19912763.0,
+        "cum_profit": 13812437.0,
+        "utilization": 0.4302,
+        "teu_booked": 14456.2,
+        "empty_teu_nm": 1281000.0,
+        "mean_bid_pressure": 4.329
+      },
+      {
+        "day": 38,
+        "cum_revenue": 20186716.0,
+        "cum_profit": 13944695.0,
+        "utilization": 0.5241,
+        "teu_booked": 14618.0,
+        "empty_teu_nm": 1281000.0,
+        "mean_bid_pressure": 4.625
+      },
+      {
+        "day": 39,
+        "cum_revenue": 20486976.0,
+        "cum_profit": 14075023.0,
+        "utilization": 0.5241,
+        "teu_booked": 14805.5,
+        "empty_teu_nm": 1281000.0,
+        "mean_bid_pressure": 4.249
+      },
+      {
+        "day": 40,
+        "cum_revenue": 20781230.0,
+        "cum_profit": 14188803.0,
+        "utilization": 0.5664,
+        "teu_booked": 14985.2,
+        "empty_teu_nm": 1574250.0,
+        "mean_bid_pressure": 6.9
+      },
+      {
+        "day": 41,
+        "cum_revenue": 21266040.0,
+        "cum_profit": 14543759.0,
+        "utilization": 0.5653,
+        "teu_booked": 15281.2,
+        "empty_teu_nm": 1605750.0,
+        "mean_bid_pressure": 3.354
+      },
+      {
+        "day": 42,
+        "cum_revenue": 21642473.0,
+        "cum_profit": 14705221.0,
+        "utilization": 0.5654,
+        "teu_booked": 15523.5,
+        "empty_teu_nm": 1642500.0,
+        "mean_bid_pressure": 1.98
+      },
+      {
+        "day": 43,
+        "cum_revenue": 22103852.0,
+        "cum_profit": 14980044.0,
+        "utilization": 0.5654,
+        "teu_booked": 15836.8,
+        "empty_teu_nm": 1642500.0,
+        "mean_bid_pressure": 2.155
+      },
+      {
+        "day": 44,
+        "cum_revenue": 22350794.0,
+        "cum_profit": 15020723.0,
+        "utilization": 0.5414,
+        "teu_booked": 15996.5,
+        "empty_teu_nm": 1721250.0,
+        "mean_bid_pressure": 2.045
+      },
+      {
+        "day": 45,
+        "cum_revenue": 22682129.0,
+        "cum_profit": 15217398.0,
+        "utilization": 0.5431,
+        "teu_booked": 16205.2,
+        "empty_teu_nm": 1739625.0,
+        "mean_bid_pressure": 2.005
+      },
+      {
+        "day": 46,
+        "cum_revenue": 23077976.0,
+        "cum_profit": 15367222.0,
+        "utilization": 0.5431,
+        "teu_booked": 16469.0,
+        "empty_teu_nm": 1739625.0,
+        "mean_bid_pressure": 2.238
+      },
+      {
+        "day": 47,
+        "cum_revenue": 23232634.0,
+        "cum_profit": 15347246.0,
+        "utilization": 0.5334,
+        "teu_booked": 16592.0,
+        "empty_teu_nm": 2534625.0,
+        "mean_bid_pressure": 2.215
+      },
+      {
+        "day": 48,
+        "cum_revenue": 23380027.0,
+        "cum_profit": 15299608.0,
+        "utilization": 0.5334,
+        "teu_booked": 16714.5,
+        "empty_teu_nm": 2534625.0,
+        "mean_bid_pressure": 2.177
+      },
+      {
+        "day": 49,
+        "cum_revenue": 23782624.0,
+        "cum_profit": 15525476.0,
+        "utilization": 0.5328,
+        "teu_booked": 17000.2,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 3.952
+      },
+      {
+        "day": 50,
+        "cum_revenue": 24208848.0,
+        "cum_profit": 15785028.0,
+        "utilization": 0.5328,
+        "teu_booked": 17325.5,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 5.01
+      },
+      {
+        "day": 51,
+        "cum_revenue": 24551961.0,
+        "cum_profit": 15922914.0,
+        "utilization": 0.5328,
+        "teu_booked": 17547.8,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 5.333
+      },
+      {
+        "day": 52,
+        "cum_revenue": 24780246.0,
+        "cum_profit": 15972974.0,
+        "utilization": 0.5391,
+        "teu_booked": 17668.0,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 7.803
+      },
+      {
+        "day": 53,
+        "cum_revenue": 25188322.0,
+        "cum_profit": 16097626.0,
+        "utilization": 0.5391,
+        "teu_booked": 17970.8,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 8.383
+      },
+      {
+        "day": 54,
+        "cum_revenue": 25530896.0,
+        "cum_profit": 16256124.0,
+        "utilization": 0.5413,
+        "teu_booked": 18177.2,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 23.595
+      },
+      {
+        "day": 55,
+        "cum_revenue": 25661559.0,
+        "cum_profit": 16164152.0,
+        "utilization": 0.5413,
+        "teu_booked": 18260.8,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 4.521
+      },
+      {
+        "day": 56,
+        "cum_revenue": 26170411.0,
+        "cum_profit": 16487510.0,
+        "utilization": 0.5413,
+        "teu_booked": 18517.0,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 4.46
+      },
+      {
+        "day": 57,
+        "cum_revenue": 26432047.0,
+        "cum_profit": 16565139.0,
+        "utilization": 0.5413,
+        "teu_booked": 18680.2,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 10.023
+      },
+      {
+        "day": 58,
+        "cum_revenue": 26708120.0,
+        "cum_profit": 16657207.0,
+        "utilization": 0.5413,
+        "teu_booked": 18890.0,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 8.24
+      },
+      {
+        "day": 59,
+        "cum_revenue": 26964395.0,
+        "cum_profit": 16729476.0,
+        "utilization": 0.5413,
+        "teu_booked": 19057.0,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 7.754
+      },
+      {
+        "day": 60,
+        "cum_revenue": 27137929.0,
+        "cum_profit": 16719003.0,
+        "utilization": 0.5413,
+        "teu_booked": 19178.8,
+        "empty_teu_nm": 2608125.0,
+        "mean_bid_pressure": 7.236
+      }
+    ]
+  }
+}

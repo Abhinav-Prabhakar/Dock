@@ -1,0 +1,47 @@
+{
+  "model": "elasticity",
+  "method": "per-segment OLS of log(realized/baseline) on log(relative_price); elasticity = -slope",
+  "segments": [
+    "flexible",
+    "standard",
+    "urgent"
+  ],
+  "params": {
+    "flexible": {
+      "elasticity": 1.7973075536942291,
+      "intercept": -0.00022776841687133405,
+      "n": 74880
+    },
+    "standard": {
+      "elasticity": 1.105843517372153,
+      "intercept": -0.0005197016624130157,
+      "n": 74880
+    },
+    "urgent": {
+      "elasticity": 0.5533439218867067,
+      "intercept": 0.0006843788937448037,
+      "n": 74880
+    }
+  },
+  "fit_timestamp_utc": "2026-09-15T14:04:01.230572+00:00",
+  "eval_metrics": {
+    "per_segment": {
+      "flexible": {
+        "estimated": 1.7973075536942291,
+        "true": 1.8000000000000005,
+        "abs_err": 0.0026924463057713677
+      },
+      "standard": {
+        "estimated": 1.105843517372153,
+        "true": 1.0999999999999999,
+        "abs_err": 0.005843517372153162
+      },
+      "urgent": {
+        "estimated": 0.5533439218867067,
+        "true": 0.5499999999999999,
+        "abs_err": 0.0033439218867067355
+      }
+    },
+    "max_abs_err": 0.005843517372153162
+  }
+}

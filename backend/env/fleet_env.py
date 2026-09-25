@@ -116,6 +116,9 @@ class CargoFleetEnv(gym.Env if gym else object):
         else:
             self.sim.config.seed = int(self._rng.integers(0, 1 << 31))
         self.sim.reset()
+        # the RL demand-forecast features require the trained forecaster —
+        # raise, never silently degrade to ground truth
+        self.sim.require_forecaster()
         if self.shaping:
             self.sim.attach_pricer()
         self._pending = []
@@ -336,10 +339,10 @@ class CargoFleetEnv(gym.Env if gym else object):
             nxt = vv.next_event_day - sim.day
             v[i + 6 * k + 5] = np.clip(nxt / 30.0, -1, 1)
         i += 6 * 4
-        # demand forecast: next-week intensity per route (state the policy
-        # conditions on; the supervised forecaster refines this later)
-        w = min(int(sim.day // 7) + 1, sim.horizon_weeks - 1)
-        v[i:i + N_ROUTES] = sim.demand.lam[:, w] / 1200.0
+        # demand forecast: the supervised forecaster's next-week TEU
+        # prediction per route (NOT the simulator's ground-truth lam)
+        v[i:i + N_ROUTES] = np.asarray(sim.forecaster.next_week(),
+                                       dtype=np.float32) / 1200.0
         i += N_ROUTES
         v[i:i + 4] = [np.sin(2 * np.pi * sim.day / 7),
                       np.cos(2 * np.pi * sim.day / 7),

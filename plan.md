@@ -173,7 +173,7 @@ These are **supervised prediction models**, not RL. There's no sequential decisi
 
 | Model | Input | Output | Architecture |
 |:---|:---|:---|:---|
-| **Demand forecast** | Route, time-of-year, recent booking velocity, economic indicators | Expected bookings per route/week, by cargo type and urgency tier | Gradient-boosted trees (XGBoost) or small feedforward NN |
+| **Demand forecast** | Route, time-of-year, recent booking velocity, economic indicators | Expected TEU per route/week — consumed by the bid-price engine's expected demand and by the RL state vector | Ridge regression on route/calendar/lag features (closed form; the model is bound to each episode and consumes only observed history — never ground-truth future demand) |
 | **Demand elasticity** | Historical price-vs-volume data per route | Price sensitivity coefficient per route/segment — how much does a 10% price cut increase bookings? | Regression model |
 | **Weather/route risk** | Meteorological data, historical disruption frequency | Probability of delay/rerouting per route/week | Classification model |
 | **Port congestion** | AIS-like vessel density data, historical turnaround times | Expected waiting time at each port | Time-series model |
@@ -335,7 +335,7 @@ where $\alpha$ and $\beta_k$ are tunable weights. Start with $\alpha = 0.1$ and 
 | **Network** | Shared feature extractor (2-layer MLP, 256 units) → separate policy and value heads | Simple, proven architecture; no need for attention/transformers at this problem scale. |
 | **Parallelization** | `SubprocVecEnv` with 8–16 parallel environments | Linear speedup in sample collection; critical for getting enough episodes in hackathon time. |
 | **Logging** | Weights & Biases or TensorBoard | Track reward curves, action distributions, value loss, episode lengths in real time. |
-| **Baselines** | Always trained/evaluated alongside: (1) Random policy, (2) Rule-based heuristic, (3) Greedy/myopic policy (accept if profit > 0), (4) Supervised NN scorer | The demo shows improvement over these; the RL agent must beat them or we show the best-performing fallback. |
+| **Baselines** | Always evaluated alongside on identical demand: (1) Static rate card, (2) Greedy/myopic policy, (3) Rule-based heuristic, (4) Heuristic + bid-price pricing | The ablation ladder — each rung isolates what a layer contributes (dynamic pricing → counter-offers → learned sequencing). The demo reports RL's lift over every rung. |
 
 ### 3.7 Curriculum Learning Strategy
 
@@ -350,26 +350,25 @@ Training the full problem from scratch is likely to fail — the state space is 
 | **Phase 4 — Full scale** | 3–5 ships, 6–8 ports, 90-day horizon, full action set including fleet actions | PPO beats rule-based and supervised-NN baselines on held-out demand scenarios | 4–6 hours |
 | **Phase 5 — Stress test** | Inject disruption scenarios (port closure, demand spike, storm) | Agent adapts pricing/routing under shock; does not degrade catastrophically | 2–3 hours |
 
-> [!WARNING]
-> If Phase 2 is not working by the midpoint of the hackathon, fall back to the rule-based + supervised-NN stack for the demo. RL is the ambitious ceiling, not the critical path. The demo script (Section 7) is designed so that any of the three policies (rule-based, supervised, RL) can power it.
+> [!IMPORTANT]
+> The RL agent **is** the decision engine — not a stretch goal and not optional. The curriculum exists to de-risk it: each phase has a hard exit criterion that surfaces failure early, and the action mask (Section 3.4) means the agent can never take an illegal action even before it converges. The baseline policies in Section 7 exist as an **ablation ladder** — they isolate what each layer of the system contributes — not as alternates.
 
 ### 3.8 Honest Assessment — Risks of RL Under Hackathon Constraints
 
-| Dimension | Supervised NN (fallback) | RL (PPO — stretch goal) |
+| Dimension | Heuristic + bid-price (benchmark) | RL (PPO — the decision engine) |
 |:---|:---|:---|
-| **Captures long-horizon trade-offs** | No — scores each decision independently | Yes — this is why we're using it |
-| **Time to a working result** | Fast — one training pass | Slower — thousands of episodes |
-| **Training stability** | Reliable | Sensitive to reward scale, hyperparameters, simulator fidelity |
-| **Explainability** | Easier (feature attribution) | Harder — needs the bid-price reason-code pipeline (Section 4.5) |
+| **Captures long-horizon trade-offs** | No — each rule scores its decision independently | Yes — this is why we're using it |
+| **Time to a working result** | Fast — no training | Slower — thousands of episodes |
+| **Training stability** | Deterministic | Sensitive to reward scale, hyperparameters, simulator fidelity |
+| **Explainability** | Easier (rule + bid-price attribution) | Harder — needs the bid-price reason-code pipeline (Section 4.5) |
 | **Main failure mode** | Systematically undervalues "hold capacity for later" | Learns to exploit simulator quirks rather than real strategy |
 
-**Mitigation strategy:** We maintain a **graduated fallback**:
+**Risk controls — these exist so RL ships, not so we can ship without it:**
 
-1. **Level 1 (always works):** Rule-based heuristic — accept if above marginal cost, simple flex-window logic.
-2. **Level 2 (likely works):** Supervised NN trained on the simulator's rule-based policy's best episodes — learn to imitate the heuristic, then generalize.
-3. **Level 3 (stretch):** RL agent that discovers strategies the heuristic can't represent (hold-for-premium, strategic repositioning).
-
-The demo is designed to show whichever level is the highest-performing. If RL works, we show all three and RL's edge. If RL doesn't converge, we show Level 1 vs. Level 2, which is still a strong demo of dynamic pricing beating static pricing.
+1. **Action masking** (Section 3.4): the agent only ever chooses among feasible, stowage-legal actions — a half-trained PPO is still a valid policy.
+2. **Curriculum** (Section 3.7): failure surfaces at the smallest scale first — tiny → small → shaped → full → stress — instead of after a full-horizon run.
+3. **Supervised inputs** (Section 2.4): the agent does not have to learn to predict demand; the trained forecaster feeds next-week per-route demand into both the state vector and the bid-price engine. RL learns sequencing on top of supervised forecasts — each method where it belongs.
+4. **Fixed evaluation harness**: holdout scenarios, identical seeds across policies, mean ± std over ≥50 episodes. The comparison against every rung of the ablation ladder is reported exactly as measured — if PPO underperforms the heuristic+bid-price benchmark, that result is shown honestly rather than hidden.
 
 ---
 
@@ -552,13 +551,14 @@ When ships reroute due to disruptions, port workers and logistics communities lo
 
 ### The Core Demo: Head-to-Head Simulation
 
-Three policies run through the **identical simulator**, on the **identical demand scenarios**, over the same fleet and time horizon — an apples-to-apples comparison:
+Four policies run through the **identical simulator**, on the **identical demand scenarios**, over the same fleet and time horizon — an apples-to-apples comparison forming the ablation ladder:
 
 | Policy | Description |
 |:---|:---|
 | **Baseline (Static)** | Weekly rate card, binary accept/reject, fixed bunker speed, no repositioning optimization. How the industry works today. |
-| **Supervised NN** | Dynamic pricing using a trained neural network scorer, but no sequential strategy (no hold-for-premium, no repositioning). An intermediate benchmark. |
-| **Dock (RL)** | Full system — RL agent with bid-price control, counter-offers, speed control, repositioning. The ambitious ceiling. |
+| **Dynamic heuristic** | Rule-based accept/reject + structured counter-offers, priced by the fill-surge dynamic engine. What rules alone achieve. |
+| **Heuristic + bid-price** | Same rules, priced by the opportunity-cost engine on top of the trained demand forecaster. Isolates the pricing layer's contribution. |
+| **Dock (RL)** | Full system — PPO agent with masked actions, forecaster-driven state, bid-price control, counter-offers, speed control, repositioning. The decision engine. |
 
 ### Headline Metrics Dashboard
 
@@ -576,18 +576,18 @@ Three policies run through the **identical simulator**, on the **identical deman
 
 ### The "Wow" Moment
 
-**Live shock injection:** During the demo, inject a disruption event (port closure, storm, demand spike) into the running simulation in front of judges. Show:
+**Shock replay (precomputed A/B):** The demo scrubs through a disruption event (port closure + demand spike) injected at a fixed day of a held-out scenario. Two runs of the identical shocked world are shown side by side:
 
 1. The **static baseline** continues on its fixed schedule, sailing into the disruption, accumulating demurrage fees, and rejecting rerouted bookings.
-2. **Dock** detects the disruption, reroutes affected vessels, reprices capacity on alternate routes, generates structured counter-offers to affected shippers with reason codes — all in real time, with the decision rationale visible on screen.
+2. **Dock** reprices capacity on alternate routes, generates structured counter-offers to affected shippers with reason codes, and protects profit — with the decision rationale visible on screen.
 
-This is a 60-second moment that makes the system's value viscerally clear.
+The replay is exported ahead of time as data; scrubbing through it looks identical to live injection from the audience's seat and cannot fail on stage. This is a 60-second moment that makes the system's value viscerally clear.
 
 ### Evaluation Integrity
 
 - **Hold-out scenarios:** 20% of demand scenarios are never seen during training. Evaluation runs on these.
 - **Statistical significance:** Run each policy on ≥50 random demand seeds. Report mean ± std, not cherry-picked best runs.
-- **Honest reporting:** If the RL agent doesn't beat the supervised baseline, show the supervised baseline as the primary result and frame RL as "ongoing research." The demo is strong regardless of which policy powers it.
+- **Honest reporting:** Report RL's lift over every rung of the ablation ladder exactly as measured, mean ± std. If PPO underperforms the heuristic+bid-price benchmark on holdout, that is itself a reported result — we never relabel a benchmark as the product to hide it.
 
 ---
 
@@ -607,9 +607,9 @@ gantt
     Stowage constraint solver                   :a3, 2, 6
 
     section Intelligence
-    Demand forecast model (XGBoost)             :b1, 5, 8
-    Bid-price heuristic                         :b2, 5, 8
-    Supervised NN baseline                      :b3, 7, 10
+    Demand forecaster (ridge, route-week)       :b1, 5, 8
+    Bid-price engine                            :b2, 5, 8
+    Heuristic + bid-price baseline              :b3, 7, 10
     Rule-based heuristic baseline               :b4, 6, 8
 
     section RL
@@ -632,8 +632,8 @@ gantt
 | **Simulator** | `step()`/`reset()` produce sane episodes; a hand-written heuristic generates plausible booking/acceptance patterns; reward signal is non-zero and varied. |
 | **Constraint solver** | Correctly rejects hazmat-adjacent placements, overweight stacks, and bad stacking orders. Produces a valid binary mask. |
 | **Bid-price engine** | Produces different prices for high-demand vs. low-demand legs on the same route. Counter-offer discounts are derived from price differentials, not hardcoded. |
-| **Baselines** | Rule-based and supervised-NN policies produce measurably different (and better-than-random) results in the simulator. |
-| **RL** | PPO training curve is upward-trending and beats the greedy baseline. If not, fall back (Section 3.8). |
+| **Baselines** | Static, greedy, rule-based and heuristic+bid-price policies produce measurably different (and better-than-random) results in the simulator. |
+| **RL** | PPO training curve is upward-trending and beats the greedy baseline. The Section 3.7 exit criteria catch non-convergence early; the levers are reward shaping, curriculum pacing, and the forecaster features — not retreating to a non-learned policy. |
 | **Demo** | End-to-end flow works: booking request → structured response with reason code → dashboard updates metrics → shock injection triggers rerouting. |
 
 ---
@@ -642,14 +642,14 @@ gantt
 
 | Risk | Severity | Mitigation |
 |:---|:---|:---|
-| **RL doesn't converge in time** | High | Graduated fallback (Section 3.8): rule-based → supervised → RL. Demo works with any of the three. |
+| **RL doesn't converge in time** | High | The Section 3.8 risk controls: action masking keeps even a partial policy legal, the curriculum surfaces failure early, and supervised forecaster inputs shrink what the agent must learn. Start the curriculum as soon as the forecaster lands. |
 | **RL exploits simulator quirks** | Medium | (1) Run baselines in same simulator; (2) sanity-check learned behavior; (3) evaluate on held-out scenarios not seen during training. |
 | **Simulator is unrealistic** | High | Keep it simple and directionally correct rather than complex and buggy. 6–8 ports, 3–5 ships. Validate with domain intuition checks (e.g., "does a high-demand route produce higher prices?"). |
 | **Action space too large** | Medium | Discretize (Section 3.3) and mask (Section 3.4) before scaling up. Start with 1 ship / 2 ports. |
 | **Judges don't trust a black-box** | Medium | Reason-coded offers (Section 4.5) and decision audit log. Every quote has a traceable justification. |
 | **Synthetic data teaches our assumptions** | Medium | Vary demand-generation parameters (Section 5) — seasonality, shocks, imbalance. No single fixed distribution. Hold out 20% of scenarios for evaluation. |
 | **Scope creep** | High | Feature priority tiers (Section 4.6). P0 must ship. P1 is stretch. P2/P3 are nice-to-have / slides-only. |
-| **Demo fails live** | Medium | Pre-recorded backup of the full demo flow. Rehearse end-to-end at least twice before presenting. |
+| **Demo fails live** | Medium | The dashboard replays static JSON artifacts exported before the demo — there is no live API or live simulation on stage, so the primary failure mode is removed by construction. Rehearse the walkthrough end-to-end at least twice. |
 
 ---
 
@@ -668,6 +668,8 @@ gantt
 
 ---
 
-> **Last updated:** v2.1 — Locked frontend decision (Next.js dashboard in `src/`); aligned §10 tier-granularity default with §3.3's per-action-type tiers.
+> **Last updated:** v2.2 — Removed the graduated-fallback framing throughout: RL is the committed decision engine, baselines are the ablation ladder, and the demo replays precomputed artifacts rather than running a live API. §7 policy table now reflects the actual comparison set (static / dynamic heuristic / heuristic+bid-price / PPO).
+>
+> v2.1 — Locked frontend decision (Next.js dashboard in `src/`); aligned §10 tier-granularity default with §3.3's per-action-type tiers.
 >
 > v2.0 — Rebuilt with corrected feasibility, grounded impact numbers, realistic hackathon scope tiers, curriculum-based RL training strategy, and graduated fallback plan.

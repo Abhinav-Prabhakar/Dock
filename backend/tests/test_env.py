@@ -10,11 +10,14 @@ pytest.importorskip("gymnasium")
 from env import N_ACTIONS, OBS_DIM, CargoFleetEnv
 from simulator import SimConfig, Simulator
 
+from conftest import stub_forecaster
+
 
 @pytest.fixture
 def env() -> CargoFleetEnv:
-    return CargoFleetEnv(SimConfig(horizon_days=30, seed=5),
-                         scenario_pool=["baseline"])
+    return CargoFleetEnv(
+        SimConfig(horizon_days=30, seed=5, forecaster=stub_forecaster()),
+        scenario_pool=["baseline"])
 
 
 class TestContract:
@@ -54,6 +57,21 @@ class TestContract:
         _, r, _, _, _ = env.step(int(np.flatnonzero(mask)[0]))
         assert np.isfinite(r)
 
+    def test_env_obs_uses_forecaster_not_lam(self, env):
+        """The demand-forecast obs slice must come from the bound
+        forecaster (stub -> 400 TEU/route-week), not sim.demand.lam —
+        deleting ground truth must not break obs building."""
+        obs, _ = env.reset(seed=5)
+        # obs layout: ... + demand forecast(N_ROUTES=18) + temporal(4)
+        #             + decision flags(2)  ->  forecast ends 6 from the end
+        i = OBS_DIM - 6 - 18
+        np.testing.assert_allclose(obs[i:i + 18], 400.0 / 1200.0, rtol=1e-6)
+        del env.sim.demand.lam
+        obs2 = env._obs()
+        np.testing.assert_allclose(obs2[i:i + 18], 400.0 / 1200.0,
+                                   rtol=1e-6)
+        assert np.all(np.isfinite(obs2))
+
     def test_booking_mask_reject_always_legal(self, env):
         env.reset(seed=5)
         # step until a booking step, then check action 0 is legal
@@ -80,10 +98,14 @@ class TestContract:
 
 class TestDeterminism:
     def test_same_seed_same_first_obs(self):
-        e1 = CargoFleetEnv(SimConfig(horizon_days=20, seed=5),
-                           scenario_pool=["baseline"])
-        e2 = CargoFleetEnv(SimConfig(horizon_days=20, seed=5),
-                           scenario_pool=["baseline"])
+        e1 = CargoFleetEnv(
+            SimConfig(horizon_days=20, seed=5,
+                      forecaster=stub_forecaster()),
+            scenario_pool=["baseline"])
+        e2 = CargoFleetEnv(
+            SimConfig(horizon_days=20, seed=5,
+                      forecaster=stub_forecaster()),
+            scenario_pool=["baseline"])
         o1, _ = e1.reset(seed=42)
         o2, _ = e2.reset(seed=42)
         np.testing.assert_array_equal(o1, o2)
@@ -94,10 +116,12 @@ class TestDeterminism:
         SimConfig(seed=seed) produces. Fails if the pinning is removed."""
         seed, scen, h = 1234, "baseline", 25
         ref = Simulator(SimConfig(scenario=scen, horizon_days=h, seed=seed,
-                                  pricing="bid_price"))
+                                  pricing="bid_price",
+                                  forecaster=stub_forecaster()))
         ref.reset()
         env = CargoFleetEnv(
-            SimConfig(horizon_days=h, pricing="bid_price"),
+            SimConfig(horizon_days=h, pricing="bid_price",
+                      forecaster=stub_forecaster()),
             scenario_pool=["boom-market", "port-strike-season"])
         env.reset(seed=999,
                   options={"sim_seed": seed, "scenario": scen})
@@ -109,8 +133,9 @@ class TestDeterminism:
     def test_unpinned_reset_still_randomizes(self):
         """Absent the options keys, training behaviour is unchanged: the
         sim seed is drawn, not the env seed."""
-        env = CargoFleetEnv(SimConfig(horizon_days=20),
-                            scenario_pool=["baseline"])
+        env = CargoFleetEnv(
+            SimConfig(horizon_days=20, forecaster=stub_forecaster()),
+            scenario_pool=["baseline"])
         env.reset(seed=5)
         assert env.sim.config.seed != 5
 

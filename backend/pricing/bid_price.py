@@ -19,9 +19,10 @@ the total network value implied by current bid prices, used for
 potential-based reward shaping (plan §3.5, Ng et al. 1999: potential-based
 shaping leaves the optimal policy unchanged).
 
-Demand expectations come from a pluggable ``demand_fn``; by default the
-simulator's own demand process is used as the forecast oracle (the offline
-supervised forecaster in ``models/`` approximates the same object).
+Demand expectations come from a required ``demand_fn`` — the trained
+supervised forecaster in ``models/demand.py``, bound to the episode via
+``DemandForecaster.bind`` and wired in by ``Simulator``. There is no
+oracle path: the engine never reads the simulator's ground-truth demand.
 """
 
 from __future__ import annotations
@@ -116,30 +117,16 @@ class BidPriceEngine:
         self.sim = sim
         self.elasticity = float(elasticity)
         # demand_fn(route_idx, day_lo, day_hi) -> expected TEU of requests
-        self.demand_fn = demand_fn or self._oracle_demand
+        if demand_fn is None:
+            raise ValueError(
+                "BidPriceEngine requires demand_fn — pass a bound "
+                "DemandForecaster.daily (see models/demand.py; Simulator "
+                "wires it automatically). The oracle demand path was "
+                "removed.")
+        self.demand_fn = demand_fn
         self._cache_day = -1.0
         self._E: dict[tuple[str, int], float] = {}
         self._mkt: dict[tuple[str, int], float] = {}
-        self._lam_cum: np.ndarray | None = None
-
-    # ------------------------------------------------------------------
-    # Demand oracle
-    # ------------------------------------------------------------------
-
-    def _build_lam_cum(self) -> np.ndarray:
-        """(R, D+1) cumsum of daily request TEU per route over the episode."""
-        n_days = int(self.sim.config.horizon_days) + 61
-        wk = np.minimum(np.arange(n_days) // 7,
-                        self.sim.demand.horizon_weeks - 1)
-        daily = self.sim.demand.lam[:, wk] / 7.0
-        zero = np.zeros((daily.shape[0], 1))
-        return np.concatenate([zero, np.cumsum(daily, axis=1)], axis=1)
-
-    def _oracle_demand(self, r: int, day_lo: float, day_hi: float) -> float:
-        cum = self._lam_cum
-        lo = int(np.clip(np.floor(day_lo), 0, cum.shape[1] - 1))
-        hi = int(np.clip(np.ceil(day_hi), 0, cum.shape[1] - 1))
-        return float(cum[r, hi] - cum[r, lo]) if hi > lo else 0.0
 
     def _n_deps(self, o: str, d: str, t: float) -> int:
         """Own-fleet departures on OD choosable on day t: (t, t+49d]."""
@@ -161,7 +148,6 @@ class BidPriceEngine:
         self._cache_day = day
         self._E.clear()
         self._mkt.clear()
-        self._lam_cum = self._build_lam_cum()
 
         for v in self.sim.vessels.values():
             vid = v.spec.vessel_id
@@ -187,9 +173,12 @@ class BidPriceEngine:
                         / self._n_deps(call.port, d, (lo + hi) / 2.0)
                     if e_i <= 0:
                         continue
+                    # current-week spot rate: the honest martingale
+                    # forecast of a mean-reverting rate process — reading
+                    # rates at the leg's future departure week would leak
+                    # ground truth
                     rate = float(self.sim.demand.rates[
-                        r, min(int(dep_i // 7),
-                               self.sim.demand.horizon_weeks - 1)])
+                        r, self.sim.demand.week_of(self.sim.day)])
                     # An OD rate pays for the WHOLE journey, so each leg it
                     # traverses may only claim its distance share of it —
                     # otherwise summing leg bids over a k-leg itinerary
