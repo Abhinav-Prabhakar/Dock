@@ -132,12 +132,15 @@ class TestDeterminism:
 
     def test_unpinned_reset_still_randomizes(self):
         """Absent the options keys, training behaviour is unchanged: the
-        sim seed is drawn, not the env seed."""
+        sim seed is drawn, not the env seed — and differs across resets."""
         env = CargoFleetEnv(
             SimConfig(horizon_days=20, forecaster=stub_forecaster()),
             scenario_pool=["baseline"])
         env.reset(seed=5)
-        assert env.sim.config.seed != 5
+        s1 = env.sim.config.seed
+        env.reset(seed=6)
+        s2 = env.sim.config.seed
+        assert s1 != 5 and s2 != 6 and s1 != s2
 
 
 class TestActionDecode:
@@ -154,3 +157,66 @@ class TestActionDecode:
         for a in range(12, N_ACTIONS):               # fleet actions
             acts = env._decode_fleet(a)
             assert isinstance(acts, list)
+
+    def test_booking_action_semantics(self, env):
+        """Decode must produce the intended kind/tier/target — not merely
+        a BookingDecision instance."""
+        from simulator.types import DecisionKind
+        from conftest import anchored_request
+        env.reset(seed=5)
+        req = anchored_request(env.sim)
+        req.options = env.sim._options_for(req, req.dest)
+        assert req.options
+
+        assert env._decode_booking(0, req).kind is DecisionKind.REJECT
+
+        d = env._decode_booking(1, req)
+        in_flex = [o for o in req.options if o.within_flex]
+        if in_flex:
+            assert d.kind is DecisionKind.ACCEPT
+            assert req.options[d.option_idx].within_flex
+        else:
+            assert d.kind is DecisionKind.REJECT
+
+        out_of_flex = [o for o in req.options if not o.within_flex]
+        for a, tier in zip(range(2, 6), (0.05, 0.10, 0.15, 0.20)):
+            d = env._decode_booking(a, req)
+            assert d.kind is DecisionKind.FLEX_WINDOW
+            assert d.discount_pct == tier
+            if out_of_flex:
+                assert not req.options[d.option_idx].within_flex
+
+        for a, tier in zip(range(6, 9), (0.05, 0.10, 0.15)):
+            d = env._decode_booking(a, req)
+            assert d.kind is DecisionKind.ALT_HUB
+            assert d.discount_pct == tier
+
+        for a, frac in zip(range(9, 12), (0.5, 0.6, 0.7)):
+            d = env._decode_booking(a, req)
+            assert d.kind is DecisionKind.SPLIT
+            assert d.split_frac == frac
+            assert d.second_idx == min(1, len(req.options) - 1)
+
+    def test_fleet_action_semantics(self, env):
+        """Fleet actions decode to the exact (vessel, speed) and
+        (pair, teu) the layout promises."""
+        from env.fleet_env import REPO_TIERS, SPEED_TIERS
+        env.reset(seed=5)
+        for a in range(12, 12 + 4 * len(SPEED_TIERS)):
+            acts = env._decode_fleet(a)
+            a0 = a - 12
+            assert len(acts) == 1
+            assert acts[0].kind == "set_speed"
+            assert acts[0].vessel_id == f"VES{a0 // len(SPEED_TIERS) + 1}"
+            assert acts[0].speed_kt == SPEED_TIERS[a0 % len(SPEED_TIERS)]
+        pairs = env._repo_pairs()
+        for a in range(12 + 4 * len(SPEED_TIERS), N_ACTIONS):
+            a0 = a - 12 - 4 * len(SPEED_TIERS)
+            acts = env._decode_fleet(a)
+            if a0 // len(REPO_TIERS) >= len(pairs):
+                assert acts == []
+                continue
+            assert len(acts) == 1 and acts[0].kind == "reposition"
+            assert (acts[0].port_from, acts[0].port_to) == \
+                pairs[a0 // len(REPO_TIERS)]
+            assert acts[0].teu == REPO_TIERS[a0 % len(REPO_TIERS)]

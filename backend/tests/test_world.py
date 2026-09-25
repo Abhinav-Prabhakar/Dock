@@ -139,11 +139,18 @@ class TestPricing:
         assert q == 1780.0                   # calibration route rate
 
     def test_dynamic_quote_tracks_market(self, sim):
+        """dynamic quote = market x segment uplift x fill surge; at empty
+        fill surge is 1, and the formula is exactly proportional to the
+        market rate."""
         req = anchored_request(sim, market=2000.0)
         opt = first_option(sim, req)
         assert opt is not None
         q = sim.quote(req, opt)
-        assert 0.7 * req.market_rate < q < 3.0 * req.market_rate
+        uplift = C.SEGMENTS[req.segment.value]["quote_uplift"]
+        assert q == pytest.approx(req.market_rate * uplift, rel=1e-9)
+        import dataclasses
+        req2 = dataclasses.replace(req, market_rate=4000.0)
+        assert sim.quote(req2, opt) == pytest.approx(2.0 * q, rel=1e-9)
 
 
 class TestOptionWindow:
@@ -245,7 +252,10 @@ class TestForecasterContract:
         assert eng.leg_bid(opt.vessel_id, opt.legs[0]) > 0
         assert eng.option_bid(opt) > 0
         assert eng.quote(req, opt).price > 0
-        assert eng.counter_discount(req, opt) is not None
+        # same option as its own reference -> no cheaper capacity -> no
+        # discount (the semantic contract, not just "returns something")
+        disc, reason = eng.counter_discount(req, opt, opt_req=opt)
+        assert disc == 0.0 and reason == "no_cheaper_capacity"
         assert eng.network_value() >= 0
         assert eng.mean_pressure() >= 0
         ex = eng.explain(req, opt)
@@ -266,6 +276,42 @@ class TestForecasterContract:
             assert sim.obs_teu[:, 1:].sum() == 0.0
             assert sim.obs_teu.sum() == per_route.sum()
             sim.end_day()
+
+    def test_obs_teu_rolls_into_next_week(self, sim):
+        """Requests on days 7+ must land in week column 1, and week 0's
+        finalized total must not move afterwards."""
+        for _ in range(8):
+            sim.begin_day()
+            sim.end_day()
+        assert sim.day == pytest.approx(8.0)
+        w0 = sim.obs_teu[:, 0].copy()
+        assert sim.obs_teu[:, 1].sum() > 0
+        sim.begin_day()
+        sim.end_day()
+        np.testing.assert_array_equal(sim.obs_teu[:, 0], w0)
+
+    def test_observed_teu_boundaries(self, sim):
+        """_observed_teu is the bound forecaster's `observed` feed: final
+        totals for elapsed weeks, a 7/elapsed-scaled nowcast for the week
+        in progress once a day has elapsed, None otherwise."""
+        r = 0
+        assert sim._observed_teu(r, sim.start_week) is None      # day 0
+        assert sim._observed_teu(r, sim.start_week - 1) is None  # pre-episode
+        sim.begin_day()
+        sim.end_day()
+        assert sim.day == pytest.approx(1.0)
+        v = sim._observed_teu(r, sim.start_week)
+        assert v == pytest.approx(float(sim.obs_teu[r, 0]) * 7.0)
+        assert sim._observed_teu(r, sim.start_week + 1) is None  # future
+        assert sim._observed_teu(r, sim.start_week
+                                 + sim.horizon_weeks) is None    # oob
+        for _ in range(6):
+            sim.begin_day()
+            sim.end_day()
+        assert sim.day == pytest.approx(7.0)
+        # week 0 fully elapsed -> raw finalized total, no scaling
+        assert sim._observed_teu(r, sim.start_week) == pytest.approx(
+            float(sim.obs_teu[r, 0]))
 
 
 class TestNegotiation:
