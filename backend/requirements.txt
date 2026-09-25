@@ -8,3 +8,15 @@ pytest>=8.0
 stable-baselines3>=2.3
 sb3-contrib>=2.3
 torch>=2.2
+
+# API server + live episode streaming
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27                    # TestClient for tests/test_api.py
+
+# Settlement layer — real local EVM (in-process; no external node needed)
+web3>=7,<8
+eth-tester[py-evm]
+py-evm
+pycryptodome>=3.19             # keccak256 — Ethereum's hash, not NIST sha3
+py-solc-x>=2.0                 # build-time solc; runtime uses committed artifact

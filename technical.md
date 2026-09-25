@@ -418,15 +418,17 @@ extends to…".
 `plan.md` §7 is the deliverable: three policies, identical demand, live
 metrics, plus a shock-injection moment. Two decisions up front.
 
-### Decision A — artifact-driven, not a live API
+### Decision A — superseded: live API + artifact comparison [done]
 
-**Do not build an HTTP server between Python and Next.js.** The backend
-writes static JSON; the frontend reads static JSON. Rationale: it removes
-the entire live-demo failure mode that `plan.md` §9 tells us to plan
-around, it needs no process management on stage, it is faster to build, and
-the demo becomes reproducible and diffable. Everything in §7 of the plan is
-a *replay* of a completed episode — there is no interactive requirement
-that needs a server.
+A live FastAPI server now sits between Python and Next.js (`api.md`):
+episodes run server-side and stream real sim events over WebSocket;
+conditional deals settle on a real local EVM (py-evm + `DockSettlement.sol`)
+and every event lands in a hash-chained JSONL ledger. The **precomputed
+artifacts remain** for the 5-policy comparison surfaces — that batch export
+takes minutes and is still served read-only via `GET /compare/*`. The
+original anti-live-API rationale (stage failure modes) is mitigated by the
+hybrid: the riskiest surface (comparison numbers) is still precomputed,
+while live episodes add the interactive demo the judges can poke at.
 
 ### Decision B — superseded by frontend.md
 

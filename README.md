@@ -147,6 +147,19 @@ Curriculum: 14d/1-vessel → 30d/2-vessel → +reward shaping → 90d/full-fleet
 +adversarial scenarios. Checkpoints land in `runs/ppo_cN/` with `config.json`
 (git SHA + obs semantics) and TensorBoard logs.
 
+### Live API server
+
+```bash
+cd backend
+.venv/bin/uvicorn server.app:app --port 8399
+```
+
+FastAPI + WebSocket: `POST /episodes` starts a live sim (any policy incl.
+PPO), events stream to the frontend, conditional deals settle on a real
+local EVM, and every event lands in a hash-chained ledger
+(`runs/ledger/<id>.jsonl`). Full reference: `api.md`. Verify a ledger with
+`python -m scripts.verify_ledger runs/ledger/<id>.jsonl`.
+
 ### Frontend
 
 ```bash
@@ -154,8 +167,9 @@ npm install
 npm run dev
 ```
 
-The dashboard reads `public/demo/*.json` — no live API, nothing can fail on
-stage. Layout spec: `frontend.md`.
+The dashboard consumes the live API (`api.md`) for episodes/deals/ledger
+and `GET /compare/*` (serving `public/demo/*.json`) for the 5-policy
+comparison. Layout spec: `frontend.md`.
 
 ## The demo
 

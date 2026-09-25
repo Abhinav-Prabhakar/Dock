@@ -2,10 +2,12 @@
 
 Everything the dashboard needs to know: what the backend is, what it
 produces, the exact shape of every artifact it writes, and the vocabulary
-used throughout. The frontend consumes **static JSON only** — there is no
-live API, no backend server, no request/response surface at runtime. All
-numbers in the artifacts are pre-aggregated and pre-rounded; the frontend
-should render them, not recompute them.
+used throughout. The backend now also exposes a **live API** — FastAPI +
+WebSocket episode streaming, hash-chained event ledger, and on-chain deal
+settlement — fully documented in `api.md`. The static artifacts below
+remain the source for the 5-policy comparison surfaces (they are produced
+by a multi-minute batch export, not computed on demand); live episode
+data, deals, and the ledger come from the API.
 
 ## The pipeline (one picture)
 

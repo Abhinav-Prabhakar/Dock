@@ -1,0 +1,204 @@
+"""REST endpoints for the Dock live API."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pandas as pd
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+
+from data import calibration as C
+
+from .episodes import (BACKEND, REPO_ROOT, EpisodeConflict, EpisodeManager,
+                       list_policies)
+
+GENERATED = BACKEND / "data" / "generated"
+SCENARIO_DIR = GENERATED / "scenarios"
+DEMO_DIR = REPO_ROOT / "public" / "demo"
+COMPARE_NAMES = {"summary", "timeline", "offers", "shock", "meta"}
+
+router = APIRouter()
+
+
+class EpisodeStart(BaseModel):
+    policy: str
+    scenario: str
+    seed: int = 42
+    horizon_days: int = 90
+    speed_days_per_sec: float = 20.0
+
+
+class EpisodeControl(BaseModel):
+    action: str                      # pause|resume|stop|set_speed
+    speed: float | None = None
+
+
+def _mgr(request: Request) -> EpisodeManager:
+    return request.app.state.episodes
+
+
+def _episode_or_404(mgr: EpisodeManager, ep_id: str):
+    ep = mgr.get(ep_id)
+    if ep is None:
+        raise HTTPException(404, f"episode '{ep_id}' not found")
+    return ep
+
+
+@router.get("/health")
+def health():
+    return {"ok": True}
+
+
+@router.get("/policies")
+def policies():
+    return list_policies()
+
+
+@router.get("/scenarios")
+def scenarios():
+    out = []
+    for p in sorted(SCENARIO_DIR.glob("*.json")):
+        try:
+            rec = json.loads(p.read_text())
+        except Exception:
+            continue
+        if "scenario_id" not in rec:   # skips manifest.json
+            continue
+        out.append(rec)
+    return out
+
+
+@router.get("/ports")
+def ports():
+    df = pd.read_parquet(GENERATED / "ports.parquet")
+    return df.to_dict("records")
+
+
+@router.get("/vessels")
+def vessels():
+    df = pd.read_parquet(GENERATED / "vessels.parquet")
+    return df.to_dict("records")
+
+
+@router.get("/routes")
+def routes():
+    return [{"origin": o, "dest": d, "base_teu_wk": b,
+             "market_usd_per_teu": m, "lane": lane, "direction": direc}
+            for (o, d, b, m, lane, direc) in C.ROUTES]
+
+
+@router.get("/models/report")
+def models_report():
+    p = BACKEND / "models" / "artifacts" / "report.json"
+    if not p.exists():
+        raise HTTPException(404, "models/artifacts/report.json not found")
+    return json.loads(p.read_text())
+
+
+@router.post("/episodes", status_code=201)
+def start_episode(body: EpisodeStart, request: Request):
+    mgr = _mgr(request)
+    try:
+        ep = mgr.start(body.policy, body.scenario, body.seed,
+                       body.horizon_days, body.speed_days_per_sec)
+    except EpisodeConflict as e:
+        raise HTTPException(409, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except Exception as e:
+        raise HTTPException(500, str(e))
+    return ep.descriptor()
+
+
+@router.get("/episodes")
+def list_episodes(request: Request):
+    return [ep.descriptor() for ep in _mgr(request).list()]
+
+
+@router.get("/episodes/{ep_id}")
+def episode_snapshot(ep_id: str, request: Request):
+    try:
+        return _mgr(request).snapshot(ep_id)
+    except KeyError:
+        raise HTTPException(404, f"episode '{ep_id}' not found")
+
+
+@router.post("/episodes/{ep_id}/control")
+def episode_control(ep_id: str, body: EpisodeControl, request: Request):
+    mgr = _mgr(request)
+    try:
+        ep = mgr.control(ep_id, body.action, body.speed)
+    except KeyError:
+        raise HTTPException(404, f"episode '{ep_id}' not found")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return ep.descriptor()
+
+
+@router.get("/episodes/{ep_id}/events")
+def episode_events(ep_id: str, request: Request,
+                   after_seq: int = 0, limit: int = 500):
+    ep = _episode_or_404(_mgr(request), ep_id)
+    with ep._lock:
+        evs = [e for e in ep.events if e.get("seq", 0) >= after_seq]
+    evs = evs[:max(0, limit)]
+    next_seq = evs[-1]["seq"] + 1 if evs else after_seq
+    return {"events": evs, "next_seq": next_seq}
+
+
+@router.get("/episodes/{ep_id}/ledger")
+def episode_ledger(ep_id: str, request: Request,
+                   after_seq: int = 0, limit: int = 500):
+    """The episode's hash-chained ledger events (the canonical record;
+    identical to /events but read back from the .jsonl file)."""
+    ep = _episode_or_404(_mgr(request), ep_id)
+    path = _mgr(request).ledger_dir / f"{ep.id}.jsonl"
+    if not path.exists():
+        raise HTTPException(404, "ledger file not found")
+    lines = path.read_text().splitlines()
+    recs = [json.loads(ln) for ln in lines if ln.strip()]
+    recs = [r for r in recs if r.get("seq", 0) >= after_seq]
+    recs = recs[:max(0, limit)]
+    nxt = recs[-1]["seq"] + 1 if recs else after_seq
+    return {"events": recs, "next_seq": nxt}
+
+
+@router.get("/episodes/{ep_id}/ledger/verify")
+def episode_ledger_verify(ep_id: str, request: Request):
+    """Recompute the hash chain and check linkage — proves the ledger
+    is untampered."""
+    from ledger.store import Ledger
+    ep = _episode_or_404(_mgr(request), ep_id)
+    path = _mgr(request).ledger_dir / f"{ep.id}.jsonl"
+    if not path.exists():
+        raise HTTPException(404, "ledger file not found")
+    return Ledger.verify(path)
+
+
+@router.get("/episodes/{ep_id}/deals")
+def episode_deals(ep_id: str, request: Request):
+    ep = _episode_or_404(_mgr(request), ep_id)
+    with ep._lock:
+        return list(ep.deals.values())
+
+
+@router.get("/episodes/{ep_id}/deals/{deal_id}")
+def episode_deal(ep_id: str, deal_id: str, request: Request):
+    ep = _episode_or_404(_mgr(request), ep_id)
+    d = ep.deals.get(deal_id)
+    if d is None:
+        raise HTTPException(404, f"deal '{deal_id}' not found")
+    return d
+
+
+@router.get("/compare/{name}")
+def compare(name: str):
+    if name not in COMPARE_NAMES:
+        raise HTTPException(404, f"unknown compare view '{name}' — "
+                                 f"one of {sorted(COMPARE_NAMES)}")
+    p = DEMO_DIR / f"{name}.json"
+    if not p.exists():
+        raise HTTPException(404, f"public/demo/{name}.json not found")
+    return json.loads(p.read_text())
