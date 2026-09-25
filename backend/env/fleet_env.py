@@ -12,7 +12,7 @@ exposes the feasible-action mask computed by the stowage solver + capacity
 checks — hard constraints are never learned.
 
 Action layout (N_ACTIONS = 44):
-    0           reject
+    0           reject (booking steps) / pass (fleet steps)
     1           accept at quoted price (earliest within-flex option)
     2..5        flex-window discount {5,10,15,20}% on a later option
     6..8        alt-hub discount {5,10,15}% to the alternate discharge port
@@ -22,7 +22,12 @@ Action layout (N_ACTIONS = 44):
                 (fleet steps only)
 
 Reward = per-step profit delta (revenue minus fuel/carbon/port/lease/
-demurrage/compensation costs) minus a small empty-mile penalty.
+demurrage/compensation costs) minus a small empty-mile penalty, plus
+optional potential-based bid-price shaping (plan §3.5):
+    r_shape = alpha * (gamma * Phi(s') - Phi(s))
+with Phi(s) = sum over bookable legs of bid_price x remaining capacity,
+computed by pricing.BidPriceEngine. Potential-based shaping does not
+change the optimal policy; it densifies the accept-vs-hold signal.
 """
 
 from __future__ import annotations
@@ -55,21 +60,26 @@ N_ACTIONS = N_BOOKING_ACTIONS + 4 * len(SPEED_TIERS) + N_REPO * len(REPO_TIERS)
 
 N_PORTS = len(C.PORTS)
 N_ROUTES = len(D.ROUTE_KEYS)
-# obs: request(14) + options(4*4) + market(6) + ports(3*8) + vessels(6*4)
+# obs: request(14) + options(5*4) + market(6) + ports(3*8) + vessels(6*4)
 #      + demand forecast(N_ROUTES) + temporal(4) + decision flag(2)
-OBS_DIM = 14 + 16 + 6 + 3 * N_PORTS + 6 * 4 + N_ROUTES + 4 + 2
+OBS_DIM = 14 + 20 + 6 + 3 * N_PORTS + 6 * 4 + N_ROUTES + 4 + 2
 
 EMPTY_MILE_PENALTY = 2e-6          # per empty TEU-nm sailed per step
+SHAPING_ALPHA = 0.1                # weight of potential-based shaping
+SHAPING_CLIP = 50.0                # bound the per-step shaping term
+SHAPING_GAMMA = 0.99               # matches PPO gamma in rl/train.py
 
 
 class CargoFleetEnv(gym.Env if gym else object):
     metadata = {"render_modes": []}
 
     def __init__(self, sim_config: SimConfig | None = None,
-                 scenario_pool: list[str] | None = None):
+                 scenario_pool: list[str] | None = None,
+                 shaping: bool = False):
         if gym is None:
             raise ImportError("gymnasium is required for CargoFleetEnv")
         self.sim_config = sim_config or SimConfig()
+        self.shaping = shaping
         # train-time scenario randomization (holdout set stays untouched)
         self.scenario_pool = scenario_pool or [
             "baseline", "high-imbalance", "seasonal-peak", "steady-growth",
@@ -96,6 +106,8 @@ class CargoFleetEnv(gym.Env if gym else object):
         self.sim.config.scenario = scen
         self.sim.config.seed = int(self._rng.integers(0, 1 << 31))
         self.sim.reset()
+        if self.shaping:
+            self.sim.attach_pricer()
         self._pending = []
         self._req = None
         self._fleet_step = False
@@ -110,7 +122,9 @@ class CargoFleetEnv(gym.Env if gym else object):
             if self._req is None and not self._fleet_step:
                 if not self._pending:
                     self._pending = self.sim.begin_day()
-                    if int(self.sim.day) % self.sim.config.fleet_every == 0:
+                    if self.sim.config.fleet_actions \
+                            and int(self.sim.day) \
+                            % self.sim.config.fleet_every == 0:
                         self._fleet_step = True
                         return
                 if self._pending:
@@ -124,6 +138,7 @@ class CargoFleetEnv(gym.Env if gym else object):
 
     def step(self, action: int):
         assert self._req is not None or self._fleet_step
+        phi0 = self.sim.pricer.network_value() if self.shaping else 0.0
         if self._fleet_step:
             for act in self._decode_fleet(action):
                 self.sim.apply_fleet_action(act)
@@ -147,6 +162,11 @@ class CargoFleetEnv(gym.Env if gym else object):
         self._last_empty_nm = m.empty_teu_nm
 
         self._advance_to_decision()
+        if self.shaping:
+            phi1 = 0.0 if self.sim.done else self.sim.pricer.network_value()
+            reward += float(np.clip(
+                SHAPING_ALPHA * (SHAPING_GAMMA * phi1 - phi0) / 10_000.0,
+                -SHAPING_CLIP, SHAPING_CLIP))
         terminated = self.sim.done
         obs = self._obs() if not terminated else np.zeros(
             OBS_DIM, dtype=np.float32)
@@ -180,6 +200,8 @@ class CargoFleetEnv(gym.Env if gym else object):
 
     def _decode_fleet(self, a: int) -> list[FleetAction]:
         acts: list[FleetAction] = []
+        if a == 0:
+            return acts                           # pass / do nothing
         a0 = a - N_BOOKING_ACTIONS
         if a0 < 4 * len(SPEED_TIERS):
             vid = f"VES{a0 // len(SPEED_TIERS) + 1}"
@@ -211,14 +233,19 @@ class CargoFleetEnv(gym.Env if gym else object):
     def action_masks(self) -> np.ndarray:
         mask = np.zeros(N_ACTIONS, dtype=bool)
         if self._fleet_step:
+            mask[0] = True                           # pass always legal
             lo = N_BOOKING_ACTIONS
+            for i in range(4):
+                vid = f"VES{i + 1}"
+                if vid in self.sim.vessels:
+                    mask[lo + i * len(SPEED_TIERS):
+                         lo + (i + 1) * len(SPEED_TIERS)] = True
             hi = N_BOOKING_ACTIONS + 4 * len(SPEED_TIERS)
-            mask[lo:hi] = True                       # speed always legal
             pairs = self._repo_pairs()
-            for i, (src, _dst) in enumerate(pairs):
+            for i, (src, dst) in enumerate(pairs):
                 for k in range(len(REPO_TIERS)):
-                    mask[hi + i * len(REPO_TIERS) + k] = (
-                        self.sim.empties.get(src, 0) >= REPO_TIERS[k])
+                    mask[hi + i * len(REPO_TIERS) + k] = \
+                        self.sim.can_reposition(src, dst, REPO_TIERS[k])
             return mask
 
         req = self._req
@@ -263,17 +290,25 @@ class CargoFleetEnv(gym.Env if gym else object):
             for k, o in enumerate(req.options[:4]):
                 vv = sim.vessels[o.vessel_id]
                 cap = vv.leg_cap(o.legs[0])
-                v[i + 4 * k + 0] = (o.board_day - sim.day) / 60.0
-                v[i + 4 * k + 1] = cap.teu / max(vv.own_lift_teu, 1)
-                v[i + 4 * k + 2] = float(o.within_flex)
-                v[i + 4 * k + 3] = float(o.capacity_ok)
-        i += 16
+                v[i + 5 * k + 0] = (o.board_day - sim.day) / 60.0
+                v[i + 5 * k + 1] = cap.teu / max(vv.own_lift_teu, 1)
+                v[i + 5 * k + 2] = float(o.within_flex)
+                v[i + 5 * k + 3] = float(o.capacity_ok)
+                if sim.pricer is not None:
+                    v[i + 5 * k + 4] = np.clip(
+                        sim.pricer.option_bid(o)
+                        / max(req.market_rate, 1.0), 0.0, 3.0) / 3.0
+        i += 20
+        pricer = sim.pricer
         v[i:i + 6] = [
             sim.demand.fuel_price(sim.day) / 1000.0,
             sim.demand.ets_price(sim.day) / 120.0,
             sim.day / max(sim.config.horizon_days, 1),
             float(sim.start_week) / C.N_WEEKS,
-            0.0, 0.0]
+            np.clip(pricer.mean_pressure() / 3.0, 0, 1)
+            if pricer is not None else 0.0,
+            np.clip(pricer.network_value() / 1e8, 0, 5) / 5.0
+            if pricer is not None else 0.0]
         i += 6
         for k, p in enumerate(sim.port_ids):
             di = int(min(sim.day, len(sim.port_wait[p]) - 1))

@@ -140,6 +140,73 @@ class TestPricing:
         assert 0.7 * req.market_rate < q < 3.0 * req.market_rate
 
 
+class TestOptionWindow:
+    """req_dep_day is a jittered observation of a real sailing date
+    (DemandStream anchors it then adds N(0,1.2)), so the option search
+    window must tolerate jitter in both directions — see JITTER_TOL_D."""
+
+    def test_positive_jitter_flex0_finds_anchored_sailing(self, sim):
+        # A request anchored 1-2 days AFTER a real sailing with flex_days=0
+        # must still see that sailing (it is the one the customer meant).
+        # Regresses on: lo = req_dep_day - flex_days.
+        found = False
+        for (o, d), deps in sim.sailings.items():
+            future = deps[deps > sim.day + 2.0]
+            if not len(future):
+                continue
+            dep = float(future[0])
+            req = make_request(origin=o, dest=d, dep_day=dep + 1.5, flex=0)
+            opts = sim._options_for(req, d)
+            hit = [op for op in opts if abs(op.board_day - dep) < 1e-9]
+            if hit:
+                assert hit[0].within_flex
+                found = True
+                break
+        assert found, "no OD exercised the jittered-anchor case"
+
+    def test_no_self_pair_sailings(self, sim):
+        # Loops that visit a port twice must not produce (p, p) entries.
+        assert all(o != d for (o, d) in sim.sailings)
+
+
+class TestBidPriceProration:
+    """An OD market rate pays for the whole journey, so each leg may only
+    claim its mileage share — otherwise summing leg bids over a k-leg
+    itinerary counts the fare k times (see bid_price.refresh())."""
+
+    def _ratios_by_legcount(self):
+        cfg = SimConfig(scenario="baseline", horizon_days=45, seed=3,
+                        start_week=10, pricing="bid_price")
+        sim = Simulator(cfg)
+        sim.reset()
+        eng = sim.pricer
+        route_rate = {(o, d): float(rate)
+                      for (o, d, _b, rate, _l, _dir) in C.ROUTES}
+        ratios: dict[int, list[float]] = {2: [], 3: []}
+        for (o, d), deps in sim.sailings.items():
+            if (o, d) not in route_rate:
+                continue
+            for dep in deps:
+                if dep <= sim.day + 2.0:
+                    continue
+                req = make_request(origin=o, dest=d, dep_day=float(dep),
+                                   flex=2, market=route_rate[(o, d)])
+                for opt in sim._options_for(req, d):
+                    if len(opt.legs) in ratios:
+                        ratios[len(opt.legs)].append(
+                            eng.option_bid(opt) / req.market_rate)
+        return ratios
+
+    def test_option_bid_does_not_scale_with_legs(self):
+        ratios = self._ratios_by_legcount()
+        assert len(ratios[2]) >= 5 and len(ratios[3]) >= 5
+        med2, med3 = np.median(ratios[2]), np.median(ratios[3])
+        assert med2 < 1.6 and med3 < 1.6
+        # opportunity cost must not grow materially with leg count
+        # (pre-proration medians were ~2.0 / ~3.0 for 2/3 legs)
+        assert med3 <= med2 + 0.4
+
+
 class TestFleetActions:
     def test_set_speed_clamps(self, sim):
         sim.apply_fleet_action(FleetAction(kind="set_speed", vessel_id="VES1",
@@ -189,7 +256,12 @@ class TestPolicyComparison:
         assert heur_rep["profit_usd"] > static_rep["profit_usd"]
 
     def test_heuristic_converts_rejections(self):
-        rep, _ = run_episode(DynamicHeuristicPolicy(), seed=31)
-        assert rep["reject_to_counter_conv"] > 0
+        # counter conversion is rarer now that in-flex options are found
+        # reliably (JITTER_TOL_D) — capacity is the binding constraint — but
+        # it must still happen; the static baseline never counters at all.
+        assert any(
+            run_episode(DynamicHeuristicPolicy(), seed=s)[0]
+            ["reject_to_counter_conv"] > 0
+            for s in (3, 11, 31))
         stat, _ = run_episode(StaticRateCardPolicy(), seed=31)
         assert stat["countered"] == 0
