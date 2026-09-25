@@ -1872,3 +1872,18 @@ body::before {
   .acts { margin-left: auto; }
   .wall { grid-template-columns: minmax(230px, 1fr); }
 }
+
+/* ---------- live data: API-down band + quoted-order action ---------- */
+.api-down {
+  position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 90;
+  max-width: min(640px, calc(100vw - 32px)); padding: 9px 16px; border-radius: 3px;
+  background: #fbf8ef; color: var(--terra); border: 1px solid rgba(185, 111, 75, .55);
+  box-shadow: 0 1px 0 #fff inset, 0 8px 24px rgba(60, 44, 20, .18);
+  font: 9px/1.5 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase;
+}
+.review-quote {
+  margin-top: 12px; padding: 8px 14px; border-radius: 3px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff;
+  font: 9px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .16em; text-transform: uppercase;
+}
+.review-quote:active { transform: translateY(1px) scale(.98); }

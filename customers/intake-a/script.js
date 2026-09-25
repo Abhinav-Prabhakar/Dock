@@ -9,8 +9,6 @@
    ghosts. confirm is a sage rubber stamp that slams down.
    ============================================================ */
 
-const API = location.port === '8399' ? '' : 'http://localhost:8399';
-const ORDERS_KEY = 'ml.orders';
 const DASH = '../dashboard/';
 const forceNew = new URLSearchParams(location.search).has('new');
 
@@ -30,31 +28,13 @@ function hashStr(t) {
 function setG(el, txt) { el.textContent = txt; el.dataset.t = txt; }
 
 /* -------------------- ports & servable lanes -------------------- */
-const FALLBACK = [
-  { port_id: 'CNSHA', name: 'Shanghai' },
-  { port_id: 'SGSIN', name: 'Singapore' },
-  { port_id: 'KRPUS', name: 'Busan' },
-  { port_id: 'NLRTM', name: 'Rotterdam' },
-  { port_id: 'DEHAM', name: 'Hamburg' },
-  { port_id: 'BEANR', name: 'Antwerp' },
-  { port_id: 'USLAX', name: 'Los Angeles/Long Beach' },
-  { port_id: 'USNYC', name: 'New York/New Jersey' },
-];
-const SERVABLE = {
-  CNSHA: ['NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC', 'SGSIN'],
-  SGSIN: ['NLRTM', 'BEANR', 'CNSHA'],
-  KRPUS: ['USLAX', 'CNSHA'],
-  NLRTM: ['CNSHA', 'SGSIN', 'BEANR'],
-  DEHAM: ['CNSHA'],
-  BEANR: ['SGSIN'],
-  USLAX: ['CNSHA', 'KRPUS'],
-  USNYC: ['CNSHA'],
-};
+/* ports + servable lanes come from the backend (DockAPI.network());
+   nothing is embedded, so the form only offers lanes the fleet serves */
+let SERVABLE = {};
 const code3 = id => id.slice(2);          // SGSIN → SIN (UN/LOCODE tail)
 const portName = id => (PORT_MAP[id] || id).toUpperCase();
 let PORT_MAP = {};
-FALLBACK.forEach(p => { PORT_MAP[p.port_id] = p.name; });
-let PORT_LIST = FALLBACK.map(p => p.port_id);
+let PORT_LIST = [];
 
 /* -------------------- form state -------------------- */
 const MAX_KINDS = 4;
@@ -97,20 +77,10 @@ const CHEV_R = '<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 5 5 9 1
    earns a "→ DASHBOARD" chip in the header.                    */
 (async () => {
   if (forceNew) return;
-  let has = null;
   try {
-    const r = await fetch(`${API}/orders`);
-    if (r.ok) {
-      const list = await r.json();
-      has = Array.isArray(list) && list.length > 0;
-      try { localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); } catch (e) {}
-    }
-  } catch (e) { /* offline — check the cache */ }
-  if (has === null) {
-    try { has = (JSON.parse(localStorage.getItem(ORDERS_KEY)) || []).length > 0; }
-    catch (e) { has = false; }
-  }
-  if (has) $('dashChip').hidden = false;
+    const list = await DockAPI.orders();
+    if (Array.isArray(list) && list.length) $('dashChip').hidden = false;
+  } catch (e) { /* API down — loadPorts() reports it */ }
 })();
 
 /* ==================== PORT SELECTS ==================== */
@@ -118,18 +88,17 @@ const selO = $('selOrigin'), selD = $('selDest');
 
 async function loadPorts() {
   try {
-    const r = await fetch(`${API}/ports`);
-    if (r.ok) {
-      const list = await r.json();
-      if (Array.isArray(list) && list.length) {
-        PORT_LIST = list.map(p => p.port_id);
-        PORT_MAP = {};
-        list.forEach(p => { PORT_MAP[p.port_id] = p.name; });
-      }
-    }
-  } catch (e) { /* fallback stands */ }
-  if (!PORT_LIST.length) PORT_LIST = FALLBACK.map(p => p.port_id);
-  if (PORT_MAP[PORT_LIST[0]] === undefined) FALLBACK.forEach(p => { if (!PORT_MAP[p.port_id]) PORT_MAP[p.port_id] = p.name; });
+    const net = await DockAPI.network();
+    PORT_LIST = net.ports.map(p => p.port_id);
+    PORT_MAP = {};
+    net.ports.forEach(p => { PORT_MAP[p.port_id] = p.name; });
+    SERVABLE = net.servable;
+    if (!PORT_LIST.includes(S.origin)) S.origin = PORT_LIST[0];
+  } catch (e) {
+    note('BOOKING SERVICE UNAVAILABLE — ' + String(e.message).toUpperCase());
+    confirmBtn.disabled = true;
+    return;
+  }
   fillOrigin();
   fillDest();
   reink({ origin: true, dest: true });
@@ -465,51 +434,23 @@ confirmBtn.addEventListener('click', async () => {
     flex_days: S.flex,
   }));
 
+  /* price each consignment line live, then the rate-quotation slip */
+  let results;
   try {
-    const created = await Promise.all(bodies.map(b =>
-      fetch(`${API}/orders`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(b),
-      }).then(async r => {
-        if (!r.ok) {
-          let detail = 'HTTP ' + r.status;
-          try { const j = await r.json(); if (j && j.detail) detail = j.detail; } catch (e) {}
-          throw { api: true, detail };
-        }
-        return r.json();
-      })));
-    try {
-      const cache = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(created.concat(cache)));
-    } catch (e) {}
-    fileAway();
+    results = await Promise.all(bodies.map(DockAPI.quote));
   } catch (err) {
-    if (err && err.api) {
-      /* 422 & friends — stamp the clerk's note, let them fix it */
-      note(String(err.detail).toUpperCase());
-      confirmBtn.disabled = false;
-    } else {
-      /* API unreachable — mirror into the local ledger, still file */
-      try {
-        const orders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-        bodies.forEach((b, i) => orders.push({
-          id: 'BK-' + (2500 + orders.length + i) + '-WB',
-          status: 'PENDING REVIEW',
-          ...b,
-          progress: 0, created: Date.now() / 1000,
-        }));
-        localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-      } catch (e) {}
-      fileAway();
-    }
+    note(String(err.message).toUpperCase());   // 422 & friends — let them fix it
+    confirmBtn.disabled = false;
+    return;
   }
+  const final = await DockOffers.review(results);
+  fileAway(final.some(o => ['CONFIRMED', 'LOADING'].includes(o.status)) ? 'CONFIRMED' : 'CLOSED');
 });
 
-function fileAway() {
+function fileAway(status = 'FILED') {
   $('filedStamp').classList.add('landed');
-  $('cStatus').textContent = 'FILED';
-  $('bandT').innerHTML = 'BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;FILED';
+  $('cStatus').textContent = status;
+  $('bandT').innerHTML = `BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;${status}`;
   kick();
   setTimeout(() => { location.href = DASH; }, 1150);
 }

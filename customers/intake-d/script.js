@@ -8,11 +8,10 @@
    ARRIVAL datestamp. A small sage seal-dot travels the spine and
    stamps each leg's header as that section fills. The stub row
    carries the service-segment ticket punches + the CONFIRM seal.
-   Confirm POSTs one order per cargo kind to {API}/orders.
+   Confirm prices one order per cargo kind live (DockAPI.quote) and
+   opens the rate-quotation slip (DockOffers.review).
    ============================================================ */
 
-const API = location.port === '8399' ? '' : 'http://localhost:8399';
-const ORDERS_KEY = 'ml.orders';
 const DASH = '../dashboard/';
 
 /* ----------------------------- helpers ----------------------------- */
@@ -27,28 +26,11 @@ const esc = s => String(s).replace(/[&<>"]/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ==================== SERVICE NETWORK ==================== */
-/* the real ports — embedded fallback; GET /ports refreshes them */
-const PORT_G = {
-  CNSHA: { n: 'SHANGHAI',    lat:  31.2243, lon:  121.4869 },
-  SGSIN: { n: 'SINGAPORE',   lat:   1.2644, lon:  103.8200 },
-  KRPUS: { n: 'BUSAN',       lat:  35.0951, lon:  129.0398 },
-  NLRTM: { n: 'ROTTERDAM',   lat:  51.9480, lon:    4.1420 },
-  DEHAM: { n: 'HAMBURG',     lat:  53.5403, lon:    9.9852 },
-  BEANR: { n: 'ANTWERP',     lat:  51.2630, lon:    4.4020 },
-  USLAX: { n: 'LOS ANGELES', lat:  33.7292, lon: -118.1970 },
-  USNYC: { n: 'NEW YORK',    lat:  40.6690, lon:  -74.0100 },
-};
+/* ports, coordinates and servable lanes come from the backend
+   (DockAPI.network()) before the strip paints — nothing embedded */
+const PORT_G = {};
 /* servable OD pairs — destination lane is filtered by origin */
-const PAIRS = {
-  CNSHA: ['NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC', 'SGSIN'],
-  SGSIN: ['NLRTM', 'BEANR', 'CNSHA'],
-  KRPUS: ['USLAX', 'CNSHA'],
-  NLRTM: ['CNSHA', 'SGSIN', 'BEANR'],
-  DEHAM: ['CNSHA'],
-  BEANR: ['SGSIN'],
-  USLAX: ['CNSHA', 'KRPUS'],
-  USNYC: ['CNSHA'],
-};
+const PAIRS = {};
 const D2R_ = Math.PI / 180;
 function nmOf(a, b) {
   const A = PORT_G[a], B = PORT_G[b];
@@ -61,14 +43,14 @@ function nmOf(a, b) {
 const dstFor = oc => (PAIRS[oc] || []).slice();
 const servable = (o, d) => (PAIRS[o] || []).includes(d);
 
-fetch(`${API}/ports`).then(r => r.ok ? r.json() : null).then(list => {
-  if (!Array.isArray(list)) return;
-  list.forEach(p => {
-    const g = PORT_G[p.port_id];
-    if (g) { g.lat = p.lat; g.lon = p.lon; }
+async function loadNetwork() {
+  const net = await DockAPI.network();
+  net.ports.forEach(p => {
+    PORT_G[p.port_id] = { n: String(p.name).split('/')[0].trim().toUpperCase(),
+                          lat: p.lat, lon: p.lon };
   });
-  ledger();
-}).catch(() => { /* fallback table already embedded */ });
+  Object.assign(PAIRS, net.servable);
+}
 
 /* ==================== STATE ==================== */
 const S = {
@@ -551,24 +533,6 @@ function validate() {
   if (!S.segment) bad.push(['seg', 'PUNCH A SERVICE SEGMENT']);
   return bad;
 }
-function mirrorAndGo(msg) {
-  try {
-    const arr = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-    const rr = mulberry(Date.now() % 100000);
-    const list = Array.isArray(arr) ? arr : [];
-    S.kinds.forEach(k => list.push({
-      id: `BK-${2400 + ((rr() * 500) | 0)}-${'TCWAQNKJ'[(rr() * 8) | 0]}${'TCWAQNKJ'[(rr() * 8) | 0]}`,
-      origin: S.origin, dest: S.dest,
-      teu: k.teu, weight_t: k.wt, cargo_type: k.type,
-      segment: S.segment, req_dep_day: S.depDay, flex_days: S.flex,
-      status: 'PENDING REVIEW', created: Date.now() / 1000,
-      vessel: null, voyage: null, eta: null, progress: 0, price_usd: null,
-    }));
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(list));
-  } catch (e) { /* storage unavailable — still redirect */ }
-  showNote('sage', 'LOCAL', msg);
-  setTimeout(() => { location.href = DASH; }, 1100);
-}
 async function confirm() {
   if (S.busy) return;
   const g = $('csG');
@@ -584,52 +548,47 @@ async function confirm() {
     return;
   }
   S.busy = true;
-  confirmBtn.innerHTML = confirmSVG('FILING…');
-  const made = [];
-  for (const k of S.kinds) {
-    const body = {
-      origin: S.origin, dest: S.dest,
-      teu: k.teu, weight_t: k.wt, cargo_type: k.type,
-      segment: S.segment, req_dep_day: S.depDay, flex_days: S.flex,
-    };
-    let r;
-    try {
-      r = await fetch(`${API}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-    } catch (e) {
-      mirrorAndGo(`API OFFLINE — ${made.length ? made.join(' · ') + ' FILED, REST ' : ''}MIRRORED TO LOCAL LEDGER`);
-      return;
-    }
-    if (r.status === 422) {
-      let detail = 'UNPROCESSABLE';
-      try { const j = await r.json(); detail = j.detail || detail; } catch (e) {}
-      showNote('terra', 'HOLD', `422 — ${String(detail).toUpperCase()}`);
-      holdLeg('b');
-      S.busy = false;
-      confirmBtn.innerHTML = confirmSVG('CONFIRM');
-      return;
-    }
-    if (!r.ok) {                                   /* API failure — mirror + go */
-      mirrorAndGo(`API ${r.status} — MIRRORED TO LOCAL LEDGER`);
-      return;
-    }
-    try { const j = await r.json(); made.push(j.id || 'BK-????'); }
-    catch (e) { made.push('BK-????'); }
+  confirmBtn.innerHTML = confirmSVG('PRICING…');
+  const bodies = S.kinds.map(k => ({
+    origin: S.origin, dest: S.dest,
+    teu: k.teu, weight_t: k.wt, cargo_type: k.type,
+    segment: S.segment, req_dep_day: S.depDay, flex_days: S.flex,
+  }));
+  let results;
+  try {
+    results = await Promise.all(bodies.map(DockAPI.quote));
+  } catch (e) {
+    /* nothing is filed offline — hold the strip and say why */
+    showNote('terra', 'HOLD', `${e.status ? e.status + ' — ' : ''}${String(e.message).toUpperCase()}`);
+    if (e.status === 422) holdLeg('b');
+    S.busy = false;
+    confirmBtn.innerHTML = confirmSVG('CONFIRM');
+    return;
   }
-  confirmBtn.innerHTML = confirmSVG('✓ FILED');
+  const final = await DockOffers.review(results);
+  const booked = final.filter(o => ['CONFIRMED', 'LOADING'].includes(o.status)).map(o => o.id);
+  confirmBtn.innerHTML = confirmSVG(booked.length ? '✓ BOOKED' : 'CLOSED');
   const gg = $('csG'); gg.classList.add('slam');
-  showNote('sage', 'FILED', `${made.join(' · ')} — ON THE BOARD`);
-  setTimeout(() => { location.href = DASH; }, 1400);
+  showNote('sage', booked.length ? 'BOOKED' : 'QUOTED',
+           `${(booked.length ? booked : final.map(o => o.id)).join(' · ')} — ON THE BOARD`);
+  setTimeout(() => { location.href = DASH; }, 1100);
 }
 confirmBtn.addEventListener('click', confirm);
 
 /* ==================== INIT ==================== */
-applyStamp('a'); applyStamp('b');
-renderPunches(); renderDays(); renderSeg(); setFlex(2, true);
-layoutSpine(); refreshDone(); ledger();
+async function boot() {
+  try {
+    await loadNetwork();
+  } catch (e) {
+    showNote('terra', 'OFFLINE', `BOOKING SERVICE UNAVAILABLE — ${String(e.message).toUpperCase()}`);
+    confirmBtn.disabled = true;
+    return;
+  }
+  applyStamp('a'); applyStamp('b');
+  renderPunches(); renderDays(); renderSeg(); setFlex(2, true);
+  layoutSpine(); refreshDone(); ledger();
+}
+boot();
 
 /* intro: the seal-dot rides the strip once, stamping each leg —
    chained so no travel ever cancels a stamp mid-flight          */

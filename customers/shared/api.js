@@ -42,6 +42,7 @@
   window.DockAPI = {
     base: BASE,
     ports:   () => call('/ports'),
+    routes:  () => call('/routes'),
     orders:  () => call('/orders'),
     order:   id => call(`/orders/${encodeURIComponent(id)}`),
     /* price a request against the live simulation:
@@ -50,5 +51,13 @@
     accept:  (orderId, offerId) => post(`/orders/${encodeURIComponent(orderId)}/accept`, { offer_id: offerId }),
     decline: orderId => post(`/orders/${encodeURIComponent(orderId)}/decline`),
     live:    () => call('/live'),
+    /* the service network: ports + servable lanes, straight from the
+       backend calibration (/ports, /routes) -> { ports[], servable{} } */
+    network: async () => {
+      const [ports, routes] = await Promise.all([call('/ports'), call('/routes')]);
+      const servable = {};
+      routes.forEach(r => { (servable[r.origin] = servable[r.origin] || []).push(r.dest); });
+      return { ports, servable };
+    },
   };
 })();

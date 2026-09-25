@@ -11,9 +11,10 @@
    pinned under the views. Clicking a row, badge, route or vessel
    selects the same order everywhere.
 
-   Data is live: GET {API}/orders and {API}/ports (the Dock
-   FastAPI backend). Falls back to the ml.orders localStorage
-   cache + the embedded port table when the API is unreachable.
+   Data is live: DockAPI.orders() / DockAPI.ports() (shared/api.js,
+   the Dock backend). No cache and no embedded fallback: if the API
+   is unreachable the page says so. QUOTED orders reopen the
+   rate-quotation slip (shared/offers.js) to accept or decline.
    ============================================================ */
 
 /* ----------------------------- helpers ----------------------------- */
@@ -28,24 +29,8 @@ const num = n => n.toLocaleString('en-US');
 const fmtUSD = n => 'USD ' + num(n || 0);
 
 /* ============================== API ============================== */
-/* same-origin when served through the FastAPI mount (:8399/customers);
-   otherwise talk to the backend directly on :8399 */
-const API = location.port === '8399' ? '' : 'http://localhost:8399';
-const CACHE_KEY = 'ml.orders';
+/* all backend access goes through window.DockAPI (../shared/api.js) */
 const MABR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-
-/* static calibration fallback — the eight servable ports, mirroring
-   backend/data/calibration.py PORTS so the chart still works offline */
-const PORT_RECS = [
-  { port_id: 'CNSHA', name: 'SHANGHAI',                lat:  31.2243, lon:  121.4869 },
-  { port_id: 'SGSIN', name: 'SINGAPORE',               lat:   1.2644, lon:  103.8200 },
-  { port_id: 'KRPUS', name: 'BUSAN',                   lat:  35.0951, lon:  129.0398 },
-  { port_id: 'NLRTM', name: 'ROTTERDAM',               lat:  51.9480, lon:    4.1420 },
-  { port_id: 'DEHAM', name: 'HAMBURG',                 lat:  53.5403, lon:    9.9852 },
-  { port_id: 'BEANR', name: 'ANTWERP',                 lat:  51.2630, lon:    4.4020 },
-  { port_id: 'USLAX', name: 'LOS ANGELES/LONG BEACH',  lat:  33.7292, lon: -118.1970 },
-  { port_id: 'USNYC', name: 'NEW YORK/NEW JERSEY',     lat:  40.6690, lon:  -74.0100 },
-];
 
 /* --------------------------- port gazetteer --------------------------- */
 let PORTS = {};
@@ -54,6 +39,10 @@ const portOf = c => PORTS[c] || { city: c || '—', lon: 0, lat: 0 };
 /* status registry — stage drives milestones, ink drives stamps/routes */
 const ST = {
   'PENDING REVIEW': { short: 'REVIEW',    stage: 0, ink: 'terra' },
+  'QUOTED':         { short: 'QUOTED',    stage: 0, ink: 'terra' },
+  'NO OFFER':       { short: 'NO OFFER',  stage: 0, ink: 'faint' },
+  'DECLINED':       { short: 'DECLINED',  stage: 0, ink: 'faint' },
+  'EXPIRED':        { short: 'EXPIRED',   stage: 0, ink: 'faint' },
   'CONFIRMED':      { short: 'CONFIRMED', stage: 1, ink: 'ink'   },
   'LOADING':        { short: 'LOADING',   stage: 2, ink: 'ink'   },
   'IN TRANSIT':     { short: 'TRANSIT',   stage: 3, ink: 'sage'  },
@@ -61,9 +50,13 @@ const ST = {
   'DELIVERED':      { short: 'DELIVERED', stage: 5, ink: 'faint' },
 };
 const stOf = o => ST[(o.status || '').toUpperCase()] || ST['CONFIRMED'];
-const ATTN = new Set(['PENDING REVIEW']);
+const ATTN = new Set(['PENDING REVIEW', 'QUOTED']);
 const ST_INK = {
   'PENDING REVIEW': '#b96f4b',
+  'QUOTED':         '#b96f4b',
+  'NO OFFER':       '#908d81',
+  'DECLINED':       '#908d81',
+  'EXPIRED':        '#908d81',
   'CONFIRMED':      '#3a5a44',
   'LOADING':        '#3a5a44',
   'IN TRANSIT':     '#3a5a44',
@@ -75,13 +68,11 @@ const MILESTONES = ['FILED', 'REVIEWED', 'LOADED', 'SAILED', 'ARRIVED', 'DELIVER
 let orders = [];
 let newestId = null;
 
-/* normalise an API order row (or a legacy ml.orders row) to the display
+/* normalise an API order row to the display
    shape: origin/dest + one cargo_type → from/to + types[]; req_dep_day ±
    flex_days → window/eta strings expressed in sim days */
 const CARGO_CANON = { dry: 'dry', haz: 'hazmat', hazmat: 'hazmat',
                       reef: 'reefer', reefer: 'reefer' };
-const VESSEL_POOL = ['PACIFIC AURORA', 'MERIDIAN STAR',
-                     'ATLANTIC PIONEER', 'CORAL EMPRESS'];
 
 function normalize(o, i) {
   o.from   = o.origin || o.from;
@@ -98,8 +89,9 @@ function normalize(o, i) {
   if (o.created && o.created < 1e12) o.created *= 1000;   // unix s → ms
   o.created  = o.created || Date.now();
   o.progress = clamp(o.progress || 0, 0, 1);
-  o.vessel   = o.vessel || ('MV ' + VESSEL_POOL[i % VESSEL_POOL.length]);
-  o.voyage   = o.voyage || ('ML-1' + (40 + i) + 'E');
+  // vessel/voyage/eta exist only once an offer is accepted — never invented
+  o.vessel   = o.vessel ? 'MV ' + String(o.vessel).toUpperCase() : null;
+  o.voyage   = o.voyage || null;
   o.price    = o.price_usd != null ? o.price_usd : o.price;
   o.ocean    = o.ocean || OCEAN_OF[o.from] || '—';
 
@@ -110,7 +102,7 @@ function normalize(o, i) {
     o.window  = o.window || (lo === hi ? `DAY ${hi}` : `D+${lo} → D+${hi}`);
     o._etaDay = o.req_dep_day + daysOf(o);
   }
-  o.eta = o.eta || (o._etaDay != null ? `D+${Math.round(o._etaDay)}` : 'TBC');
+  o.eta = o.eta || 'TBC';
   return o;
 }
 
@@ -428,9 +420,12 @@ function buildOrder(o, idx) {
           <div class="r"><span>Filed</span><b>${fmtDate(o.created)}</b></div>
           <div class="r"><span>ETA</span><b>${esc(o.eta || 'TBC')} · ${esc(portOf(o.to).city)}</b></div>
         </div>
+        ${st === 'QUOTED' ? `<button class="review-quote" type="button" data-review="${esc(o.id)}">Review quote →</button>` : ''}
       </div>
     </div></div></div>`;
 
+  const rq = li.querySelector('[data-review]');
+  if (rq) rq.addEventListener('click', e => { e.stopPropagation(); reviewQuote(o.id); });
   const btn = li.querySelector('.lrow');
   btn.addEventListener('click', () => {
     const open = li.classList.toggle('open');
@@ -913,7 +908,7 @@ function vesselElement(o) {
   el.setAttribute('role', 'button');
   el.setAttribute('tabindex', '0');
   el.setAttribute('aria-label',
-    `Vessel ${o.vessel}, order ${o.id}, ${Math.round((o._vt || 0) * 100)} percent of voyage`);
+    `Vessel ${o.vessel || 'not yet assigned'}, order ${o.id}, ${Math.round((o._vt || 0) * 100)} percent of voyage`);
   const rot = document.createElement('span');
   rot.style.cssText = 'display:flex;transform-origin:50% 50%;transition:transform .25s ease;';
   rot.innerHTML = `<svg class="vship" viewBox="0 0 24 14" aria-hidden="true">${IC.ship.replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>`;
@@ -1211,8 +1206,8 @@ function fillDetail(o) {
   const etaD = etaDays(o.eta, o);
 
   document.getElementById('dRows').innerHTML =
-    `<div class="r"><span>${IC.ship}VESSEL</span><b class="mono">${esc(o.vessel)}</b></div>
-     <div class="r"><span>${IC.flag}VOYAGE</span><b class="mono">${esc(o.voyage)}</b></div>
+    `<div class="r"><span>${IC.ship}VESSEL</span><b class="mono">${esc(o.vessel || '— AWAITING VESSEL')}</b></div>
+     <div class="r"><span>${IC.flag}VOYAGE</span><b class="mono">${esc(o.voyage || '—')}</b></div>
      <div class="r"><span>${IC.cal}WINDOW</span><b>${esc(o.window || '—')}</b></div>
      <div class="r"><span>${IC.anchor}ETA</span><b>${esc(o.eta)}${etaD !== null && o.status !== 'DELIVERED' ? ` · IN ${etaD}D` : ''}</b></div>
      <div class="r"><span>${IC.gauge}PRICE</span><b class="d-num" data-t="${o.price != null ? fmtUSD(o.price).replace('USD ', '$ ') : '—'}">${o.price != null ? fmtUSD(o.price).replace('USD ', '$ ') : '—'}</b></div>`;
@@ -1305,21 +1300,15 @@ window.addEventListener('keydown', e => {
 
 /* ============================== BOOT ============================== */
 (async function boot() {
-  /* 1 · reference data + orders, live from the API with a cached fallback */
-  let pRecs = PORT_RECS;
-  let ords = null;
+  /* 1 · reference data + orders, live from the API (no fallback) */
+  let pRecs = [];
+  let ords = [];
   try {
-    const [pr, or] = await Promise.all([
-      fetch(`${API}/ports`).then(r => { if (!r.ok) throw 0; return r.json(); }),
-      fetch(`${API}/orders`).then(r => { if (!r.ok) throw 0; return r.json(); }),
-    ]);
-    pRecs = pr;
-    ords = or;
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify(or)); } catch (e) {}
+    [pRecs, ords] = await Promise.all([DockAPI.ports(), DockAPI.orders()]);
   } catch (e) {
-    try { ords = JSON.parse(localStorage.getItem(CACHE_KEY)) || []; } catch (e2) { ords = []; }
+    apiDown(e);
   }
-  (pRecs || PORT_RECS).forEach(p => {
+  pRecs.forEach(p => {
     const id = p.port_id || p.id;
     PORTS[id] = { city: String(p.name || id).toUpperCase(), lon: p.lon, lat: p.lat };
   });
@@ -1395,3 +1384,24 @@ window.addEventListener('keydown', e => {
   const first = orders.find(o => o.status === 'IN TRANSIT') || orders[0];
   if (first) setTimeout(() => select(first.id), 900);
 })();
+
+/* ============================ LIVE DATA ============================ */
+/* API unreachable: say so on the page instead of showing stale data */
+function apiDown(err) {
+  const b = document.createElement('div');
+  b.className = 'api-down';
+  b.setAttribute('role', 'alert');
+  b.textContent = `Booking service unavailable — ${err.message} Orders can't be shown until it's back.`;
+  document.body.appendChild(b);
+}
+
+/* QUOTED order -> the rate-quotation slip, then reload with the outcome */
+async function reviewQuote(id) {
+  try {
+    const o = await DockAPI.order(id);
+    await DockOffers.review([{ order: o, offers: (o.offers || []).filter(f => f.status === 'open') }]);
+  } catch (e) {
+    alert(`Couldn't open this quote: ${e.message}`);
+  }
+  location.reload();
+}

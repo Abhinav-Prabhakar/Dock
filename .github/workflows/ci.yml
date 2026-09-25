@@ -56,6 +56,12 @@ jobs:
           find customers drafts/cargo-ship -name '*.js' -not -path '*/node_modules/*' -print0 \
             | xargs -0 -n1 node --check
           echo "checked $(find customers drafts/cargo-ship -name '*.js' | wc -l) files"
+      - name: No hard-coded API origin or local order cache in the customer site
+        run: |
+          if git grep -n "localhost:8399\|ml\.orders" -- 'customers/*.js' 'customers/*.html'; then
+            echo "::error::customer pages must use customers/shared/api.js (same-origin, no local cache)"
+            exit 1
+          fi
 
   stack:
     name: Docker stack smoke test

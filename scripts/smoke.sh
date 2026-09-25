@@ -28,11 +28,20 @@ expect "customer dashboard /customers/dashboard/" 200 "$BASE/customers/dashboard
 expect "shared api client        " 200 "$BASE/customers/shared/api.js"
 expect "offer slip component      " 200 "$BASE/customers/shared/offers.js"
 expect "missing file is a 404"                  404 "$BASE/customers/no-such-file.json"
+for page in "" dashboard/ intake-a/ intake-b/ intake-c/ intake-d/; do
+  html=$(curl -s "$BASE/customers/$page")
+  if echo "$html" | grep -q 'shared/api.js' && echo "$html" | grep -q 'shared/offers.js'; then
+    ok "customers/$page uses the shared API client + offer slip"
+  else
+    bad "customers/$page is missing shared/api.js or shared/offers.js"
+  fi
+done
 
 echo "api (through nginx /api)"
 expect "health"          200 "$API/health"
 expect "ports"           200 "$API/ports"
 expect "vessels"         200 "$API/vessels"
+expect "routes"          200 "$API/routes"
 expect "compare/summary" 200 "$API/compare/summary"
 
 echo "live simulation"

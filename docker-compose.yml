@@ -2,10 +2,8 @@
 # (FastAPI backend) · db (Postgres). `docker compose up --build`, then
 # open http://localhost:8080 (operator) and http://localhost:8080/customers/.
 #
-# api is temporarily also published on :8399 (its own port, matching what
-# customers/*.js currently hard-codes) — this goes away once the frontends
-# are migrated to call same-origin /api/* through the ui service (see
-# docs/INTEGRATION_PLAN.md, "same-origin /api").
+# The api is only reachable through ui's same-origin /api proxy (no host
+# port of its own), exactly the way the browser sees it.
 services:
   db:
     image: postgres:16-alpine
@@ -36,8 +34,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8399:8000"          # temporary — see header note
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 5s
