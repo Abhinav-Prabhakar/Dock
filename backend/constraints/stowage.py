@@ -157,27 +157,32 @@ class StowagePlan:
 
     def can_place(self, n: int, board_call: int, discharge_call: int,
                   weight_each_t: float, cargo_type: str) -> bool:
-        """Feasibility check for a batch of identical containers (a booking)."""
+        """Feasibility check for a batch of identical containers (a booking).
+
+        Trial-places each unit through the real `_pick_bay`/`_place` path,
+        then rolls back — the check can never disagree with `place()`.
+        """
         if cargo_type is REEFER and \
                 self.reefer_used + n > self.reefer_plugs:
             return False
-        placed = 0
-        shadow: list[Slot] = []          # tentatively placed this batch
+        placed: list[tuple[Bay, Slot]] = []
+        ok = True
         for _ in range(n):
             slot = Slot(board_call, discharge_call, weight_each_t, cargo_type)
-            found = None
-            for bay in self.bays:
-                bay.slots.extend(shadow)  # shadow placements constrain too
-                ok = self._can_stack(bay, slot)
-                del bay.slots[len(bay.slots) - len(shadow):]
-                if ok:
-                    found = bay
-                    break
-            if found is None:
-                return False
-            shadow.append(slot)
-            placed += 1
-        return True
+            bay = self._pick_bay(slot)
+            if bay is None:
+                ok = False
+                break
+            self._place(bay, slot)
+            placed.append((bay, slot))
+        for bay, slot in placed:
+            bay.slots.remove(slot)
+        self.used -= len(placed)
+        self.reefer_used = sum(1 for b in self.bays for s in b.slots
+                               if s.cargo_type is REEFER)
+        self.hazmat_used = sum(1 for b in self.bays for s in b.slots
+                               if s.cargo_type is HAZMAT)
+        return ok
 
     def place(self, n: int, board_call: int, discharge_call: int,
               weight_each_t: float, cargo_type: str) -> bool:
