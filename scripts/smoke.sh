@@ -25,6 +25,8 @@ expect "operator console  /"                    200 "$BASE/"
 expect "operator js       /js/main.js"          200 "$BASE/js/main.js"
 expect "customer intake   /customers/"          200 "$BASE/customers/"
 expect "customer dashboard /customers/dashboard/" 200 "$BASE/customers/dashboard/"
+expect "shared api client        " 200 "$BASE/customers/shared/api.js"
+expect "offer slip component      " 200 "$BASE/customers/shared/offers.js"
 expect "missing file is a 404"                  404 "$BASE/customers/no-such-file.json"
 
 echo "api (through nginx /api)"
