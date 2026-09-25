@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import { BookingDesk } from "@/components/customers/BookingDesk";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Dock — Customers",
-  description: "The booking desk: live customer offers at the counter",
-};
-
-export default function CustomersPage() {
-  return <BookingDesk />;
+// The booking desk scene lives at /customers now — keep the old route working.
+export default function BookingDeskRedirect() {
+  redirect("/customers");
 }

@@ -1,7 +1,3 @@
-"use client";
-
-import { useState, useEffect, useRef } from 'react';
-
 export const API_BASE = process.env.NEXT_PUBLIC_DOCK_API ?? "http://localhost:8399";
 
 export function wsUrl(episodeId: string) {
@@ -150,7 +146,7 @@ export interface MetaData {
   seed: number;
   episodes: number;
   horizon_days: number;
-  scenarios: any[];
+  scenarios: string[];
   policies_present: string[];
   demand_model: string;
   notes: string;
@@ -196,6 +192,11 @@ export interface Port {
   lat: number;
   lon: number;
   berths: number;
+  daily_capacity_teu: number;
+  base_congestion: number;
+  tz_offset: number;
+  mean_dwell_days: number;
+  base_wait_hours: number;
 }
 export interface Vessel {
   vessel_id: string;
@@ -285,7 +286,7 @@ export interface EpisodeEvent {
   type: string;
   prev_hash: string;
   hash: string;
-  [key: string]: any; // payload details
+  [key: string]: unknown; // payload details
 }
 
 // --- Fetch Functions ---
@@ -311,9 +312,9 @@ export const api = {
   getPorts: () => fetchApi<Port[]>('/ports'),
   getVessels: () => fetchApi<Vessel[]>('/vessels'),
   getRoutes: () => fetchApi<Route[]>('/routes'),
-  getModelsReport: () => fetchApi<any>('/models/report'),
+  getModelsReport: () => fetchApi<unknown>('/models/report'),
   startEpisode: (params: { policy: string; scenario: string; seed: number; horizon_days: number; speed_days_per_sec: number }) =>
-    fetchApi<any>('/episodes', {
+    fetchApi<EpisodeDescriptor>('/episodes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
@@ -321,7 +322,7 @@ export const api = {
   getEpisodes: () => fetchApi<EpisodeDescriptor[]>('/episodes'),
   getEpisode: (id: string) => fetchApi<EpisodeSnapshot>(`/episodes/${id}`),
   controlEpisode: (id: string, params: { action: 'pause' | 'resume' | 'stop' | 'set_speed'; speed?: number }) =>
-    fetchApi<any>(`/episodes/${id}/control`, {
+    fetchApi<EpisodeDescriptor>(`/episodes/${id}/control`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
@@ -330,79 +331,8 @@ export const api = {
     fetchApi<{ events: EpisodeEvent[]; next_seq: number }>(`/episodes/${id}/events?after_seq=${after_seq}&limit=${limit}`),
   getEpisodeDeals: (id: string) => fetchApi<Deal[]>(`/episodes/${id}/deals`),
   verifyLedger: (id: string) => fetchApi<{ ok: boolean; n_events: number; first_bad_seq: number | null; detail: string }>(`/episodes/${id}/ledger/verify`),
-  getCompare: (name: 'summary' | 'timeline' | 'offers' | 'shock' | 'meta') =>
-    fetchApi<any>(`/compare/${name}`),
+  getCompare: <T = unknown>(name: 'summary' | 'timeline' | 'offers' | 'shock' | 'meta') =>
+    fetchApi<T>(`/compare/${name}`),
 };
 
 export type ControlAction = 'pause' | 'resume' | 'stop' | 'set_speed';
-
-// --- Hooks ---
-
-export function useEpisodePolling(episodeId: string | null, intervalMs = 1000) {
-  const [snapshot, setSnapshot] = useState<EpisodeSnapshot | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!episodeId) return;
-
-    let mounted = true;
-    const poll = async () => {
-      try {
-        const data = await api.getEpisode(episodeId);
-        if (mounted) {
-          setSnapshot(data);
-          setError(null);
-        }
-      } catch (err: any) {
-        if (mounted) setError(err);
-      }
-    };
-
-    poll(); // initial fetch
-    const timer = setInterval(poll, intervalMs);
-
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, [episodeId, intervalMs]);
-
-  return { snapshot, error };
-}
-
-export function useEpisodeStream(episodeId: string | null) {
-  const [events, setEvents] = useState<EpisodeEvent[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<Event | null>(null);
-  const ws = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    if (!episodeId) return;
-
-    setEvents([]);
-    setError(null);
-
-    const wsUrl = `${API_BASE.replace(/^http/, 'ws')}/episodes/${episodeId}/stream`;
-    const socket = new WebSocket(wsUrl);
-    ws.current = socket;
-
-    socket.onopen = () => setIsConnected(true);
-    socket.onclose = () => setIsConnected(false);
-    socket.onerror = (e) => setError(e);
-    socket.onmessage = (msg) => {
-      try {
-        const event: EpisodeEvent = JSON.parse(msg.data);
-        setEvents((prev) => [...prev, event]);
-      } catch (e) {
-        console.error('Failed to parse WS message:', e);
-      }
-    };
-
-    return () => {
-      socket.close();
-      ws.current = null;
-    };
-  }, [episodeId]);
-
-  return { events, isConnected, error };
-}

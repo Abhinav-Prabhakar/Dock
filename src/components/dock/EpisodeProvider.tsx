@@ -91,7 +91,9 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
   const snapTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const dealTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const episodeRef = useRef<EpisodeDescriptor | null>(null);
-  episodeRef.current = episode;
+  useEffect(() => {
+    episodeRef.current = episode;
+  }, [episode]);
 
   const clearTimers = useCallback(() => {
     if (snapTimer.current) clearInterval(snapTimer.current);
@@ -185,8 +187,10 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (episode && !isLive(episode.status)) {
       clearTimers();
-      pollSnapshot(episode.id);
-      pollDeals(episode.id);
+      queueMicrotask(() => {
+        pollSnapshot(episode.id);
+        pollDeals(episode.id);
+      });
     }
   }, [episode?.status, episode, clearTimers, pollDeals, pollSnapshot]);
 
