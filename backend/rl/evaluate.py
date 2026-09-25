@@ -140,10 +140,14 @@ def main() -> int:
                   f"{agg['empty_teu_nm']['mean']:>16,.0f}")
         if model is not None and "ppo" in out["results"][scen]:
             for base in ("static", "heuristic"):
-                lift = (out["results"][scen]["ppo"]["profit_usd"]["mean"]
-                        / max(out["results"][scen][base]["profit_usd"]
-                              ["mean"], 1) - 1)
-                print(f"  ppo vs {base}: profit {lift:+.1%}")
+                ppo_p = out["results"][scen]["ppo"]["profit_usd"]["mean"]
+                base_p = out["results"][scen][base]["profit_usd"]["mean"]
+                if base_p > 0:
+                    print(f"  ppo vs {base}: profit {ppo_p / base_p - 1:+.1%}")
+                else:
+                    # % lift is meaningless against a loss-making baseline
+                    print(f"  ppo vs {base}: profit {ppo_p - base_p:+,.0f} "
+                          f"(baseline loses money)")
 
     dst = (Path(args.model).parent / "eval_results.json"
            if args.model != "none" else Path("eval_results.json"))
