@@ -13,6 +13,7 @@
   --hair: #d9d3c1;
   --accent: #3a5a44;          /* deep sage */
   --terra: #b96f4b;           /* terracotta */
+  --col-w: clamp(330px, 32vw, 440px);
 }
 
 html, body { height: 100%; }
@@ -186,14 +187,14 @@ header {
 }
 .mark { width: 18px; height: 18px; flex: none; }
 .org {
-  font-size: 10px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
   letter-spacing: .20em;
   color: var(--ink);
   line-height: 1;
 }
 .org span {
   display: block;
-  font-size: 6px; font-weight: 600;
+  font-size: 7px; font-weight: 600;
   letter-spacing: .30em;
   color: var(--accent);
   margin-top: 2.5px;
@@ -201,11 +202,11 @@ header {
 .tag {
   margin-left: auto;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7px; font-weight: 600;
+  font-size: 8px; font-weight: 600;
   letter-spacing: .22em;
   color: #f4f1e4;
   background: var(--accent);
-  padding: 3.5px 6px 3px 7px;
+  padding: 3.5px 6.5px 3px 7.5px;
   border-radius: 2px;
   box-shadow: 0 0.5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
 }
@@ -266,7 +267,7 @@ header {
 /* info column */
 .info { display: flex; flex-direction: column; min-width: 0; }
 .lbl {
-  font-size: 7px; font-weight: 600;
+  font-size: 8px; font-weight: 600;
   letter-spacing: .24em;
   color: #9a9587;
   text-transform: uppercase;
@@ -275,7 +276,7 @@ header {
   position: relative;
   margin-top: 4px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 21px; font-weight: 700;
+  font-size: 22.5px; font-weight: 700;
   letter-spacing: .015em;
   color: var(--ink);
   line-height: 1.12;
@@ -290,15 +291,15 @@ header {
 .name::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
 .name::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
 .role {
-  margin-top: 6px;
-  font-size: 11px; font-weight: 600;
+  margin-top: 5px;
+  font-size: 12px; font-weight: 600;
   letter-spacing: .05em;
   color: var(--ink2);
 }
 .dept {
   margin-top: 3px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.8px; font-weight: 600;
+  font-size: 8.8px; font-weight: 600;
   letter-spacing: .17em;
   text-transform: uppercase;
   color: var(--faint);
@@ -314,15 +315,15 @@ header {
   padding-bottom: 3px;
 }
 .rows .r span {
-  width: 56px; flex: none;
-  font-size: 6.8px; font-weight: 600;
+  width: 58px; flex: none;
+  font-size: 7.8px; font-weight: 600;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: #a19d90;
 }
 .rows .r b {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.2px; font-weight: 600;
+  font-size: 10.2px; font-weight: 600;
   letter-spacing: .08em;
   color: #26241e;
 }
@@ -362,7 +363,7 @@ header {
 .ctn-num {
   position: relative;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 21px; font-weight: 700;
+  font-size: 22.5px; font-weight: 700;
   line-height: .9;
   color: var(--ink);
   opacity: .94;
@@ -385,7 +386,7 @@ header {
   background: #0e0d0b;
   color: #f0ebdc;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.8px; font-weight: 600;
+  font-size: 7.8px; font-weight: 600;
   letter-spacing: .16em;
   white-space: nowrap;
   box-shadow: 0 3px 8px rgba(22,17,9,.45);
@@ -412,13 +413,13 @@ header {
 }
 .wt b {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 16px; font-weight: 700;
+  font-size: 17.5px; font-weight: 700;
   letter-spacing: .02em;
   color: var(--ink);
 }
 .wt i {
   font-style: normal;
-  font-size: 7.6px; font-weight: 600;
+  font-size: 8.6px; font-weight: 600;
   letter-spacing: .1em;
   color: var(--faint);
 }
@@ -450,7 +451,7 @@ header {
 }
 .cal-chip {
   flex: none;
-  width: 25px;
+  width: 26px;
   text-align: center;
   background: #fbf7ea;
   border: .8px solid rgba(28,24,16,.24);
@@ -459,7 +460,7 @@ header {
 .cal-chip span {
   display: block;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 5.6px; font-weight: 700;
+  font-size: 6.5px; font-weight: 700;
   letter-spacing: .2em;
   color: #f4f1e4;
   background: var(--terra);
@@ -468,13 +469,13 @@ header {
 .cal-chip b {
   display: block;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 13.5px; font-weight: 700;
+  font-size: 14.5px; font-weight: 700;
   line-height: 1.15;
   color: var(--ink);
 }
 .cal-sub {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6px; font-weight: 600;
+  font-size: 7px; font-weight: 600;
   letter-spacing: .16em;
   line-height: 1.8;
   color: var(--faint);
@@ -490,7 +491,7 @@ header {
 .hmap { display: block; width: 100%; height: auto; }
 .hp {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7px; font-weight: 600;
+  font-size: 8px; font-weight: 600;
   letter-spacing: .12em;
   fill: #55503f;
 }
@@ -500,7 +501,7 @@ header {
 .micro {
   margin: 7px 18px 0;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 5.2px;
+  font-size: 6.2px;
   letter-spacing: .06em;
   color: #b2ab98;
   white-space: nowrap;
@@ -519,7 +520,7 @@ header {
 .cap {
   margin-top: 4px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7px;
+  font-size: 8px;
   letter-spacing: .26em;
   color: #77756c;
   text-align: center;
@@ -549,7 +550,7 @@ header {
 }
 .band-t {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.2px; font-weight: 700;
+  font-size: 9.2px; font-weight: 700;
   letter-spacing: .22em;
   color: #eae6d6;
 }
@@ -572,11 +573,11 @@ header {
   pointer-events: none;
   transform: translateZ(1px);
   background:
-    linear-gradient(155deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.02) 26%, rgba(255,255,255,0) 40%),
-    linear-gradient(335deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,0) 30%);
+    linear-gradient(155deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.015) 26%, rgba(255,255,255,0) 40%),
+    linear-gradient(335deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,0) 30%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.9),
-    inset 1px 0 0 rgba(255,255,255,.30),
+    inset 0 1px 0 rgba(255,255,255,.85),
+    inset 1px 0 0 rgba(255,255,255,.25),
     inset -1px 0 0 rgba(20,16,10,.06),
     inset 0 -1px 0 rgba(20,16,10,.10),
     inset 0 0 0 1px rgba(26,22,14,.10);
@@ -598,7 +599,7 @@ header {
     rgba(255,255,255,0) 100%);
   transform: translateX(var(--sx));
   mix-blend-mode: screen;
-  opacity: .6;
+  opacity: .42;
   filter: blur(.6px);
 }
 /* faint vertical laminate streak texture */
@@ -641,7 +642,7 @@ header {
   text-align: center;
   white-space: nowrap;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: .34em;
   color: #a49e8d;
   z-index: 6;
@@ -649,62 +650,79 @@ header {
 }
 
 /* ============================================================
-   SPLIT VIEW — booking-details panel pinned right.
-   Cream sheet, hairline rules, mono labels, serif numerals.
-   Hidden until #panel.on; children cascade in via .rvl.
+   SPLIT VIEW — booking-details multi-column deck pinned right.
+   Cream sheets, hairline rules, mono labels, serif numerals.
+   Hidden until #panel.on; transitions between single & dual column.
    ============================================================ */
-#panel {
+#panel.panel-deck {
   position: fixed;
   top: 0; right: 0; bottom: 0;
-  width: min(44vw, 470px);
-  padding: 0 clamp(22px, 3.2vw, 42px);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: row;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(calc(var(--col-w) * 2 + 40px));
+  transition: opacity .5s ease,
+              transform .72s cubic-bezier(.22, 1, .36, 1),
+              visibility 0s .72s;
+}
+#panel.panel-deck.on {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+/* Step 1: col1 is docked at the right edge, col2 is hidden offscreen */
+#panel.panel-deck.on.step-1 {
+  transform: translateX(var(--col-w));
+}
+
+/* Step 2: col1 moves to the left, col2 slides in from the right edge! */
+#panel.panel-deck.on.step-2 {
+  transform: translateX(0);
+}
+
+.panel-col {
+  width: var(--col-w);
+  flex: 0 0 var(--col-w);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0 clamp(20px, 2.8vw, 38px);
   background:
     linear-gradient(181deg, #fdfbf3 0%, #f8f4e7 55%, #f1ecd9 100%);
   border-left: 1px solid var(--hair);
   box-shadow: -18px 0 46px rgba(58,48,32,.10),
               inset 1px 0 0 rgba(255,255,255,.7);
-  opacity: 0;
-  transform: translateX(34px);
-  visibility: hidden;
-  transition: opacity .6s ease,
-              transform .65s cubic-bezier(.22,.8,.3,1),
-              visibility 0s .7s;
-  pointer-events: none;
-  z-index: 3;
   overflow: hidden;
+  position: relative;
+  transition: box-shadow .6s ease;
 }
-#panel.on {
-  opacity: 1; transform: none; visibility: visible;
-  transition-delay: 0s;
-  pointer-events: auto;
+
+.panel-col.col-2 {
+  box-shadow: -14px 0 36px rgba(58,48,32,.08),
+              inset 1px 0 0 rgba(255,255,255,.7);
 }
+
 .p-inner {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column;
   padding: clamp(20px, 6vh, 64px) 0;
-  /* clip lives on this STATIC box, not on .pages — a transformed element
-     carries its overflow clip with it, so overflow:hidden on the sliding
-     track itself would clip page 2 out of view forever                */
   overflow: hidden;
 }
 
-/* ---------------- pager — sub-pages slide left on CONTINUE ---------------- */
-.pages {
-  flex: 1; min-height: 0;
-  display: flex;
-  transition: transform .62s cubic-bezier(.3,.8,.25,1);
-  will-change: transform;
-}
-.page {
-  flex: 0 0 100%;
-  min-width: 0;
-  display: flex; flex-direction: column;
-}
 .pg-scroll {
   flex: 1; min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
+  padding-right: 4px;
+}
+
+.p-tag-alt {
+  background: var(--terra);
 }
 
 /* ---------------- footer buttons ---------------- */
@@ -713,10 +731,37 @@ header {
   padding-top: 16px;
   display: flex; align-items: center; gap: 10px;
 }
+
+/* In Step 2, Column 1's action buttons (CANCEL and CONTINUE) disappear neatly,
+   and smoothly reappear when returning to Step 1 */
+#col1 .btnrow {
+  transition: opacity .35s ease,
+              transform .4s cubic-bezier(.22, 1, .36, 1),
+              visibility 0s;
+}
+
+#panel.step-2 #col1 .btnrow {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity .25s ease,
+              transform .3s cubic-bezier(.22, 1, .36, 1),
+              visibility 0s .28s;
+}
+
+#panel.step-1 #col1 .btnrow.rvl.on {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity .45s ease .18s,
+              transform .5s cubic-bezier(.22, 1, .36, 1) .18s;
+}
 .btn {
   appearance: none;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8px; font-weight: 700;
+  font-size: 9.2px; font-weight: 700;
   letter-spacing: .22em;
   padding: 10px 15px 9px;
   border-radius: 2px;
@@ -765,18 +810,18 @@ header {
 .p-head { display: flex; align-items: center; gap: 10px; }
 .p-eyebrow {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.4px; font-weight: 600;
+  font-size: 8.5px; font-weight: 600;
   letter-spacing: .24em;
   color: var(--faint);
 }
 .p-tag {
   margin-left: auto;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.6px; font-weight: 700;
+  font-size: 7.6px; font-weight: 700;
   letter-spacing: .2em;
   color: #f4f1e4;
   background: var(--accent);
-  padding: 3px 6px 2.5px 7px;
+  padding: 3px 6.5px 2.5px 7.5px;
   border-radius: 2px;
   box-shadow: 0 .5px 0 rgba(255,255,255,.4), inset 0 0 0 .5px rgba(0,0,0,.15);
 }
@@ -792,7 +837,7 @@ header {
 .q-h {
   display: flex; align-items: baseline; gap: 10px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10px; font-weight: 700;
+  font-size: 11.5px; font-weight: 700;
   letter-spacing: .24em;
   color: var(--ink);
 }
@@ -806,7 +851,7 @@ header {
 .q-sub {
   margin-top: 5px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.8px; font-weight: 600;
+  font-size: 7.8px; font-weight: 600;
   letter-spacing: .2em;
   color: #a19d90;
 }
@@ -825,7 +870,7 @@ header {
 }
 .ct-name {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.4px; font-weight: 700;
+  font-size: 9.5px; font-weight: 700;
   letter-spacing: .22em;
   color: var(--ink2);
 }
@@ -862,7 +907,7 @@ header {
   display: none;
   position: absolute; right: 1px; bottom: 2px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.4px; font-weight: 700;
+  font-size: 7.2px; font-weight: 700;
   letter-spacing: .08em;
   color: #5c5749;
   background: rgba(251,247,234,.92);
@@ -901,18 +946,18 @@ header {
   cursor: ns-resize;
 }
 .sval:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
-.sv-w { font-size: 14px; min-width: 7ch; }   /* room for 30000 KG */
-.sv-c { font-size: 27px; min-width: 2.2ch; } /* room for 99 */
+.sv-w { font-size: 15px; min-width: 7ch; }   /* room for 30000 KG */
+.sv-c { font-size: 28.5px; min-width: 2.2ch; } /* room for 99 */
 .sval .u {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 5.6px; font-weight: 700;
+  font-size: 6.5px; font-weight: 700;
   letter-spacing: .14em;
   color: #a49e8d;
   margin-left: 3px;
 }
 .sunit {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 5.8px; font-weight: 700;
+  font-size: 6.8px; font-weight: 700;
   letter-spacing: .2em;
   color: #a49e8d;
   margin-top: 2px;
@@ -924,7 +969,7 @@ header {
   padding: 0 0 2.5px;
   background: none; border: none; cursor: pointer;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.8px; font-weight: 700;
+  font-size: 8.8px; font-weight: 700;
   letter-spacing: .24em;
   color: var(--accent);
   border-bottom: .8px solid rgba(58,90,68,.45);
@@ -953,20 +998,38 @@ header {
 
 /* ---------------- narrow fallbacks ---------------- */
 @media (max-width: 860px) {
-  #panel { width: min(52vw, 400px); padding: 0 18px; }
+  :root {
+    --col-w: min(85vw, 400px);
+  }
+  .panel-col { padding: 0 18px; }
   .ct-body { gap: 10px; }
 }
 @media (max-width: 640px) {
   /* overlay sheet — badge stays centered, panel slides up over it */
-  #panel {
+  :root {
+    --col-w: 100vw;
+  }
+  #panel.panel-deck {
     left: 0; right: 0; top: auto; bottom: 0;
-    width: auto;
-    height: min(52vh, 420px);
-    border-left: none;
+    width: 200vw;
+    height: min(56vh, 440px);
     border-top: 1px solid var(--hair);
     box-shadow: 0 -16px 42px rgba(58,48,32,.14);
-    transform: translateY(36px);
+    transform: translateY(100%);
     z-index: 7;
+  }
+  #panel.panel-deck.on.step-1 {
+    transform: translateY(0) translateX(0);
+  }
+  #panel.panel-deck.on.step-2 {
+    transform: translateY(0) translateX(-100vw);
+  }
+  .panel-col {
+    width: 100vw;
+    flex: 0 0 100vw;
+    border-left: none;
+    border-right: 1px solid var(--hair);
+    padding: 0 18px;
   }
   .p-inner { padding: 16px 4px 20px; }
 }
@@ -1041,7 +1104,7 @@ header {
   min-width: 3ch;
   font-family: Georgia, "Times New Roman", serif;
   font-variant-numeric: tabular-nums;
-  font-size: 34px; font-weight: 700;
+  font-size: 36px; font-weight: 700;
   line-height: .9;
   letter-spacing: .01em;
   color: var(--ink);
@@ -1061,14 +1124,14 @@ header {
 .cal-cap {
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7px; font-weight: 700;
+  font-size: 8px; font-weight: 700;
   letter-spacing: .24em;
   color: var(--accent);
 }
 .cal-rng {
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.6px; font-weight: 600;
+  font-size: 7.6px; font-weight: 600;
   letter-spacing: .16em;
   color: var(--faint);
 }
@@ -1080,7 +1143,7 @@ header {
 .cal-mh {
   display: flex; align-items: baseline; gap: 10px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.6px; font-weight: 700;
+  font-size: 8.8px; font-weight: 700;
   letter-spacing: .26em;
   color: var(--ink2);
 }
@@ -1131,7 +1194,7 @@ header {
   font-style: normal;
   text-align: center;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.2px; font-weight: 700;
+  font-size: 7.2px; font-weight: 700;
   letter-spacing: .1em;
   color: #a49e8d;
 }
@@ -1159,7 +1222,7 @@ header {
   display: flex; align-items: center; justify-content: center;
   font-style: normal;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 11px; font-weight: 600;
+  font-size: 12px; font-weight: 600;
   color: var(--ink2);
   border: .8px solid rgba(28,24,16,.12);
   border-radius: 50%;
@@ -1268,26 +1331,26 @@ header {
 }
 .pp-code {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 12.5px; font-weight: 700;
+  font-size: 13.5px; font-weight: 700;
   letter-spacing: .04em;
   fill: var(--pp-ink);
 }
 .pp-city {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6px; font-weight: 700;
+  font-size: 7px; font-weight: 700;
   letter-spacing: .2em;
   fill: var(--pp-ink);
 }
 .pp-role {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 5.2px; font-weight: 700;
+  font-size: 6.2px; font-weight: 700;
   letter-spacing: .26em;
   fill: var(--pp-ink);
   opacity: .88;
 }
 .pp-date {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 4.8px; font-weight: 600;
+  font-size: 5.8px; font-weight: 600;
   letter-spacing: .14em;
   fill: var(--pp-ink);
   opacity: .88;
@@ -1295,7 +1358,7 @@ header {
 /* ledger readout under the route — miles + days at sea */
 .pp-dist {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6px; font-weight: 600;
+  font-size: 7px; font-weight: 600;
   letter-spacing: .18em;
   fill: #8f947f;
 }
@@ -1332,10 +1395,10 @@ header {
 
 /* ---------------- request price ---------------- */
 .pp-price { flex: none; margin-left: 4px; }
-.pp-val { font-size: 24px; min-width: 8.4ch; }   /* room for USD 999,990 */
+.pp-val { font-size: 25.5px; min-width: 8.4ch; }   /* room for USD 999,990 */
 .pp-val .u {
   margin-left: 0; margin-right: 4px;
-  font-size: 6.4px;
+  font-size: 7.4px;
 }
 /* print misregistration ghosts, same treatment as .ctn-num */
 .pp-num { position: relative; }

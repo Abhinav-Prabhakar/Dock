@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MERIDIAN LINE — Booking Request BK-2481-TC</title>
-<link rel="stylesheet" href="style.css?v=4" />
+<link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -392,139 +392,149 @@
   <div class="hint">DRAG THE BADGE&nbsp;&nbsp;·&nbsp;&nbsp;FLING IT&nbsp;&nbsp;·&nbsp;&nbsp;GRAB THE CORD</div>
 </div>
 
-<!-- booking-details panel — revealed once the badge swings left -->
-<aside id="panel" aria-label="Booking details">
-  <div class="p-inner">
-    <div class="p-head rvl">
-      <span class="p-eyebrow">MERIDIAN LINE · BOOKING BK-2481-TC</span>
-      <span class="p-tag">DRAFT</span>
+<!-- booking-details multi-column deck — revealed once the badge swings left -->
+<div id="panel" class="panel-deck" aria-label="Booking details">
+  <!-- Column 1: Request size -->
+  <aside class="panel-col col-1" id="col1" aria-label="Request size">
+    <div class="p-inner">
+      <div class="p-head rvl">
+        <span class="p-eyebrow">MERIDIAN LINE · BOOKING BK-2481-TC</span>
+        <span class="p-tag">01 · CARGO</span>
+      </div>
+      <div class="p-rule rvl"></div>
+
+      <div class="pg-scroll">
+        <div class="q">
+          <div class="q-h rvl">REQUEST SIZE</div>
+          <div class="q-sub rvl">IN TEU · 20′ EQUIVALENT UNITS</div>
+          <div id="types"></div>
+          <button id="addType" class="add-type rvl" type="button">+ ADD NEW TYPE</button>
+        </div>
+      </div>
+
+      <div class="btnrow rvl">
+        <button class="btn ghost" type="button" data-cancel>CANCEL</button>
+        <button class="btn go" type="button" data-next>CONTINUE&nbsp;<span class="arr">→</span></button>
+      </div>
     </div>
-    <div class="p-rule rvl"></div>
+  </aside>
 
-    <div class="pages" id="pages">
-      <section class="page" aria-label="Request size">
-        <div class="pg-scroll">
-          <div class="q">
-            <div class="q-h rvl">REQUEST SIZE</div>
-            <div class="q-sub rvl">IN TEU · 20′ EQUIVALENT UNITS</div>
-            <div id="types"></div>
-            <button id="addType" class="add-type rvl" type="button">+ ADD NEW TYPE</button>
+  <!-- Column 2: Scheduling & Port Pair -->
+  <aside class="panel-col col-2" id="col2" aria-label="Scheduling and port pair">
+    <div class="p-inner">
+      <div class="p-head rvl">
+        <span class="p-eyebrow">MERIDIAN LINE · BOOKING BK-2481-TC</span>
+        <span class="p-tag p-tag-alt">02 · ROUTE</span>
+      </div>
+      <div class="p-rule rvl"></div>
+
+      <div class="pg-scroll">
+        <div class="q">
+          <div class="q-h rvl">SCHEDULING</div>
+          <div class="q-sub rvl">DEPARTURE WINDOW · DRAG ACROSS DAYS</div>
+          <div class="cal-stat rvl">
+            <b class="cal-num cal-nil" id="calNum" data-t="—">—</b>
+            <span class="cal-side">
+              <i class="cal-cap">DAY WINDOW</i>
+              <i class="cal-rng" id="calRng">DRAG TO SELECT</i>
+            </span>
           </div>
+          <div class="cal-grid rvl" id="calGrid"></div>
         </div>
-        <div class="btnrow rvl">
-          <button class="btn ghost" type="button" data-cancel>CANCEL</button>
-          <button class="btn go" type="button" data-next>CONTINUE&nbsp;<span class="arr">→</span></button>
-        </div>
-      </section>
 
-      <section class="page" aria-label="Scheduling">
-        <div class="pg-scroll">
-          <div class="q">
-            <div class="q-h rvl">SCHEDULING</div>
-            <div class="q-sub rvl">DEPARTURE WINDOW · DRAG ACROSS DAYS</div>
-            <div class="cal-stat rvl">
-              <b class="cal-num cal-nil" id="calNum" data-t="—">—</b>
-              <span class="cal-side">
-                <i class="cal-cap">DAY WINDOW</i>
-                <i class="cal-rng" id="calRng">DRAG TO SELECT</i>
-              </span>
+        <div class="q pp-q">
+          <div class="q-h rvl">PORT PAIR</div>
+          <div class="q-sub rvl">TAP A STAMP TO RE-ROUTE · SCROLL THE RATE</div>
+          <div class="pp-row rvl">
+            <div class="pp-map">
+              <svg class="pp-svg" viewBox="0 0 300 108" aria-hidden="true">
+                <defs>
+                  <marker id="ppMk" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4.4" markerHeight="4.4" orient="auto">
+                    <path d="M0 .5 L5.6 3 L0 5.5 z" fill="#3a5a44"/>
+                  </marker>
+                  <!-- ink distress — speckled coverage, like a real rubber stamp -->
+                  <filter id="ppInk" x="-15%" y="-15%" width="130%" height="130%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
+                    <feColorMatrix in="n" type="matrix"
+                      values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 6 -1.4" result="spek"/>
+                    <feComposite in="SourceGraphic" in2="spek" operator="in"/>
+                  </filter>
+                  <!-- curved-text baselines: city over the top, role under the bottom -->
+                  <path id="ppArcCityA" d="M 35 54 A 19 19 0 0 1 73 54"/>
+                  <path id="ppArcRoleA" d="M 31 54 A 23 23 0 0 0 77 54"/>
+                  <path id="ppArcCityB" d="M 227 54 A 19 19 0 0 1 265 54"/>
+                  <path id="ppArcRoleB" d="M 223 54 A 23 23 0 0 0 269 54"/>
+                </defs>
+                <!-- faint terracotta alternate arc, echoing the hub map -->
+                <path class="pp-alt" d="M 89 40 C 120 14 180 14 211 40"/>
+                <!-- booked routing — one sagging transpacific leg -->
+                <path class="pp-route" id="ppRoute" marker-end="url(#ppMk)"
+                      d="M 89 46 Q 150 84 211 46"/>
+                <!-- origin datestamp — sage ink, tilted like a hand stamp -->
+                <g class="pp-stamp pp-origin" id="ppCoinA" filter="url(#ppInk)">
+                  <circle class="pp-ghost-ring" cx="55.2" cy="53.1" r="31"/>
+                  <circle class="pp-ring-out" cx="54" cy="54" r="31"/>
+                  <circle class="pp-ring-in" cx="54" cy="54" r="27.5"/>
+                  <circle class="pp-ring-in" cx="54" cy="54" r="16"/>
+                  <circle class="pp-sep" cx="33" cy="54" r="1.1"/>
+                  <circle class="pp-sep" cx="75" cy="54" r="1.1"/>
+                  <text class="pp-city"><textPath href="#ppArcCityA" startOffset="50%" text-anchor="middle" id="ppNameA">SINGAPORE</textPath></text>
+                  <text class="pp-role"><textPath href="#ppArcRoleA" startOffset="50%" text-anchor="middle">ORIGIN</textPath></text>
+                  <text class="pp-code" id="ppCodeA" x="54" y="51.5" text-anchor="middle">SIN</text>
+                  <text class="pp-date" x="54" y="60.5" text-anchor="middle">14 MAR 25</text>
+                </g>
+                <!-- destination datestamp — terracotta ink, opposite tilt -->
+                <g class="pp-stamp pp-dest" id="ppCoinB" filter="url(#ppInk)">
+                  <circle class="pp-ghost-ring" cx="247.2" cy="53.1" r="31"/>
+                  <circle class="pp-ring-out" cx="246" cy="54" r="31"/>
+                  <circle class="pp-ring-in" cx="246" cy="54" r="27.5"/>
+                  <circle class="pp-ring-in" cx="246" cy="54" r="16"/>
+                  <circle class="pp-sep" cx="225" cy="54" r="1.1"/>
+                  <circle class="pp-sep" cx="267" cy="54" r="1.1"/>
+                  <text class="pp-city"><textPath href="#ppArcCityB" startOffset="50%" text-anchor="middle" id="ppNameB">OAKLAND</textPath></text>
+                  <text class="pp-role"><textPath href="#ppArcRoleB" startOffset="50%" text-anchor="middle">DESTINATION</textPath></text>
+                  <text class="pp-code" id="ppCodeB" x="246" y="51.5" text-anchor="middle">OAK</text>
+                  <text class="pp-date" x="246" y="60.5" text-anchor="middle">ML-114E</text>
+                </g>
+                <!-- ledger readout under the route -->
+                <text class="pp-dist" id="ppDist" x="150" y="97" text-anchor="middle">≈ 7,320 NM · 16 DAYS</text>
+                <!-- little freighter riding the route -->
+                <g id="ppShip">
+                  <g class="pp-ship-in">
+                    <path d="M-8.6 1.2 H 7.4 L 5.2 4.4 H -6.6 Z" fill="#2f2b24"/>
+                    <path d="M-8.6 1.2 H 7.4" stroke="rgba(240,235,215,.5)" stroke-width=".6" fill="none"/>
+                    <rect x="-8"   y="-3.6" width="2.4" height="4.8" fill="#ece4cd" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+                    <rect x="-7.6" y="-4.7" width="1.6" height="1.2" fill="#b96f4b"/>
+                    <rect x="-4.6" y="-2"   width="3.2" height="3.2" fill="#3a5a44" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+                    <rect x="-1"   y="-2"   width="3.2" height="3.2" fill="#b96f4b" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+                    <rect x="2.6"  y="-2"   width="3.2" height="3.2" fill="#a8843e" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
+                    <path d="M-9.8 5.8h-3.2M-8 7.2h-4.6" stroke="rgba(58,90,68,.35)" stroke-width=".7" fill="none"/>
+                  </g>
+                </g>
+              </svg>
+              <button class="pp-hit pp-hit-a" id="ppPortA" type="button"></button>
+              <button class="pp-hit pp-hit-b" id="ppPortB" type="button"></button>
             </div>
-            <div class="cal-grid rvl" id="calGrid"></div>
-          </div>
-
-          <div class="q pp-q">
-            <div class="q-h rvl">PORT PAIR</div>
-            <div class="q-sub rvl">TAP A STAMP TO RE-ROUTE · SCROLL THE RATE</div>
-            <div class="pp-row rvl">
-              <div class="pp-map">
-                <svg class="pp-svg" viewBox="0 0 300 108" aria-hidden="true">
-                  <defs>
-                    <marker id="ppMk" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4.4" markerHeight="4.4" orient="auto">
-                      <path d="M0 .5 L5.6 3 L0 5.5 z" fill="#3a5a44"/>
-                    </marker>
-                    <!-- ink distress — speckled coverage, like a real rubber stamp -->
-                    <filter id="ppInk" x="-15%" y="-15%" width="130%" height="130%">
-                      <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="7" result="n"/>
-                      <feColorMatrix in="n" type="matrix"
-                        values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 6 -1.4" result="spek"/>
-                      <feComposite in="SourceGraphic" in2="spek" operator="in"/>
-                    </filter>
-                    <!-- curved-text baselines: city over the top, role under the bottom -->
-                    <path id="ppArcCityA" d="M 35 54 A 19 19 0 0 1 73 54"/>
-                    <path id="ppArcRoleA" d="M 31 54 A 23 23 0 0 0 77 54"/>
-                    <path id="ppArcCityB" d="M 227 54 A 19 19 0 0 1 265 54"/>
-                    <path id="ppArcRoleB" d="M 223 54 A 23 23 0 0 0 269 54"/>
-                  </defs>
-                  <!-- faint terracotta alternate arc, echoing the hub map -->
-                  <path class="pp-alt" d="M 89 40 C 120 14 180 14 211 40"/>
-                  <!-- booked routing — one sagging transpacific leg -->
-                  <path class="pp-route" id="ppRoute" marker-end="url(#ppMk)"
-                        d="M 89 46 Q 150 84 211 46"/>
-                  <!-- origin datestamp — sage ink, tilted like a hand stamp -->
-                  <g class="pp-stamp pp-origin" id="ppCoinA" filter="url(#ppInk)">
-                    <circle class="pp-ghost-ring" cx="55.2" cy="53.1" r="31"/>
-                    <circle class="pp-ring-out" cx="54" cy="54" r="31"/>
-                    <circle class="pp-ring-in" cx="54" cy="54" r="27.5"/>
-                    <circle class="pp-ring-in" cx="54" cy="54" r="16"/>
-                    <circle class="pp-sep" cx="33" cy="54" r="1.1"/>
-                    <circle class="pp-sep" cx="75" cy="54" r="1.1"/>
-                    <text class="pp-city"><textPath href="#ppArcCityA" startOffset="50%" text-anchor="middle" id="ppNameA">SINGAPORE</textPath></text>
-                    <text class="pp-role"><textPath href="#ppArcRoleA" startOffset="50%" text-anchor="middle">ORIGIN</textPath></text>
-                    <text class="pp-code" id="ppCodeA" x="54" y="51.5" text-anchor="middle">SIN</text>
-                    <text class="pp-date" x="54" y="60.5" text-anchor="middle">14 MAR 25</text>
-                  </g>
-                  <!-- destination datestamp — terracotta ink, opposite tilt -->
-                  <g class="pp-stamp pp-dest" id="ppCoinB" filter="url(#ppInk)">
-                    <circle class="pp-ghost-ring" cx="247.2" cy="53.1" r="31"/>
-                    <circle class="pp-ring-out" cx="246" cy="54" r="31"/>
-                    <circle class="pp-ring-in" cx="246" cy="54" r="27.5"/>
-                    <circle class="pp-ring-in" cx="246" cy="54" r="16"/>
-                    <circle class="pp-sep" cx="225" cy="54" r="1.1"/>
-                    <circle class="pp-sep" cx="267" cy="54" r="1.1"/>
-                    <text class="pp-city"><textPath href="#ppArcCityB" startOffset="50%" text-anchor="middle" id="ppNameB">OAKLAND</textPath></text>
-                    <text class="pp-role"><textPath href="#ppArcRoleB" startOffset="50%" text-anchor="middle">DESTINATION</textPath></text>
-                    <text class="pp-code" id="ppCodeB" x="246" y="51.5" text-anchor="middle">OAK</text>
-                    <text class="pp-date" x="246" y="60.5" text-anchor="middle">ML-114E</text>
-                  </g>
-                  <!-- ledger readout under the route -->
-                  <text class="pp-dist" id="ppDist" x="150" y="97" text-anchor="middle">≈ 7,320 NM · 16 DAYS</text>
-                  <!-- little freighter riding the route -->
-                  <g id="ppShip">
-                    <g class="pp-ship-in">
-                      <path d="M-8.6 1.2 H 7.4 L 5.2 4.4 H -6.6 Z" fill="#2f2b24"/>
-                      <path d="M-8.6 1.2 H 7.4" stroke="rgba(240,235,215,.5)" stroke-width=".6" fill="none"/>
-                      <rect x="-8"   y="-3.6" width="2.4" height="4.8" fill="#ece4cd" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
-                      <rect x="-7.6" y="-4.7" width="1.6" height="1.2" fill="#b96f4b"/>
-                      <rect x="-4.6" y="-2"   width="3.2" height="3.2" fill="#3a5a44" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
-                      <rect x="-1"   y="-2"   width="3.2" height="3.2" fill="#b96f4b" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
-                      <rect x="2.6"  y="-2"   width="3.2" height="3.2" fill="#a8843e" stroke="rgba(22,18,10,.3)" stroke-width=".3"/>
-                      <path d="M-9.8 5.8h-3.2M-8 7.2h-4.6" stroke="rgba(58,90,68,.35)" stroke-width=".7" fill="none"/>
-                    </g>
-                  </g>
-                </svg>
-                <button class="pp-hit pp-hit-a" id="ppPortA" type="button"></button>
-                <button class="pp-hit pp-hit-b" id="ppPortB" type="button"></button>
-              </div>
-              <div class="stepper st-c pp-price" id="ppPrice" title="Request price — click or scroll">
-                <button class="sbtn" data-d="1" type="button" aria-label="raise request price"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 5 5 1 9 5"/></svg></button>
-                <div class="sval pp-val" id="ppVal" tabindex="0" role="spinbutton"
-                     aria-valuemin="0" aria-valuemax="999990" aria-valuenow="4820"
-                     aria-label="request price in US dollars" title="scroll to adjust"><span class="u">USD</span><span class="pp-num" id="ppNum" data-t="4,820">4,820</span></div>
-                <button class="sbtn" data-d="-1" type="button" aria-label="lower request price"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 5 5 9 1"/></svg></button>
-                <div class="sunit">REQUEST PRICE</div>
-              </div>
+            <div class="stepper st-c pp-price" id="ppPrice" title="Request price — click or scroll">
+              <button class="sbtn" data-d="1" type="button" aria-label="raise request price"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 5 5 1 9 5"/></svg></button>
+              <div class="sval pp-val" id="ppVal" tabindex="0" role="spinbutton"
+                   aria-valuemin="0" aria-valuemax="999990" aria-valuenow="4820"
+                   aria-label="request price in US dollars" title="scroll to adjust"><span class="u">USD</span><span class="pp-num" id="ppNum" data-t="4,820">4,820</span></div>
+              <button class="sbtn" data-d="-1" type="button" aria-label="lower request price"><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1 5 5 9 1"/></svg></button>
+              <div class="sunit">REQUEST PRICE</div>
             </div>
           </div>
         </div>
-        <div class="btnrow rvl">
-          <button class="btn ghost" type="button" data-cancel>CANCEL</button>
-          <button class="btn go" type="button" data-next disabled>CONTINUE&nbsp;<span class="arr">→</span></button>
-        </div>
-      </section>
+      </div>
+
+      <div class="btnrow rvl">
+        <button class="btn ghost" type="button" data-back>← BACK</button>
+        <button class="btn go" type="button" data-submit disabled>CONFIRM BOOKING&nbsp;<span class="arr">→</span></button>
+      </div>
     </div>
-  </div>
-</aside>
+  </aside>
+</div>
 
-<script src="script.js?v=4"></script>
+<script src="script.js?v=6"></script>
 </body>
 </html>

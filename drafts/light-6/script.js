@@ -434,7 +434,7 @@ window.addEventListener('pointerdown', (e) => {
   if (Math.abs(l.x) < W / 2 + 10 && l.y > -H / 2 - 52 && l.y < H / 2 + 10) {
     grab = { lx: clamp(l.x, -W / 2, W / 2), ly: clamp(l.y, -H / 2 - 42, H / 2) };
     tap  = { x: e.clientX, y: e.clientY, t: performance.now() };
-  } else if (panelEl && panelEl.contains(e.target)) {
+  } else if (deckEl && deckEl.contains(e.target)) {
     return;                        // panel presses belong to the panel
   } else {
     let best = -1, bd = 42 * 42;
@@ -464,25 +464,42 @@ const release = (e) => {
 window.addEventListener('pointerup', release);
 window.addEventListener('pointercancel', release);
 
-/* ==================== SPLIT VIEW — DETAILS PANEL ==================== */
+/* ==================== SPLIT VIEW — DETAILS PANEL DECK ==================== */
 /* ~1.7s after load the peg itself glides left; the badge physically
-   swings over and settles while a print-style panel fades in right.  */
+   swings over and settles while Column 1 slides in from the right.
+   Clicking CONTINUE moves Column 1 left and slides in Column 2 from the side! */
 const mountEl = document.querySelector('.mount');
 const hintEl  = document.querySelector('.hint');
-const panelEl = document.getElementById('panel');
+const deckEl  = document.getElementById('panel');
+const col1El  = document.getElementById('col1');
+const col2El  = document.getElementById('col2');
 const typesEl = document.getElementById('types');
 const addBtn  = document.getElementById('addType');
-const pagesEl = document.getElementById('pages');
-const pageEls = [...pagesEl.querySelectorAll('.page')];
-let   pageIdx = 0;
 
+let step  = 1;                     // 1 = Cargo (col1), 2 = Scheduling & Route (col1 + col2 side-by-side)
 let split = false;                 // split engaged?
 let anchAnim = null;               // {t0, from, dur} — anchor glide
+let col2Revealed = false;
 const SHEET_VW = 640;              // below this the panel is a bottom sheet
+
+function getColWidth() {
+  if (col1El) {
+    const rect = col1El.getBoundingClientRect();
+    if (rect.width > 0) return rect.width;
+  }
+  return Math.min(440, Math.max(330, vw * 0.32));
+}
 
 function anchorGoal() {
   if (!split || vw <= SHEET_VW) return vw / 2;
-  return Math.max(vw * 0.30, W / 2 + 14);
+  const colW = getColWidth();
+  const nCols = step === 2 ? 2 : 1;
+  const remaining = vw - nCols * colW;
+  const minPeg = W / 2 + 16;
+  if (remaining <= minPeg * 2) {
+    return minPeg;
+  }
+  return Math.max(minPeg, Math.min(remaining - minPeg, remaining / 2));
 }
 const easeIO = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 
@@ -494,22 +511,34 @@ function stepAnchor(now) {
   if (k >= 1) { ANCHOR.x = anchorGoal(); anchAnim = null; }
 }
 
-/* staggered reveal — a list of .rvl elements fades up in order.
-   future questions join the cascade just by carrying the class. */
+/* staggered reveal — a list of .rvl elements fades up in order. */
 function rvlShow(items, base = 480, step = 250) {
   [...items].forEach((el, i) =>
     setTimeout(() => el.classList.add('on'), base + i * step));
 }
 
-/* sub-page navigation — the column pushes left, content fades in */
-function goPage(i) {
-  if (i === pageIdx || i < 0 || i >= pageEls.length) return;
-  pageEls[pageIdx].querySelectorAll('.rvl.on')
-    .forEach(el => el.classList.remove('on'));            // fade the leaving page out
-  pageIdx = i;
-  pagesEl.style.transform = `translateX(${-i * 100}%)`;
-  setTimeout(() =>                                        // cascade the new page in
-    rvlShow(pageEls[i].querySelectorAll('.rvl'), 60, 160), 300);
+/* step navigation — column 1 pushes left, column 2 slides in from the side */
+function setStep(s) {
+  if (s === step || (s !== 1 && s !== 2)) return;
+  step = s;
+  anchAnim = { t0: performance.now(), from: ANCHOR.x, dur: 750 };
+  if (step === 2) {
+    deckEl.classList.remove('step-1');
+    deckEl.classList.add('step-2');
+    col1El.querySelectorAll('.btnrow .btn').forEach(btn => btn.setAttribute('tabindex', '-1'));
+    if (!col2Revealed) {
+      col2Revealed = true;
+      rvlShow(col2El.querySelectorAll('.p-inner > .rvl'), 200, 140);
+      rvlShow(col2El.querySelectorAll('.pg-scroll .rvl'), 340, 160);
+      rvlShow(col2El.querySelectorAll('.btnrow.rvl'), 600, 140);
+    } else {
+      col2El.querySelectorAll('.rvl').forEach(el => el.classList.add('on'));
+    }
+  } else {
+    deckEl.classList.remove('step-2');
+    deckEl.classList.add('step-1');
+    col1El.querySelectorAll('.btnrow .btn').forEach(btn => btn.removeAttribute('tabindex'));
+  }
 }
 
 /* collapse/restore the whole split — the badge swings home or steps aside */
@@ -518,13 +547,18 @@ function setSplit(on) {
   split = on;
   anchAnim = { t0: performance.now(), from: ANCHOR.x, dur: 900 };
   if (on) {
-    panelEl.classList.add('on');
-    rvlShow(panelEl.querySelectorAll('.p-inner > .rvl'), 320, 150);
-    rvlShow(pageEls[pageIdx].querySelectorAll('.rvl'), 480, 160);
+    step = 1;
+    deckEl.classList.add('on', 'step-1');
+    deckEl.classList.remove('step-2');
+    col1El.querySelectorAll('.btnrow .btn').forEach(btn => btn.removeAttribute('tabindex'));
+    rvlShow(col1El.querySelectorAll('.p-inner > .rvl'), 320, 150);
+    rvlShow(col1El.querySelectorAll('.pg-scroll .rvl'), 480, 160);
+    rvlShow(col1El.querySelectorAll('.btnrow.rvl'), 650, 150);
   } else {
-    panelEl.classList.remove('on');
-    panelEl.querySelectorAll('.rvl.on')
-      .forEach(el => el.classList.remove('on'));
+    deckEl.classList.remove('on', 'step-1', 'step-2');
+    deckEl.querySelectorAll('.rvl.on').forEach(el => el.classList.remove('on'));
+    col1El.querySelectorAll('.btnrow .btn').forEach(btn => btn.removeAttribute('tabindex'));
+    col2Revealed = false;
   }
 }
 
@@ -561,9 +595,9 @@ function containerArt(seed) {
   s += '<rect x="105.7" y="12.4" width="2.7" height="3.5" rx=".3" fill="rgba(238,234,218,.85)" stroke="rgba(15,10,5,.4)" stroke-width=".3"/>';
 
   /* stencil markings on the corrugated wall */
-  s += '<text x="12.4" y="16.6" font-size="3.3" letter-spacing=".7" class="cc-mark">MLSU 2481 034</text>' +
-       '<text x="12.4" y="20.6" font-size="2.4" letter-spacing=".4" class="cc-mark2">MAX GROSS 30 480 KG · 22G1</text>' +
-       '<text x="99.6" y="16.6" font-size="2.6" text-anchor="end" letter-spacing=".4" class="cc-mark2">20′ GP</text>';
+  s += '<text x="12.4" y="16.6" font-size="3.7" letter-spacing=".7" class="cc-mark">MLSU 2481 034</text>' +
+       '<text x="12.4" y="20.8" font-size="2.8" letter-spacing=".4" class="cc-mark2">MAX GROSS 30 480 KG · 22G1</text>' +
+       '<text x="99.6" y="16.6" font-size="3.0" text-anchor="end" letter-spacing=".4" class="cc-mark2">20′ GP</text>';
 
   /* weathering — scuffs, scratches, rust weep off the top rail, dents */
   for (let i = 0; i < 6; i++) {
@@ -744,13 +778,30 @@ function addType() {
 addBtn.addEventListener('click', addType);
 addType();                                           // TYPE 1 — orange
 
-/* footer buttons — CONTINUE pages forward; CANCEL steps back, and on the
-   first page collapses the split (tap the badge to bring it back)      */
-panelEl.addEventListener('click', e => {
+/* footer buttons — CONTINUE opens column 2 side-by-side; BACK slides column 2 back;
+   CANCEL collapses the view (tap badge to reopen) */
+deckEl.addEventListener('click', e => {
   const b = e.target.closest('.btn');
   if (!b || b.disabled) return;
-  if (b.hasAttribute('data-next'))   goPage(pageIdx + 1);
-  if (b.hasAttribute('data-cancel')) pageIdx > 0 ? goPage(pageIdx - 1) : setSplit(false);
+  if (b.hasAttribute('data-next')) {
+    setStep(2);
+  } else if (b.hasAttribute('data-back')) {
+    setStep(1);
+  } else if (b.hasAttribute('data-cancel')) {
+    if (step === 2) {
+      setStep(1);
+    } else {
+      setSplit(false);
+    }
+  } else if (b.hasAttribute('data-submit')) {
+    b.textContent = '✓ BOOKING SUBMITTED';
+    b.disabled = true;
+    b.style.background = '#2c4234';
+    const badgeStatus = document.querySelector('.face .rows .r:last-child b');
+    if (badgeStatus) badgeStatus.textContent = 'CONFIRMED';
+    const bandText = document.querySelector('.face .band-t');
+    if (bandText) bandText.innerHTML = 'BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;CONFIRMED';
+  }
 });
 
 /* swing left, then cascade the questions in */
@@ -844,8 +895,8 @@ requestAnimationFrame(frame);
     rngEl.textContent = !on ? 'DRAG TO SELECT'
       : lo === hi ? fmt(cells[lo].d)
       : fmt(cells[lo].d) + ' → ' + fmt(cells[hi].d);
-    const nb = pageEls[1] && pageEls[1].querySelector('[data-next]');
-    if (nb) nb.disabled = !on;                // CONTINUE wakes once a window exists
+    const nb = col2El && col2El.querySelector('[data-submit], [data-next]');
+    if (nb) nb.disabled = !on;                // CONFIRM wakes once a window exists
   }
 
   /* paint the rendered month's cells purely from (lo, hi) — not-bookable
