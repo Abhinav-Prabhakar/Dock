@@ -53,17 +53,23 @@ done
 [ -n "$live" ] && ok "GET /live -> episode $live" || bad "live simulation never came up"
 expect "vessel stowage" 200 "$API/live/vessels/VES1/stowage"
 expect "policy network" 200 "$API/live/policy/network"
-n=$(curl -s "$API/live/policy" | json 'len(d["decisions"])')
-[ "${n:-0}" -gt 0 ] && ok "policy trace has $n live decisions" || bad "no live policy decisions"
+n=0
+for _ in $(seq 1 60); do             # the policy thread starts right after /live comes up
+  n=$(curl -s "$API/live/policy" | json 'len(d["decisions"])' 2>/dev/null)
+  [ "${n:-0}" -gt 0 ] && break; sleep 1
+done
+[ "${n:-0}" -gt 0 ] && ok "policy trace has $n live decisions" \
+  || { bad "no live policy decisions after 60s"; curl -s "$API/live" | head -c 400; echo; }
 
 echo "customer booking (quote -> accept, Postgres)"
 oid=""; offer=""
-for dep in 5 9 14 20 26; do
+for dep in 5 9 14 20 26 33 40 5 12 19; do
   q=$(curl -s -X POST "$API/orders" -H 'content-type: application/json' \
     -d "{\"origin\":\"CNSHA\",\"dest\":\"NLRTM\",\"teu\":6,\"weight_t\":60,\"cargo_type\":\"dry\",\"segment\":\"standard\",\"req_dep_day\":$dep,\"flex_days\":3}")
   oid=$(echo "$q" | json 'd["order"]["id"]')
   offer=$(echo "$q" | json '(d["offers"] or [{}])[0].get("id","")')
   [ -n "$offer" ] && break
+  sleep 1
 done
 [ -n "$oid" ] && ok "POST /orders -> $oid" || bad "POST /orders returned no order"
 if [ -n "$offer" ]; then
@@ -75,7 +81,7 @@ if [ -n "$offer" ]; then
     | json "next((e.get('source','') for e in d['events'] if e.get('order_id')=='$oid'), '')")
   [ "$src" = "customer" ] && ok "booking.decision recorded for the customer" || bad "no customer booking.decision"
 else
-  bad "no offers in any window (live world may be saturated)"
+  bad "no offers in any window (live world may be saturated)"; echo "  last quote: $(echo "$q" | head -c 600)"
 fi
 expect "bad OD pair rejected" 422 -X POST "$API/orders" -H 'content-type: application/json' \
   -d '{"origin":"NLRTM","dest":"USNYC","teu":1,"weight_t":5,"cargo_type":"dry","segment":"standard","req_dep_day":10,"flex_days":0}'
