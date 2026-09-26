@@ -25,7 +25,7 @@ policies        →  static | greedy | heuristic | heuristic_bid | ppo
 rl.evaluate     →  eval_results.json (holdout-only, identical seeds)
 export_demo     →  backend/demo/{summary,timeline,offers,shock,meta}.json
                       │
-                      ▼   the only thing src/ ever reads
+                      ▼   served read-only via GET /compare/*
                    backend/demo/*.json
 ```
 

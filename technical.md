@@ -104,18 +104,14 @@ was treating a symptom.
 | Stowage constraints | [done] |
 | Reason-coded offers | [done] — `explain()` consumed by `export_demo.py` → `offers.json` |
 | **Demand forecasting** | **[done] — `models/` landed; oracle path deleted** |
-| **Manual-vs-AI dashboard** | **[todo] — `src/` stays hardcoded mock data for now (explicit product direction)** |
+| **Manual-vs-AI dashboard** | **[done] — the operator console's Statistics page renders the 5-policy comparison from `/compare/*`; the Next.js `src/` mock is gone.** |
 
 Meanwhile we have built out the P1 RL stack (curriculum, GPU box, eval
 harness) in depth. `plan.md` §3.8 and §8 are explicit that RL is "the
 ambitious ceiling, **not the critical path**", and that "the demo script is
 designed so that any of the three policies can power it".
 
-**Right now the demo can be powered by none of them.** There is no path
-from any policy to anything a judge can look at. `src/app/page.tsx` renders
-`src/lib/data.ts`, which is a hand-written mock (`CNT-A14`, `N°1870`…) with
-no relationship to the simulator. That is the single largest risk to the
-project and it is entirely unaddressed.
+*This risk was resolved: the live API plus the two static sites run on real data throughout; see `frontend.md`.*
 
 ### 0.4 Oracle leakage — a credibility bug we must not demo with
 
@@ -147,8 +143,7 @@ tuning.*
 
 1. ~~**Freeze RL scope.**~~ Curriculum ran once, end to end — §5.
 2. **Close the oracle leak** with one real forecaster (§3). [done]
-3. **Ship the demo** (§4) — backend artifacts done; frontend per
-   `frontend.md`.
+3. **Ship the demo** (§4) — [done] — frontend per `frontend.md` / `docs/INTEGRATION_PLAN.md`.
 
 ---
 
@@ -318,8 +313,9 @@ a true one.
 | `rl/train.py` | [done] | MaskablePPO curriculum, phases 1–5. **Frozen** — one run, no tuning. |
 | `rl/evaluate.py` | [done] | §1.2 pinned seeds landed. Holdout-only is correct. |
 | `models/` | **[done]** | §3. Ridge forecaster + elasticity + WTP; artifacts in `models/artifacts/`. |
-| Demo artifact pipeline | **[done]** | §4.1. `scripts/export_demo.py` → `public/demo/*.json`. |
-| `src/` dashboard | **[todo]** | §4.2. Exists but is pure mock data. |
+| Demo artifact pipeline | **[done]** | §4.1. `scripts/export_demo.py` → `backend/demo/*.json`. |
+| Frontends (`customers/`, `drafts/cargo-ship/`) | **[done]** | Static sites on the live API, no mock data — `frontend.md`. |
+| `server/` (live API, quotes, Postgres orders) | [done] | `api.md`; always-on live PPO world; customer quote/accept. |
 | Congestion / delay-risk / reliability forecasters | **[cut]** | See §3.3. |
 
 ---
@@ -413,14 +409,14 @@ extends to…".
 
 ---
 
-## 4. The demo — backend done, frontend per frontend.md [wip]
+## 4. The demo — backend done, frontend per frontend.md [done]
 
 `plan.md` §7 is the deliverable: three policies, identical demand, live
 metrics, plus a shock-injection moment. Two decisions up front.
 
 ### Decision A — superseded: live API + artifact comparison [done]
 
-A live FastAPI server now sits between Python and Next.js (`api.md`):
+A live FastAPI server now sits between the simulator and the two static sites (`api.md`):
 episodes run server-side and stream real sim events over WebSocket;
 conditional deals settle on a real local EVM (py-evm + `DockSettlement.sol`)
 and every event lands in a hash-chained JSONL ledger. The **precomputed
@@ -432,18 +428,13 @@ while live episodes add the interactive demo the judges can poke at.
 
 ### Decision B — superseded by frontend.md
 
-`src/app/page.tsx` (the vessel stowage/load-plan screen) stays as is — it
-is good-looking context and it is already built. The comparison surface
-was re-scoped: per `frontend.md` it is a **persistent money HUD + dialog**
-on a two-screen app (Customers + Fleet), not a `/compare` route. Same
-rule applies: reuse the existing Tailwind design language; do not try to
-retrofit `src/lib/data.ts`'s mock shapes.
+Superseded — the Next.js app was retired; the frontends are the customer booking site and the port-operator console (`frontend.md`). The comparison surface is the operator Statistics page, rendered from `/compare/*` via the precomputed artifacts.
 
 ### 4.1 Backend: `scripts/export_demo.py` [done]
 
 ```bash
 cd backend
-.venv/bin/python -m scripts.export_demo --out ../public/demo \
+.venv/bin/python -m scripts.export_demo --out demo \
     --horizon 90 --episodes 5 --seed 42
 ```
 
@@ -481,13 +472,9 @@ reimplement it), and writes:
 Keep every numeric field pre-rounded and pre-aggregated. Frontend does
 presentation only.
 
-### 4.2 Frontend: two screens + money HUD — see `frontend.md` [todo]
+### 4.2 Frontend: two static sites — see `frontend.md` [done]
 
-Next.js 16 / React 19 / Tailwind 4. **Read
-`node_modules/next/dist/docs/` before writing any Next code** — per
-`AGENTS.md`, this version has breaking changes. Load the JSON from
-`public/demo/` (static import or `fetch`; no server component needs to do
-anything clever).
+The comparison panels live on the operator console's Statistics page, rendered from `/compare/*` with no hardcoded numbers. The data contract is in `frontend.md`.
 
 Panels, in priority order — build them in this order and stop wherever time
 runs out:
@@ -511,7 +498,7 @@ policy is missing from `summary.json` (e.g. no `ppo` yet), the UI must
 degrade gracefully rather than break — we will not know until late whether
 RL makes it in.
 
-### 4.3 Shock injection — backend done (`shock.json`), frontend per frontend.md [wip]
+### 4.3 Shock injection — backend done (`shock.json`), shown on the operator Statistics page [done]
 
 `plan.md` §7's "wow moment", reduced to its honest minimum: a **precomputed
 A/B replay**, not live injection.
@@ -637,8 +624,7 @@ Strictly sequential; each step gates the next.
 5. §4.1 — `export_demo.py`, run with `heuristic_bid` as the lead policy.
    **At this point we have a complete, demoable project with no RL.** This
    is the milestone that de-risks everything.
-6. §4.2 — the `frontend.md` surfaces (money-HUD dialog first, then offer
-   cards, log rail, shock replay, credibility panel).
+6. §4.2 — the `frontend.md` surfaces live on the two static sites (`frontend.md`). **Done.**
 7. §5 — the single RL curriculum run. **Done** — `runs/ppo_c5` is the Dock
    tier; §4.1 re-exported with `--model`.
 8. §4.3 — shock panel, if time remains.
@@ -649,7 +635,7 @@ Strictly sequential; each step gates the next.
 
 ```bash
 cd backend
-.venv/bin/python -m pytest                       # must stay green (83 tests)
+.venv/bin/python -m pytest                       # must stay green (145 tests; test_api/test_quotes need Postgres — see README)
 .venv/bin/python -m data.generate --seed 42 --scale 1.0 --out data/generated
 .venv/bin/python -m models.train --data data/generated --out models/artifacts
 .venv/bin/python -m scripts.run_episode --episodes 3 --horizon 60
@@ -657,7 +643,8 @@ cd backend
 .venv/bin/python -m rl.evaluate --model none --episodes 3 --horizon 60
 .venv/bin/python -m rl.evaluate --model runs/ppo_c5/model.zip \
     --episodes 5 --horizon 90
-.venv/bin/python -m scripts.export_demo --out ../public/demo --seed 42 \
+.venv/bin/python -m scripts.export_demo --out demo --seed 42 \
     --model runs/ppo_c5/model.zip
-npm run dev                                      # Customers + Fleet screens
+cd .. && cp .env.example .env && docker compose up --build   # :8080 operator · /customers/ · /api
+scripts/smoke.sh && node --test drafts/cargo-ship/tests/*.mjs && python3 scripts/check_imports.py
 ```

@@ -14,7 +14,7 @@ booking tomorrow.
 
 > `plan.md` is the source of truth. Every feature and claim traces back to it.
 > `backend.md` documents the backend contract for frontend work; `frontend.md`
-> specifies the UI layout. `CONTEXT.md` is the agent handoff / working state.
+> is the frontend architecture & data contract (the two `design.md` files are the visual specs). `CONTEXT.md` is the agent handoff / working state.
 > `docs/INTEGRATION_PLAN.md` tracks the current work wiring both sites to the
 > live backend and containerising the stack.
 
@@ -91,17 +91,18 @@ backend/                 Python backend (this is the core system)
   baselines/             Static / greedy / dynamic heuristic policies
   data/                  Calibration constants, scenario configs, generators
   scripts/               run_episode, export_demo, run_curriculum
-  tests/                 83 pytest tests
+  tests/                 145 pytest tests
   runs/                  Trained checkpoints (ppo_c1..c5) + eval_results.json
   demo/                  Exported demo artifacts (summary/timeline/offers/
                          shock/meta JSON) — served via GET /compare/*
 customers/               Customer booking site (static; served at /customers)
-drafts/cargo-ship/       Port-operator console (static; procedural 3D vessel,
-                         stowage, statistics, decision-engine views)
+drafts/cargo-ship/       Port-operator console (static; live 3D vessel + bookings,
+                         stowage, statistics, model views)
 docs/                    INTEGRATION_PLAN.md (current work)
+scripts/                 smoke.sh, e2e.sh, check_imports.py
 plan.md                  Product source of truth
 backend.md               Backend contract: inputs, wiring, models, outputs
-frontend.md              UI layout spec (two screens + money HUD)
+frontend.md              Frontend architecture + data contract
 technical.md             Build directive + resolved-issue log
 CONTEXT.md               Agent handoff / working state
 ```
@@ -118,6 +119,8 @@ docker compose up --build
 - **http://localhost:8080** — port-operator console
 - **http://localhost:8080/customers/** — customer booking site
 - **http://localhost:8080/api/** — the backend API (same-origin, via nginx)
+
+`scripts/e2e.sh` runs a customer booking through to an on-chain settlement (start the stack with `DOCK_LIVE_SPEED=0.5` so the voyage takes minutes, not hours).
 
 First run pulls/builds everything (Postgres, then the backend image with
 its RL/settlement deps, then nginx) — a few minutes. The `api` container
@@ -140,7 +143,7 @@ python -m models.train --data data/generated --out models/artifacts
 
 # 3. Tests (test_api.py needs a reachable, migrated Postgres — see its
 #    docstring; `docker compose up -d db && alembic upgrade head` first)
-python -m pytest -q                                    # 83 tests
+python -m pytest -q                                    # 145 tests
 
 # 4. Run a head-to-head episode (baselines only)
 python -m scripts.run_episode --episodes 3 --horizon 60
@@ -196,17 +199,10 @@ open http://localhost:8399/customers/       # customer booking site (the backend
 # the port-operator console is served by the Docker ui service — use the Docker quickstart
 ```
 
-- **`customers/`** — the customer booking site: file a cargo booking, see
-  the model's priced offers (accept / flex-window / alt-hub / split
-  counter-offers) and its recommendation, and track orders on the fleet
-  dashboard. Every `fetch` targets the backend same-origin.
-- **`drafts/cargo-ship/`** — the port-operator console: a real-time 3D
-  vessel view, a stowage screen (side elevation + 2D top/plan view), a
-  nautical-chart statistics page, and a "decision engine" page that
-  visualizes the live PPO policy's inputs, network and outputs.
+- **`customers/`** — the customer booking site (Meridian Line): file a cargo booking, receive a live offer slip (shared `customers/shared/offers.js`; accept / flex-window / alt-hub / split counter-offers plus the PPO recommendation), and track orders through delivery on the fleet dashboard. Every `fetch` targets the backend same-origin.
+- **`drafts/cargo-ship/`** — the port-operator console: a real-time 3D vessel view with a Live bookings panel (customer quotes, accepts, and the settlement of their deals), a stowage screen (side elevation + 2D top/plan view), a statistics page (5-policy comparison + shock replay), and a model page that visualizes the live PPO policy's inputs, network and outputs.
 
-Wiring both sites to the live API (replacing their current mock/demo data)
-is tracked in `docs/INTEGRATION_PLAN.md`.
+Both sites run on live data only — no mock or cached fallbacks; if the API is down they say so. `frontend.md` maps every screen to its endpoints.
 
 ## The demo
 
@@ -262,8 +258,6 @@ component.
 Backend complete: simulator, stowage constraints, bid-price engine, supervised
 models, full 5-phase PPO curriculum trained (~1.8M steps, `runs/ppo_c5`),
 holdout evaluation, live API + ledger + on-chain settlement, and artifact
-export all landed — ~130 pytest tests green.
+export all landed — 145 pytest tests green.
 
-Frontend: two static sites (`customers/`, `drafts/cargo-ship/`) — wiring them
-to the live API and removing their mock/demo data is in progress, tracked in
-`docs/INTEGRATION_PLAN.md`.
+Frontend: both static sites run on the live API with no mock data — customers book against the live simulation and get priced counter-offers; the operator console shows the live world, every booking and the settlement of customer deals. Verified end to end by `scripts/e2e.sh`; history in `docs/INTEGRATION_PLAN.md`.
