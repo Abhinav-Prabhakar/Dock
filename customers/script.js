@@ -918,7 +918,12 @@ deckEl.addEventListener('click', e => {
 
     /* one order per container kind, each priced live by the fleet
        (POST /orders -> offers), then the rate-quotation slip        */
-    const txt = s => { const el = document.querySelector(s); return el ? el.textContent.trim() : ''; };
+    const inkBadge = status => {
+      const badgeStatus = document.querySelector('.face .rows .r:last-child b');
+      if (badgeStatus) badgeStatus.textContent = status;
+      const bandText = document.querySelector('.face .band-t');
+      if (bandText) bandText.innerHTML = `BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;${status}`;
+    };
     const CARGO_API = { dry: 'dry', haz: 'hazmat', reef: 'reefer' };
     const types = [...document.querySelectorAll('.ctype')].map(t => ({
       cargo: (t.querySelector('.ct-cargo') || {}).dataset?.cargo || 'dry',
@@ -926,32 +931,26 @@ deckEl.addEventListener('click', e => {
       units: parseInt((t.querySelector('.sv-c') || {}).textContent, 10) || 0,
     })).filter(t => t.units > 0);
 
-    /* departure window -> days-from-now midpoint +/- tolerance */
-    const cal = window.__mlCal;
-    let reqDep = 1, flex = 0;
-    if (cal) {
-      const mid = new Date((cal.lo.getTime() + cal.hi.getTime()) / 2);
-      reqDep = Math.max(0.5, (mid.getTime() - Date.now()) / 864e5);
-      flex   = Math.max(0, Math.round((cal.hi - cal.lo) / 864e5 / 2));
+    /* departure — this page uses the stamped day-tiles (S.depDay / S.flex),
+       not intake-b's ppCode* stamps or a drag calendar (__mlCal). */
+    if (S.depDay == null || S.depDay < 0.5) {
+      b.textContent = 'CONFIRM BOOKING';
+      b.disabled = false;
+      inkBadge('NOT PRICED');
+      alert('Pick a departure day (½ day or later) before confirming.');
+      return;
     }
 
     const bodies = types.map(t => ({
-      origin:      txt('#ppCodeA'),
-      dest:        txt('#ppCodeB'),
+      origin:      S.origin,
+      dest:        S.dest,
       teu:         t.units,
       weight_t:    +((t.kg * t.units) / 1000).toFixed(2),
       cargo_type:  CARGO_API[t.cargo] || 'dry',
-      segment:     'standard',
-      req_dep_day: +reqDep.toFixed(2),
-      flex_days:   flex,
+      segment:     S.segment,
+      req_dep_day: +S.depDay.toFixed(2),
+      flex_days:   S.flex,
     }));
-
-    const inkBadge = status => {
-      const badgeStatus = document.querySelector('.face .rows .r:last-child b');
-      if (badgeStatus) badgeStatus.textContent = status;
-      const bandText = document.querySelector('.face .band-t');
-      if (bandText) bandText.innerHTML = `BOOKING REQUEST&nbsp;&nbsp;—&nbsp;&nbsp;${status}`;
-    };
 
     (async () => {
       let results;
