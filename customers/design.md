@@ -45,11 +45,18 @@ Everything is hand-built from three files: no frameworks, no assets, no fonts lo
 
 ## File map
 
+This page is now served by Next.js (static export — see `customers/README.md`
+for the project layout), but the design contract below is unchanged: the
+Next port kept this markup/CSS/JS byte-for-byte, only moving them so a thin
+client component can mount them the same way a plain `<script>`/`<link>`
+page did.
+
 | File | Role |
 |---|---|
-| `index.html` | Scene markup: wall hook SVG, shadow div, strap canvas, the badge (`#card`) with all its print layers, the panel deck (`#panel` with `#col1` / `#col2`), hint line |
-| `style.css` | All styling. Design tokens in `:root`; sections for the card, the laminate/optics, the deck, steppers, cargo types, calendar (`.cal-*`), port pair (`.pp-*`) |
-| `script.js` | Seeded print generation (barcode/QR/stack), the physics loop, cord rendering, input handling, split-view choreography, cargo type blocks, calendar, port pair + price |
+| `app/markup/root.js` | The scene markup below, extracted verbatim from the original `index.html` `<body>` (wall hook SVG, shadow div, strap canvas, the badge `#card` with all its print layers, the panel deck `#panel` with `#col1`/`#col2`, hint line) |
+| `public/style.css` | All styling, unchanged. Design tokens in `:root`; sections for the card, the laminate/optics, the deck, steppers, cargo types, calendar (`.cal-*`), port pair (`.pp-*`) |
+| `public/script.js` | Unchanged. Seeded print generation (barcode/QR/stack), the physics loop, cord rendering, input handling, split-view choreography, cargo type blocks, calendar, port pair + price |
+| `app/RootIntakeClient.js` | The only new code for this page: renders the markup above via `dangerouslySetInnerHTML` and loads `shared/api.js` → `shared/offers.js` → `script.js` as plain `<script>` tags, same order as the original page |
 
 ---
 

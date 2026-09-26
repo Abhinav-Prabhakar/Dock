@@ -1370,61 +1370,53 @@ window.addEventListener('keydown', e => {
   if (selId) deselect();
 });
 
-/* ============================== BOOT ============================== */
-(async function boot() {
-  /* 1 · reference data + orders, live from the API (no fallback) */
-  let pRecs = [];
-  let ords = [];
-  try {
-    [pRecs, ords] = await Promise.all([DockAPI.ports(), DockAPI.orders()]);
-  } catch (e) {
-    apiDown(e);
-  }
-  pRecs.forEach(p => {
-    const id = p.port_id || p.id;
-    PORTS[id] = { city: String(p.name || id).toUpperCase(), lon: p.lon, lat: p.lat };
-  });
-  orders = (ords || []).map((o, i) => normalize(o, i)).filter(o => o.from && o.to);
-  orders.sort((a, b) => (b.created || 0) - (a.created || 0));
-  newestId = orders[0] && orders[0].id;
+/* ============================ LIVE ORDERS ============================ */
+/* Orders are owned by lib/ordersStore.js (window.DockOrdersStore, wired up
+   by the dashboard page before this script runs). applyOrders() re-derives
+   chart geometry and repaints the register, wall, totals, chart and detail
+   card in place — called once at boot and again on every store push
+   (a Booking Desk booking, another tab, or the 15s visibility poll) — so
+   nothing here needs a page reload to reflect a new/changed order. */
+let prevIds = new Set();
+let chartLand = null;
 
-  /* 2 · derived chart geometry per order */
-  orders.forEach(o => {
-    if (!PORTS[o.from] || !PORTS[o.to]) return;
-    o._arc  = gcArc(PORTS[o.from], PORTS[o.to], 42);
-    o._segs = splitAntimeridian(o._arc);
-    o._vt   = vesselT(o);
-    o._done = splitAntimeridian(o._arc.slice(0, Math.max(2, Math.round(o._vt * 42) + 1)));
-    const vp = arcPos(o._arc, o._vt);
-    o._vpos = [normLon(vp[0]), vp[1]];
-    o._vhd  = arcHeading(o._arc, o._vt);
-    const md = arcPos(o._arc, 0.5);
-    o._mid  = [normLon(md[0]), md[1]];
-  });
+function deriveGeometry(o) {
+  if (!PORTS[o.from] || !PORTS[o.to]) return;
+  o._arc  = gcArc(PORTS[o.from], PORTS[o.to], 42);
+  o._segs = splitAntimeridian(o._arc);
+  o._vt   = vesselT(o);
+  o._done = splitAntimeridian(o._arc.slice(0, Math.max(2, Math.round(o._vt * 42) + 1)));
+  const vp = arcPos(o._arc, o._vt);
+  o._vpos = [normLon(vp[0]), vp[1]];
+  o._vhd  = arcHeading(o._arc, o._vt);
+  const md = arcPos(o._arc, 0.5);
+  o._mid  = [normLon(md[0]), md[1]];
+}
 
-  /* 3 · fleet totals — serif counters */
-  (function totals() {
-    const afloat = orders.filter(o => o.status === 'IN TRANSIT')
-      .reduce((s, o) => s + (o.teu || 0), 0);
-    const active = orders.filter(o => o.status !== 'DELIVERED').length;
-    const dys = orders.map(daysOf);
-    const avg = dys.length ? Math.round(dys.reduce((a, b) => a + b, 0) / dys.length) : 0;
-    const set = (id, v) => { const el = document.getElementById(id); el.textContent = v; el.dataset.t = v; };
-    set('totTeu', afloat);
-    set('totOrd', active);
-    set('totDays', avg);
-  })();
+function renderTotals() {
+  const afloat = orders.filter(o => o.status === 'IN TRANSIT')
+    .reduce((s, o) => s + (o.teu || 0), 0);
+  const active = orders.filter(o => o.status !== 'DELIVERED').length;
+  const dys = orders.map(daysOf);
+  const avg = dys.length ? Math.round(dys.reduce((a, b) => a + b, 0) / dys.length) : 0;
+  const set = (id, v) => { const el = document.getElementById(id); el.textContent = v; el.dataset.t = v; };
+  set('totTeu', afloat);
+  set('totOrd', active);
+  set('totDays', avg);
+}
 
-  /* 4 · the register */
+function renderLedger() {
+  ledgerEl.innerHTML = '';
   orders.forEach((o, i) => ledgerEl.appendChild(buildOrder(o, i)));
   document.getElementById('regCount').textContent = `${orders.length} ENTRIES`;
   document.getElementById('regTeu').textContent =
     `${orders.reduce((s, o) => s + (o.teu || 0), 0)} TEU COMMITTED`;
   document.getElementById('regDate').textContent = fmtDate(Date.now());
+}
 
-  /* 5 · the credential wall */
+function renderWall(newIds) {
   document.getElementById('wallCount').textContent = `${orders.length} BADGES`;
-  wall.innerHTML = orders.map(o => badgeHTML(o, o.id === newestId)).join('');
+  wall.innerHTML = orders.map(o => badgeHTML(o, newIds.has(o.id))).join('');
   wall.querySelectorAll('canvas.barc').forEach(cv => drawBar(cv, +cv.dataset.seed + 314));
   wall.querySelectorAll('.badge').forEach(b =>
     b.addEventListener('click', () => {
@@ -1437,29 +1429,127 @@ window.addEventListener('keydown', e => {
     const h = wall.querySelector(`.hook[data-oid="${CSS.escape(o.id)}"]`);
     if (h) o._hook = h;
   });
+}
 
-  /* 6 · the chart — land overlay optional, GL preferred, SVG fallback */
-  let land = null;
-  try {
-    const r = await fetch('world.geo.json');
-    if (r.ok) land = await r.json();
-  } catch (e) {}
-  if (window.maplibregl) {
-    try { initGL(land); } catch (e) { renderFallback(); }
+/* first paint: fetch land + init GL/fallback. later paints: just refresh
+   the sources + vessel markers (GL) or redraw the SVG (fallback) — no
+   re-init, so panning/zoom the customer already did isn't lost. */
+function renderChart(first) {
+  if (first) {
+    (async () => {
+      try {
+        const r = await fetch('world.geo.json');
+        if (r.ok) chartLand = await r.json();
+      } catch (e) { /* land overlay is optional */ }
+      if (window.maplibregl) {
+        try { initGL(chartLand); } catch (e) { renderFallback(); }
+      } else {
+        renderFallback();
+      }
+    })();
+    return;
+  }
+  if (map) {
+    Object.values(vmarks).forEach(v => { try { v.mk.remove(); } catch (e) {} });
+    for (const k in vmarks) delete vmarks[k];
+    routeOrders().forEach(o => {
+      if (!(o._vt > 0 && o._vt < 1)) return;
+      const v = vesselElement(o);
+      const mk = new maplibregl.Marker({ element: v.el, anchor: 'center' }).setLngLat(o._vpos).addTo(map);
+      vmarks[o.id] = { oid: o.id, el: v.el, rotEl: v.rot, deg: o._vhd, mk };
+    });
+    refreshRoutes();
   } else {
-    renderFallback();
+    const host = document.getElementById('map');
+    if (host) drawFB(host, chartLand);
+  }
+}
+
+/* the one entry point boot() and every store push both go through */
+function applyOrders(raw, opts = {}) {
+  const first = !!opts.first;
+  const prevSelId = selId;
+
+  orders = (raw || []).map((o, i) => normalize(o, i)).filter(o => o.from && o.to);
+  orders.sort((a, b) => (b.created || 0) - (a.created || 0));
+  newestId = orders[0] && orders[0].id;
+
+  const newIds = new Set();
+  orders.forEach(o => {
+    if (!prevIds.has(o.id)) newIds.add(o.id);
+    deriveGeometry(o);
+  });
+
+  renderTotals();
+  renderLedger();
+  renderWall(first ? new Set(newestId ? [newestId] : []) : newIds);
+  renderChart(first);
+
+  if (prevSelId && orders.some(o => o.id === prevSelId)) {
+    select(prevSelId);
+  } else if (!first && newIds.size) {
+    /* a live booking just landed — flash/select it instead of leaving the
+       customer looking at a stale or now-empty detail card */
+    select([...newIds][0]);
+  } else if (prevSelId) {
+    deselect();
   }
 
-  /* 7 · reveal cascade, then auto-select the first live consignment */
-  const els = [...document.querySelectorAll('.rvl')];
-  els.forEach((el, i) => setTimeout(() => el.classList.add('on'), 120 + i * 55));
-  const first = orders.find(o => o.status === 'IN TRANSIT') || orders[0];
-  if (first) setTimeout(() => select(first.id), 900);
+  if (first) {
+    const els = [...document.querySelectorAll('.rvl')];
+    els.forEach((el, i) => setTimeout(() => el.classList.add('on'), 120 + i * 55));
+    const firstOrd = orders.find(o => o.status === 'IN TRANSIT') || orders[0];
+    if (firstOrd) setTimeout(() => select(firstOrd.id), 900);
+  }
+
+  prevIds = new Set(orders.map(o => o.id));
+}
+
+/* ============================== BOOT ============================== */
+(async function boot() {
+  /* 1 · reference data — ports don't change, fetched once */
+  let pRecs = [];
+  try {
+    pRecs = await DockAPI.ports();
+  } catch (e) {
+    apiDown(e);
+  }
+  pRecs.forEach(p => {
+    const id = p.port_id || p.id;
+    PORTS[id] = { city: String(p.name || id).toUpperCase(), lon: p.lon, lat: p.lat };
+  });
+
+  /* 2 · orders — via the shared store when the page wired one up (it
+     always does; the direct-fetch branch is just a safety net), so every
+     later push (a booking, another tab, the visibility poll) re-enters
+     applyOrders() the same way the first paint did */
+  const store = window.DockOrdersStore;
+  let initialOrders = [];
+  if (store) {
+    const s = await store.refetch();
+    if (s.error) apiDown({ message: s.error });
+    initialOrders = s.orders || [];
+    store.subscribe(s2 => {
+      if (!s2.loading) {
+        if (s2.error) apiDown({ message: s2.error });
+        applyOrders(s2.orders || [], { first: false });
+      }
+    });
+  } else {
+    try { initialOrders = await DockAPI.orders(); } catch (e) { apiDown(e); }
+  }
+
+  applyOrders(initialOrders, { first: true });
 })();
 
 /* ============================ LIVE DATA ============================ */
-/* API unreachable: say so on the page instead of showing stale data */
+/* API unreachable: say so on the page instead of showing stale data.
+   Only ever shown once — a background poll retrying against a downed
+   API shouldn't stack up banners. */
+let apiDownShown = false;
 function apiDown(err) {
+  if (apiDownShown) return;
+  apiDownShown = true;
   const b = document.createElement('div');
   b.className = 'api-down';
   b.setAttribute('role', 'alert');
@@ -1467,7 +1557,8 @@ function apiDown(err) {
   document.body.appendChild(b);
 }
 
-/* QUOTED order -> the rate-quotation slip, then reload with the outcome */
+/* QUOTED order -> the rate-quotation slip, then refresh in place with the
+   outcome (no reload — the store push repaints the register/wall/chart) */
 async function reviewQuote(id) {
   try {
     const o = await DockAPI.order(id);
@@ -1475,11 +1566,12 @@ async function reviewQuote(id) {
   } catch (e) {
     alert(`Couldn't open this quote: ${e.message}`);
   }
-  location.reload();
+  if (window.DockOrdersStore) window.DockOrdersStore.refetch();
+  else location.reload();
 }
 
 /* Hook for the booking desk (desk.js): focus an order the assistant
-   mentions, if this page already has it. false -> caller reloads. */
+   mentions, if this page already has it. false -> caller refetches. */
 window.DockDashboard = {
   focus(id) {
     if (!orders.some(o => o.id === id)) return false;
