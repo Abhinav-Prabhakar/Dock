@@ -396,22 +396,6 @@ export class Ship {
     };
   }
 
-  setLivery(key) {
-    const lv = this.liveries[key];
-    if (!lv) return;
-    this.liveryKey = key;
-    const swap = (m, t) => { if (m.map) m.map.dispose(); m.map = t; m.needsUpdate = true; };
-    swap(this.mat.hull, makeHullTexture(lv));
-    swap(this.mat.transom, makeTransomTexture(lv));
-    swap(this.mat.funnel, makeFunnelTexture(lv));
-    const f = makeFacadeTextures(lv.super);
-    swap(this.mat.facade, f.map);
-    this.mat.deck.color.set(lv.deck);
-    this.mat.super.color.set(lv.super);
-    this.mat.lashing.color.set(lv.lashing);
-    this.mat.hatch.color.set(lv.hatch);
-  }
-
   buildHull() {
     const hull = new THREE.Mesh(buildHullGeometry(), this.mat.hull);
     const bulwark = new THREE.Mesh(buildBulwark(), this.mat.hull);

@@ -333,7 +333,7 @@ function recomputeMetrics() {
 
 async function build() {
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
-  ship = new Ship(params.get('livery') in LIVERIES ? params.get('livery') : SHIP.livery, LIVERIES);
+  ship = new Ship(SHIP.livery, LIVERIES);
   scene.add(ship.group);
   cargo = new Cargo(ship);
   // Cargo starts empty — it's populated from the live stowage endpoint below
@@ -465,12 +465,10 @@ function setupUI() {
   $('vessel-select').innerHTML = `<option value="${currentVessel}">${currentVessel}</option>`;
   // Each vessel has its own hull, so a switch reloads the console with the
   // new id: the hull, bay layout, hydrostatics and drawings are all computed
-  // once at module load from the active SHIP (config.js). The livery override
-  // is dropped so the new vessel shows its own colours.
+  // once at module load from the active SHIP (config.js).
   $('vessel-select').onchange = (e) => {
     const next = new URLSearchParams(location.search);
     next.set('vessel', e.target.value);
-    next.delete('livery');
     location.search = next.toString();
   };
   // The ◀ ▶ flanks cycle the same select — skipping hull-less vessels
@@ -505,11 +503,6 @@ function setupUI() {
 
   const bs = $('bay-select');
   bs.innerHTML = cargo.bayInfo().map((b) => `<option value="${b.bay}">Bay ${String(b.bay).padStart(2, '0')}  (20': ${b.bays20.map((n) => String(n).padStart(2, '0')).join('/')}) · ${b.rows.length} rows · ${String(b.maxDeckTier)}</option>`).join('');
-
-  const ls = $('livery-select');
-  ls.innerHTML = Object.entries(LIVERIES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
-  ls.value = ship.liveryKey;
-  ls.onchange = () => ship.setLivery(ls.value);
 
   $('vessel-name').textContent = SHIP.name;
   // BOXES/TEU/UTIL are driven by updateStowageCard() from the live stowage
