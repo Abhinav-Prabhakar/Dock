@@ -48,6 +48,7 @@ export class StatsPage extends Page {
     this.hover = {};
     this.raw = null;
     this.d = null;
+    this._loadToken = 0;
     this.build();
     this.load();
   }
@@ -178,17 +179,22 @@ export class StatsPage extends Page {
   // Fetch from the live backend for the current scenario source. No mock, no
   // cached fallback — a failed call renders an explicit unavailable state.
   async load() {
+    // A scenario switch mid-load must not let an older, slower response
+    // land after a newer one and overwrite it under the current selector.
+    const token = ++this._loadToken;
     this.k.status.style.display = '';
     this.k.status.textContent = 'Loading statistics from the Dock backend…';
     this.k.grid.style.display = 'none';
     this.raw = null; this.d = null;
     try {
       const raw = await loadStats(this.scenario);
+      if (token !== this._loadToken) return;
       this.raw = raw;
       this.k.status.style.display = 'none';
       this.k.grid.style.display = '';
       this.setData();
     } catch (e) {
+      if (token !== this._loadToken) return;
       this.k.status.textContent = `Statistics unavailable — ${e.message}`;
       this.k.grid.style.display = 'none';
     }

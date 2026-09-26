@@ -99,6 +99,17 @@ function updateVesselHud(stow) {
   $('vessel-sub').textContent = `${stow.vessel_id} · ${stow.capacity_teu.toLocaleString()} TEU · ${Math.round(stow.aboard_teu).toLocaleString()} TEU aboard · ${where}`;
 }
 
+// The stowage card (BOXES / TEU / UTIL): the selected vessel's own real
+// counts from the live stowage response, not the fixed model hull's
+// (necessarily resampled) count of boxes actually drawn on screen.
+function updateStowageCard(stow) {
+  const boxes = stow.bays.reduce((n, b) => n + b.aboard.length, 0);
+  $('s-boxes').textContent = boxes.toLocaleString();
+  $('s-teu').textContent = Math.round(stow.aboard_teu).toLocaleString();
+  $('s-util').textContent = stow.capacity_teu > 0
+    ? `${Math.round((stow.aboard_teu / stow.capacity_teu) * 100)}%` : '—';
+}
+
 function setCargoUnavailable(message) {
   const el = $('cargo-note');
   el.classList.toggle('unavailable', !!message);
@@ -117,13 +128,20 @@ async function refreshStowage({ applySpeed = false, force = false } = {}) {
     return;
   }
   updateVesselHud(stow);
+  updateStowageCard(stow);
   if (applySpeed) {
     const kt = stow.mode === 'SEA' ? stow.speed_kt : 0;
     motion.setSpeedKnots(kt);
     $('r-speed').value = kt;
     $('v-speed').textContent = `${kt} kn`;
   }
-  const key = `${currentVessel}:${stow.at_call}:${stow.aboard_teu}`;
+  // Includes the aboard unit count and total weight, not just the TEU sum:
+  // a discharge + load of equal TEU between polls would otherwise leave a
+  // stale 3D layout since aboard_teu alone wouldn't change.
+  const unitCount = stow.bays.reduce((n, b) => n + b.aboard.length, 0);
+  const totalWeight = Math.round(stow.bays.reduce((w, b) =>
+    w + b.aboard.reduce((bw, u) => bw + u.weight_t, 0), 0));
+  const key = `${currentVessel}:${stow.at_call}:${stow.aboard_teu}:${unitCount}:${totalWeight}`;
   if (!force && key === stowageKey) return;
   stowageKey = key;
   const { specs, summary } = layoutFromStowage(stow, cargo.bays, SHIP.holdTiers);
@@ -179,6 +197,9 @@ function wireLive() {
     if (s.ok) { el.hidden = true; }
     else { el.textContent = `Live simulation unavailable — ${s.message}`; el.hidden = false; }
   });
+  // A new live episode: drop items from the old one rather than mixing the
+  // two (its request ids and event seq numbers restart from scratch).
+  live.onReset(() => { bookingItems = []; renderBookings(); });
 }
 
 function recomputeMetrics() {
@@ -229,7 +250,11 @@ async function build() {
   live.start();
   refreshCompare();
   refreshStowage({ applySpeed: true, force: true });
-  setInterval(() => refreshStowage(), 30000);
+  // refreshStowage() already catches its own fetch failures; this guards
+  // against anything past that (e.g. layoutFromStowage throwing on an
+  // unexpected shape) becoming an unhandled promise rejection on a timer
+  // nothing else awaits.
+  setInterval(() => { refreshStowage().catch((e) => setCargoUnavailable(e.message)); }, 30000);
 }
 
 /* ------------------------------------------------------------------ post */
@@ -314,18 +339,15 @@ function setupUI() {
   ls.onchange = () => ship.setLivery(ls.value);
 
   $('vessel-name').textContent = SHIP.name;
-  const upd = (s) => {
-    $('s-boxes').textContent = s.containers.toLocaleString();
-    $('s-teu').textContent = s.teu.toLocaleString();
-    $('s-util').textContent = `${Math.round((s.teu / s.deckCapacityTEU) * 100)}%`;
-  };
+  // BOXES/TEU/UTIL are driven by updateStowageCard() from the live stowage
+  // response (the selected vessel's real counts), not from cargo.stats()
+  // (a count of what's actually drawn on this fixed model hull, which can
+  // differ from the real vessel on a resample — see fromLive.js).
   cargo.onChange((s, info) => {
-    upd(s);
     if (info?.colorOnly) return;
     clearTimeout(metricsTimer);
     metricsTimer = setTimeout(recomputeMetrics, 120);
   });
-  upd(cargo.stats());
 
   const cm = $('color-mode');
   cm.innerHTML = Object.entries(COLOR_MODES).map(([k, v]) => `<button data-m="${k}">${v.label}</button>`).join('');

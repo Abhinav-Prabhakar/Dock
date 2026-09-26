@@ -19,8 +19,9 @@ const { describeEvent, trackCustomer, seedCustomers, CUSTOMER_EVENT_TYPES, live 
 
 // A stand-in for `cargo.bays` (== `ship.layout.bays`) that doesn't require
 // importing ship.js/cargo.js (both pull in three.js, which Node can't load).
-// 23 physical bays, deck tiers 6-10, hold rows narrowing towards the keel —
-// shaped like the real hull without depending on it.
+// 20 physical bays (SHIP.layout's bay count), deck tiers 6-10, hold rows
+// narrowing towards the keel — shaped like the real hull without depending
+// on it.
 const HOLD_TIERS = 9;
 const ROW_PITCH = 2.463;
 
@@ -33,7 +34,7 @@ function makeRows(rowCount) {
   return rows.sort((a, b) => a.z - b.z);
 }
 
-function makeBays(P = 23) {
+function makeBays(P = 20) {
   const rows = makeRows(9); // 9 rows per bay, same set everywhere for simplicity
   const byAbsZ = [...rows].sort((a, b) => Math.abs(a.z) - Math.abs(b.z) || a.row - b.row);
   const bays = [];
@@ -57,7 +58,7 @@ function makeBays(P = 23) {
 
 async function checkVessel(vesselId) {
   const stow = await API.stowage(vesselId);
-  const bays = makeBays(23);
+  const bays = makeBays(20);
   const { specs, summary } = layoutFromStowage(stow, bays, HOLD_TIERS);
 
   const byBay = new Map(bays.map((b) => [b.bay, b]));
@@ -147,10 +148,14 @@ async function checkVessel(vesselId) {
     for (const b of mapped) count += (stow.bays[b].aboard || []).length;
     const f = count / (mapped.length * stow.bay_height);
     const cap = totalCapPerBay.get(j);
-    const expected = Math.round(f * cap);
+    // Capped at `count`: a real container is never drawn twice, so on a
+    // small vessel (whose real per-group count is far below this fixture
+    // hull's own capacity) the shown TEU tracks the real unit count, not
+    // the naive fill-fraction projection onto this hull's larger capacity.
+    const expected = Math.min(Math.round(f * cap), count);
     const got = teuPerBay.get(j) || 0;
     assert.ok(Math.abs(got - expected) <= 2,
-      `physical bay ${j}: shown ${got} TEU vs expected ~${expected} TEU (cap ${cap})`);
+      `physical bay ${j}: shown ${got} TEU vs expected ~${expected} TEU (cap ${cap}, real units ${count})`);
   }
 
   assert.equal(summary.aboardTEU, stow.aboard_teu);
@@ -220,6 +225,26 @@ test('layoutFromStowage: reefer pairs become 40HC, hazmat maps to imdg category'
   assert.equal(reefer.type, '40HC');
   assert.equal(reefer.category, 'reefer');
   assert.equal(hazmat.category, 'imdg');
+});
+
+test('layoutFromStowage: a real container is never drawn more than once, even on a tiny vessel', () => {
+  // A small vessel's real per-bay-group capacity is far smaller than this
+  // fixture hull's; f * cap would exceed the number of real units aboard.
+  // The chosen behavior (per explicit product decision) is to show that
+  // group emptier, not to fabricate repeated containers.
+  const bays = makeBays(20);
+  const mkUnit = (i) => ({ discharge: i % 2 ? 'NLRTM' : 'DEHAM', discharge_call: 5, board: 'CNSHA', weight_t: 12, cargo_type: 'dry' });
+  const units = Array.from({ length: 3 }, (_, i) => mkUnit(i));
+  // bay_height tiny relative to this fixture's own per-group capacity, and
+  // only one real backend bay mapped across many fixture bays, so f * cap
+  // for the mapped group would be far larger than the 3 real units aboard.
+  const stow = { aboard_teu: 3, bay_height: 3, bays: [{ aboard: units }, ...Array.from({ length: 19 }, () => ({ aboard: [] }))] };
+  const { specs, summary } = layoutFromStowage(stow, bays, HOLD_TIERS);
+
+  // count physical TEU slots actually consumed: 20' = 1, 40'/40HC = 2
+  const drawnTeu = specs.reduce((n, s) => n + (s.type === '20' ? 1 : 2), 0);
+  assert.ok(drawnTeu <= units.length, `drew ${drawnTeu} TEU worth of containers from only ${units.length} real units aboard`);
+  assert.ok(summary.shownTEU <= units.length);
 });
 
 /* ------------------------------------------------------------------ describeEvent */
