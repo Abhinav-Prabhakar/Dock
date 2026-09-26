@@ -47,11 +47,12 @@ def _quote_with_offers(c) -> dict:
 
 
 def test_no_viable_offer_is_recorded_not_faked(live):
-    """A window with no sailing clears nothing -> NO OFFER, never a
+    """A request nothing can carry clears nothing -> NO OFFER, never a
     below-cost deal, and the operator still sees the turned-away demand."""
     c, _ = live
-    # 4,000 TEU exceeds any vessel's bookable own-lift space: nothing fits
-    r = c.post("/orders", json={**BASE, "teu": 4000, "weight_t": 40000,
+    # 7,000 TEU exceeds every vessel's bookable own-lift space — and a
+    # split's halves (3,500 TEU) don't fit either, so nothing is viable
+    r = c.post("/orders", json={**BASE, "teu": 7000, "weight_t": 70000,
                                 "req_dep_day": 8})
     assert r.status_code == 201, r.text
     body = r.json()
