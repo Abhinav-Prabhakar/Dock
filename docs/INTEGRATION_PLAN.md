@@ -108,7 +108,7 @@ Done. **The original UI and `drafts/cargo-ship/design.md` are retained**; only d
   speed from the vessel, 8 real ports for colour-by-port. The Bay select and Load/Discharge/Restow/Clear
   buttons stay visible but disabled (they used to invent cargo). New: Live bookings panel
   (`js/live.js`), requested so the port side sees bookings in real time.
-- Statistics: `/compare/*` (holdout 5-policy, shock replay) + live world (`js/pages/statsLive.js`);
+- Statistics: `/compare/*` (holdout 5-policy) + live world (`js/pages/statsLive.js`); the shock replay was removed 2026-09-26;
   original labels kept and made true (TEU moved, TEU by destination, per-vessel rate, segment mix).
 - Model: real network weights + live decisions (`js/pages/liveDecision.js`); every original panel fed
   by real data from the backend (`server/decision_context.py`): option legs, the engine's price/accept

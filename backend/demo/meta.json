@@ -16,5 +16,5 @@
     "ppo"
   ],
   "demand_model": "models/artifacts/demand_forecaster",
-  "notes": "Artifact-driven demo export (technical.md \u00a74.1, Decision A). Identical simulator seeds across policies: ep_seed = seed*1000 + ep*101 (same scheme as rl/evaluate.py). shock.json replays a forced NLRTM closure + 2x demand spike mid-horizon (technical.md \u00a74.3). All numbers pre-rounded and pre-aggregated \u2014 the frontend must not recompute."
+  "notes": "Artifact-driven demo export (technical.md §4.1, Decision A). Identical simulator seeds across policies: ep_seed = seed*1000 + ep*101 (same scheme as rl/evaluate.py). All numbers pre-rounded and pre-aggregated — the frontend must not recompute."
 }

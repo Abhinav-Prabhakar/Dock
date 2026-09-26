@@ -21,23 +21,16 @@ function assertNoNaNs(value, path = 'root') {
   if (value === undefined) assert.fail(`${path} is undefined`);
 }
 
-let holdout, shock;
+let holdout;
 
-test('loadStats(holdout) fetches and shapes real data', async () => {
-  holdout = await loadStats('holdout');
+test('loadStats() fetches and shapes the holdout comparison', async () => {
+  holdout = await loadStats();
   assert.equal(Object.keys(holdout.policies).length, 5, 'holdout should have 5 policies');
   assertNoNaNs(holdout);
 });
 
-test('loadStats(shock) fetches and shapes real data', async () => {
-  shock = await loadStats('shock');
-  assert.equal(Object.keys(shock.policies).length, 2, 'shock should have 2 policies (static, ppo)');
-  assert.ok(shock.policies.static && shock.policies.ppo);
-  assertNoNaNs(shock);
-});
-
 test('every policy series is 90 days long', () => {
-  for (const model of [holdout, shock]) {
+  for (const model of [holdout]) {
     for (const [key, p] of Object.entries(model.policies)) {
       for (const series of ['cum', 'cumRev', 'daily', 'revenue']) {
         assert.equal(p[series].length, 90, `${model.source}.${key}.${series} should have 90 entries`);
@@ -54,7 +47,7 @@ test('lift.profit matches summary.lift_vs_static.ppo.profit_usd_pct for holdout'
 });
 
 test('ports: 8 entries with lat/lon', () => {
-  for (const model of [holdout, shock]) {
+  for (const model of [holdout]) {
     assert.equal(model.ports.length, 8);
     for (const p of model.ports) {
       assert.ok(isFiniteNum(p.lat) && isFiniteNum(p.lon), `${p.code} should have numeric lat/lon`);
@@ -63,7 +56,7 @@ test('ports: 8 entries with lat/lon', () => {
 });
 
 test('fleet: 4 vessels with util in [0,1]', () => {
-  for (const model of [holdout, shock]) {
+  for (const model of [holdout]) {
     assert.equal(model.loops.length, 4);
     for (const l of model.loops) {
       assert.ok(l.util >= 0 && l.util <= 1, `${l.vessel} util ${l.util} should be in [0,1]`);
@@ -72,7 +65,7 @@ test('fleet: 4 vessels with util in [0,1]', () => {
 });
 
 test('funnel stages are monotonic non-increasing where defined (req >= quoted >= booked)', () => {
-  for (const model of [holdout, shock]) {
+  for (const model of [holdout]) {
     for (const s of model.funnel) {
       assert.ok(s.req >= s.quoted, `${model.source}.${s.key}: req (${s.req}) >= quoted (${s.quoted})`);
       assert.ok(s.quoted >= s.booked, `${model.source}.${s.key}: quoted (${s.quoted}) >= booked (${s.booked})`);
@@ -90,8 +83,8 @@ test('fleet segShares sums to 1 (or is null with no bookings) and matches the ev
     API.compare('summary'), API.compare('timeline'), API.compare('meta'), API.ports(), API.vessels(), API.live(),
   ]);
   const eventsResp = await API.liveEvents(0, 'booking.decision,delivery.confirmed', 1000);
-  const raw = { summary, timeline, meta, ports, vessels, live, shock: null, events: eventsResp.events };
-  const model = toStatsModel(raw, 'holdout');
+  const raw = { summary, timeline, meta, ports, vessels, live, events: eventsResp.events };
+  const model = toStatsModel(raw);
   const bookingEvents = raw.events.filter((e) => e.type === 'booking.decision');
 
   for (const l of model.loops) {
@@ -126,8 +119,15 @@ test('fleet segShares sums to 1 (or is null with no bookings) and matches the ev
 });
 
 test('outcome counts sum to the number of decisions considered', () => {
-  for (const model of [holdout, shock]) {
+  for (const model of [holdout]) {
     const sum = model.outcomes.reduce((a, o) => a + o.n, 0);
     assert.equal(sum, model.requests, `${model.source}: outcome counts should sum to requests`);
   }
+});
+
+test('the scenario label comes from the export metadata (no hard-coded seed count)', async () => {
+  const { API } = await import('../js/api.js');
+  const meta = await API.compare('meta');
+  assert.equal(holdout.scenario.label, `Holdout · ${meta.scenarios.length} unseen scenarios × ${meta.episodes} seeds`);
+  assert.equal(holdout.scenario.shock, undefined, 'the shock replay is gone');
 });

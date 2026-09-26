@@ -76,7 +76,7 @@ export const API = {
   ports:         () => api('/ports'),
   routes:        () => api('/routes'),
   orders:        () => api('/orders'),
-  compare:       (name) => api(`/compare/${name}`),   // summary | timeline | offers | shock | meta
+  compare:       (name) => api(`/compare/${name}`),   // summary | timeline | offers | meta
   // operations copilot (server-side LLM agent, read-only tools): -> { reply, actions[] }
   chat:          (body) => api('/chat/operator', { method: 'POST', body: JSON.stringify(body) }),
   chatStatus:    () => api('/chat/status'),

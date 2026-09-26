@@ -78,65 +78,35 @@ function classifyOutcome(e) {
   return null;
 }
 
-function buildPolicies(source, raw) {
+function buildPolicies(raw) {
   const policies = {};
-  if (source === 'shock') {
-    for (const pd of POLICIES) {
-      const run = raw.shock.runs[pd.key];
-      if (!run) continue;
-      const cum = run.daily.map((r) => r.cum_profit);
-      const cumRev = run.daily.map((r) => r.cum_revenue);
-      const s = run.summary;
-      policies[pd.key] = {
-        ...pd,
-        cum, cumRev,
-        daily: toDaily(run.daily, 'cum_profit'),
-        revenue: toDaily(run.daily, 'cum_revenue'),
-        profit: cum[cum.length - 1],
-        revTotal: cumRev[cumRev.length - 1],
-        revPerTEU: s.revenue_per_teu,
-        teu: s.teu_booked,
-        util: s.utilization,
-        co2: s.co2_per_teu,
-        counterWin: s.counter_win_rate,
-        empty: s.empty_teu_nm,
-        fuel: s.fuel_tonnes,
-      };
-    }
-  } else {
-    for (const pd of POLICIES) {
-      const tl = raw.timeline.policies[pd.key];
-      const sp = raw.summary.policies[pd.key];
-      if (!tl || !sp) continue;
-      const cum = tl.map((r) => r.cum_profit);
-      const cumRev = tl.map((r) => r.cum_revenue);
-      policies[pd.key] = {
-        ...pd,
-        cum, cumRev,
-        daily: toDaily(tl, 'cum_profit'),
-        revenue: toDaily(tl, 'cum_revenue'),
-        profit: cum[cum.length - 1],
-        revTotal: cumRev[cumRev.length - 1],
-        revPerTEU: sp.revenue_per_teu.mean,
-        teu: sp.teu_booked.mean,
-        util: sp.utilization.mean,
-        co2: sp.co2_per_teu.mean,
-        counterWin: sp.counter_win_rate.mean,
-        empty: sp.empty_teu_nm.mean,
-        fuel: sp.fuel_tonnes.mean,
-      };
-    }
+  for (const pd of POLICIES) {
+    const tl = raw.timeline.policies[pd.key];
+    const sp = raw.summary.policies[pd.key];
+    if (!tl || !sp) continue;
+    const cum = tl.map((r) => r.cum_profit);
+    const cumRev = tl.map((r) => r.cum_revenue);
+    policies[pd.key] = {
+      ...pd,
+      cum, cumRev,
+      daily: toDaily(tl, 'cum_profit'),
+      revenue: toDaily(tl, 'cum_revenue'),
+      profit: cum[cum.length - 1],
+      revTotal: cumRev[cumRev.length - 1],
+      revPerTEU: sp.revenue_per_teu.mean,
+      teu: sp.teu_booked.mean,
+      util: sp.utilization.mean,
+      co2: sp.co2_per_teu.mean,
+      counterWin: sp.counter_win_rate.mean,
+      empty: sp.empty_teu_nm.mean,
+      fuel: sp.fuel_tonnes.mean,
+    };
   }
   const order = POLICIES.filter((pd) => policies[pd.key]).map((pd) => pd.key);
   return { policies, order };
 }
 
-function buildLift(source, raw, policies) {
-  if (source === 'shock') {
-    const pp = policies.ppo, st = policies.static;
-    const pct = (a, b) => (Math.abs(b) < 1 ? null : ((a - b) / Math.abs(b)) * 100);
-    return { profit: pct(pp.profit, st.profit), rpt: pct(pp.revPerTEU, st.revPerTEU), util: (pp.util - st.util) * 100 };
-  }
+function buildLift(raw) {
   const l = raw.summary.lift_vs_static.ppo;
   return { profit: l.profit_usd_pct, rpt: l.revenue_per_teu_pct, util: l.utilization_pp };
 }
@@ -144,7 +114,7 @@ function buildLift(source, raw, policies) {
 // The compass of demand is "TEU by destination" (matching the old mock):
 // each booking.decision event carries both an origin and a dest port, and
 // dest is what the mock's petal chart meant by demand.
-function buildPorts(raw, bookingEvents, source) {
+function buildPorts(raw, bookingEvents) {
   const perPort = {};
   for (const p of raw.ports) perPort[p.port_id] = { requested: 0, booked: 0 };
   for (const e of bookingEvents) {
@@ -154,7 +124,6 @@ function buildPorts(raw, bookingEvents, source) {
     if (e.outcome === 'booked') agg.booked += e.teu || 0;
   }
   const empties = raw.live.empties || {};
-  const shockPort = source === 'shock' ? raw.shock.event.port : null;
   return raw.ports.map((p) => {
     const agg = perPort[p.port_id];
     return {
@@ -168,7 +137,6 @@ function buildPorts(raw, bookingEvents, source) {
       requested: agg.requested,
       booked: agg.booked,
       throughput: agg.booked,
-      shocked: shockPort === p.port_id,
     };
   });
 }
@@ -237,26 +205,26 @@ function buildFunnelAndOutcomes(bookingEvents, deliveredTotal) {
 }
 
 // Pure: raw API payloads -> the exact model shape stats.js draws from.
-export function toStatsModel(raw, source) {
-  const { policies, order } = buildPolicies(source, raw);
-  const lift = buildLift(source, raw, policies);
+export function toStatsModel(raw) {
+  const { policies, order } = buildPolicies(raw);
+  const lift = buildLift(raw);
   const bookingEvents = raw.events.filter((e) => e.type === 'booking.decision');
   const deliveredTotal = raw.events.filter((e) => e.type === 'delivery.confirmed').length;
-  const ports = buildPorts(raw, bookingEvents, source);
+  const ports = buildPorts(raw, bookingEvents);
   const loops = buildLoops(raw, bookingEvents);
   const { funnel, outcomes } = buildFunnelAndOutcomes(bookingEvents, deliveredTotal);
   const requests = bookingEvents.length;
   const customerDecisions = bookingEvents.filter((e) => e.source === 'customer').length;
   const lead = policies.ppo;
 
-  const scenario = source === 'shock'
-    ? { label: 'Shock replay · NLRTM closure', shock: { port: raw.shock.event.port, lo: raw.shock.event.day_lo, hi: raw.shock.event.day_hi, text: raw.shock.event.description } }
-    : { label: 'Holdout · 2 unseen scenarios × 3 seeds', shock: null };
+  // label straight from the export's provenance, never hard-coded
+  const nScen = (raw.meta.scenarios || []).length;
+  const scenario = { label: `Holdout · ${nScen} unseen scenario${nScen === 1 ? '' : 's'} × ${raw.meta.episodes} seeds` };
 
   const tide = lead.revenue.map((v, i) => ({ day: i + 1, ppo: v, stat: policies.static.revenue[i] }));
 
   return {
-    source, scenario, days: lead.cum.length,
+    scenario, days: lead.cum.length,
     policies, order, lift,
     ports, loops, funnel, outcomes, deliveredTotal,
     requests, customerDecisions,
@@ -266,13 +234,12 @@ export function toStatsModel(raw, source) {
   };
 }
 
-// source is 'holdout' or 'shock'.
-export async function loadStats(source) {
+// The holdout comparison (the only source; the shock replay was removed).
+export async function loadStats() {
   const [summary, timeline, meta, ports, vessels, live] = await Promise.all([
     API.compare('summary'), API.compare('timeline'), API.compare('meta'), API.ports(), API.vessels(), API.live(),
   ]);
-  const shock = source === 'shock' ? await API.compare('shock') : null;
   const eventsResp = await API.liveEvents(0, 'booking.decision,delivery.confirmed', 1000);
-  const raw = { summary, timeline, meta, ports, vessels, live, shock, events: eventsResp.events };
-  return toStatsModel(raw, source);
+  const raw = { summary, timeline, meta, ports, vessels, live, events: eventsResp.events };
+  return toStatsModel(raw);
 }

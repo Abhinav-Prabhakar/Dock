@@ -21,7 +21,7 @@ from .stowage_view import stowage_view
 GENERATED = BACKEND / "data" / "generated"
 SCENARIO_DIR = GENERATED / "scenarios"
 DEMO_DIR = BACKEND / "demo"
-COMPARE_NAMES = {"summary", "timeline", "offers", "shock", "meta"}
+COMPARE_NAMES = {"summary", "timeline", "offers", "meta"}
 
 router = APIRouter()
 

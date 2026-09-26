@@ -23,7 +23,7 @@ simulator       →  per-episode world: demand stream, fleet, stowage,
 policies        →  static | greedy | heuristic | heuristic_bid | ppo
                       │
 rl.evaluate     →  eval_results.json (holdout-only, identical seeds)
-export_demo     →  backend/demo/{summary,timeline,offers,shock,meta}.json
+export_demo     →  backend/demo/{summary,timeline,offers,meta}.json
                       │
                       ▼   served read-only via GET /compare/*
                    backend/demo/*.json
@@ -124,22 +124,6 @@ decision surface:
 
 `explain` is the explainability payload — render `text` plus the legs
 table; that's the whole "why did the system quote this" story.
-
-### `shock.json` — the wow-moment replay
-
-```jsonc
-{
-  "event": {"port": "NLRTM", "day_lo": 42, "day_hi": 63,
-            "description": "NLRTM port closure weeks 46-49 ..."},
-  "runs": {"static":        {"daily": [<same shape as timeline entries>],
-                           "summary": {<same metrics as summary.json>}},
-           "heuristic_bid": {"daily": [...], "summary": {...}}
-           /* "ppo" replaces/extends the lead run when --model given */}
-}
-```
-
-Identical shocked world, identical seed, two policies — the divergence
-between their `daily` series is the demo.
 
 ### `meta.json` — provenance
 

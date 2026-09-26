@@ -88,8 +88,8 @@ A plain "as requested" booking has no deal.
 | Vessel — stowage card (BOXES / TEU / UTIL) | same stowage endpoint | the selected vessel's own real counts (`aboard` units, `aboard_teu`, `aboard_teu / capacity_teu`) — not a count of what's drawn on the fixed model hull, which can differ under the resample above |
 | Vessel — profit | `GET /live → metrics.cum_profit`, `GET /compare/summary → lift_vs_static.ppo.profit_usd_pct` | `—` when absent |
 | Vessel — Live bookings panel | `GET /live/events` (see below) + `GET /orders` | customer quotes / accepts / declines, booking decisions, and every settlement step of customer deals |
-| Stowage — elevation + plan | same stowage endpoint | Bay select and Load/Discharge/Restow/Clear stay visible but disabled (they used to invent cargo) |
-| Statistics | `GET /compare/{summary,timeline,meta,shock}`, `/ports`, `/vessels`, `/live`, `/live/events?types=booking.decision,delivery.confirmed` | holdout 5-policy ladder, shock replay, live world; `js/pages/statsLive.js` |
+| Stowage — elevation + plan | same stowage endpoint | Bay select + Load/Discharge/Restow/Clear are a what-if tool over the real live cargo (never sent to the simulator; Restow all returns to live) |
+| Statistics | `GET /compare/{summary,timeline,meta}`, `/ports`, `/vessels`, `/live`, `/live/events?types=booking.decision,delivery.confirmed` | holdout 5-policy ladder, live world; `js/pages/statsLive.js` |
 | Model ("inside the helm") | `GET /live/policy`, `GET /live/policy/network`, `/vessels` | the real MaskablePPO forward pass per decision (obs 112, mask 44, π, V(s), attributions) + decision context; `js/pages/liveDecision.js`. Stamp is `BOOKED`/`DECLINED`/`REJECTED` once the matching `booking.decision` event has landed, `PENDING` for a non-reject decision still in flight (its outcome hasn't arrived yet) |
 
 ### Live bookings panel (`js/live.js`)
