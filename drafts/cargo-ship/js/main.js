@@ -730,18 +730,8 @@ let elapsed = 0;
 let uiTimer = 0;
 let viewShift = 0;
 
-// requestAnimationFrame fires at the display's refresh rate; on 120/144 Hz
-// screens that doubles the per-frame work (scene + reflection + shadows +
-// bloom) for no visible gain on this slow sea. Render at most ~60 fps: a frame
-// is skipped only if the previous one was < 1/75 s ago, so 60 Hz displays
-// still render every frame (16.7 ms > 13.3 ms) and 120 Hz ones every other.
-const MIN_FRAME_MS = 1000 / 75;
-let lastFrameAt = -Infinity;
-
-function loop(now = performance.now()) {
+function loop() {
   requestAnimationFrame(loop);
-  if (now - lastFrameAt < MIN_FRAME_MS) return;
-  lastFrameAt = now;
   const dt = Math.min(clock.getDelta(), 0.1);
   elapsed += dt;
 

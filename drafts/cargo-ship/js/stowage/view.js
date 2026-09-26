@@ -435,10 +435,9 @@ export class StowageView {
     let last = performance.now();
     const tick = (now) => {
       if (!this.active || this.anim.running) return;
-      requestAnimationFrame(tick);
-      if (now - last < 1000 / 75) return;   // ~60 fps cap, as in main.js's loop
       this.frame(Math.min(0.05, (now - last) / 1000));
       last = now;
+      requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }
