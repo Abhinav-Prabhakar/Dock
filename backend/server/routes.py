@@ -303,11 +303,14 @@ def live_events(request: Request, after_seq: int = 0, limit: int = 200,
 
 
 @router.get("/live/policy")
-def live_policy(request: Request, limit: int = 20):
+def live_policy(request: Request, limit: int = 20, after: int = 0):
     """Recent live decisions as the policy network saw them: obs, mask,
-    probabilities, value, hidden activations, attributions, outcome."""
+    probabilities, value, hidden activations, attributions, outcome.
+    `after=n` returns only decisions newer than n (a poller's cursor), so a
+    client that already holds the window isn't re-sent it every poll."""
     ep = _require_live(request)
-    trace = list(ep.trace)[-max(1, min(limit, 60)):]
+    trace = [d for d in list(ep.trace) if d["n"] > after]
+    trace = trace[-max(1, min(limit, 60)):]
     return {"episode_id": ep.id, "policy": ep.policy, "day": ep.day,
             "decisions": trace}
 

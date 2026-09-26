@@ -338,11 +338,13 @@ export function toDecision(trace, network) {
 }
 
 // ---------------------------------------------------------------- LiveFeed
-// Keeps a rolling history of the live policy's recent decisions and keeps
-// it CURRENT: each poll re-reads the backend's trace window, so a decision
-// first seen as PENDING picks up its real outcome (booked / declined) when
-// the customer answers, and the ledger hash once it's chained. Nothing is
-// replayed on a timer — the page shows what the policy actually did.
+// Keeps a rolling history of the live policy's recent decisions. Backend
+// trace entries are immutable once recorded (outcome, ledger hash and deal are
+// attached at record time — server/episodes.py _record_trace), so each poll
+// asks only for decisions newer than the newest one held (`after=`) and merges
+// them into the window; a new live episode (whose numbering restarts at 1)
+// resets it. Listeners are only notified when something actually changed.
+// Nothing is replayed on a timer — the page shows what the policy actually did.
 const POLL_MS = 2500;
 const WINDOW = 60;                          // /live/policy keeps the last 60
 
@@ -370,7 +372,8 @@ export class LiveFeed {
   start() {
     if (this._timer) return;
     this.poll();
-    this._timer = setInterval(() => this.poll(), POLL_MS);
+    // skip polls while the tab is in the background; the cursor catches up on return
+    this._timer = setInterval(() => { if (!(typeof document !== 'undefined' && document.hidden)) this.poll(); }, POLL_MS);
   }
 
   stop() {
@@ -382,16 +385,22 @@ export class LiveFeed {
     if (this._inFlight || !this.network) return;
     this._inFlight = true;
     try {
-      const res = await API.livePolicy(WINDOW);
+      const after = this.decisions.length ? this.decisions[0].n : 0;
+      let res = await API.livePolicy(WINDOW, after);
       const reset = !!(this.episodeId && res.episode_id && res.episode_id !== this.episodeId);
+      // a new episode numbers its decisions from 1 again: refetch its window
+      if (reset && after) res = await API.livePolicy(WINDOW, 0);
+      const fresh = (res.decisions || []).map((t) => toDecision(t, this.network));
+      const changed = reset || fresh.length > 0 || this.error !== null
+        || res.day !== this.day || res.policy !== this.policy;
       this.episodeId = res.episode_id ?? this.episodeId;
       this.policy = res.policy ?? this.policy;
       this.day = res.day ?? this.day;
-      this.decisions = (res.decisions || [])
-        .map((t) => toDecision(t, this.network))
-        .sort((a, b) => b.n - a.n);
+      this.decisions = (reset ? fresh : fresh.concat(this.decisions))
+        .sort((a, b) => b.n - a.n)
+        .slice(0, WINDOW);
       this.error = null;
-      this._emit(reset);
+      if (changed) this._emit(reset);
     } catch (e) {
       this.error = e.message || String(e);
       this._emit(false);

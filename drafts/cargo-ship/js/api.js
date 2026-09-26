@@ -69,7 +69,7 @@ export const API = {
   live:          () => api('/live'),
   liveEvents:    (afterSeq = 0, types = null, limit = 200) =>
     api(`/live/events?after_seq=${afterSeq}&limit=${limit}${types ? `&types=${encodeURIComponent(types)}` : ''}`),
-  livePolicy:    (limit = 20) => api(`/live/policy?limit=${limit}`),
+  livePolicy:    (limit = 20, after = 0) => api(`/live/policy?limit=${limit}&after=${after}`),
   policyNetwork: () => api('/live/policy/network'),
   stowage:       (vesselId) => api(`/live/vessels/${encodeURIComponent(vesselId)}/stowage`),
   vessels:       () => api('/vessels'),

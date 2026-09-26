@@ -76,8 +76,17 @@ class Live {
     this._started = true;
     this._pollSnapshot();
     this._pollEvents();
-    setInterval(() => this._pollSnapshot(), SNAPSHOT_INTERVAL_MS);
-    setInterval(() => this._pollEvents(), EVENTS_INTERVAL_MS);
+    // No polling while the tab is in the background (nothing is on screen to
+    // update); on return, catch up at once — the events cursor means nothing
+    // is missed, it just arrives in one batch.
+    const hidden = () => typeof document !== 'undefined' && document.hidden;
+    setInterval(() => { if (!hidden()) this._pollSnapshot(); }, SNAPSHOT_INTERVAL_MS);
+    setInterval(() => { if (!hidden()) this._pollEvents(); }, EVENTS_INTERVAL_MS);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { this._pollSnapshot(); this._pollEvents(); }
+      });
+    }
   }
 
   async _pollSnapshot() {

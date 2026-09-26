@@ -245,3 +245,16 @@ def test_live_snapshot_policy_and_stowage(live):
     assert st["name"] == "Pacific Aurora" and len(st["bays"]) == 64
     assert st["aboard_teu"] == sum(len(b["aboard"]) for b in st["bays"])
     assert c.get("/live/vessels/NOPE/stowage").status_code == 404
+
+
+def test_live_policy_after_cursor(live):
+    """`after=n` returns only newer decisions — what the Model page polls with."""
+    c, _ = live
+    full = c.get("/live/policy", params={"limit": 60}).json()["decisions"]
+    assert full
+    cut = full[len(full) // 2]["n"]
+    newer = c.get("/live/policy", params={"limit": 60, "after": cut}).json()["decisions"]
+    assert all(d["n"] > cut for d in newer)
+    assert {d["n"] for d in newer} >= {d["n"] for d in full if d["n"] > cut}
+    top = max(d["n"] for d in full) + 10_000
+    assert c.get("/live/policy", params={"after": top}).json()["decisions"] == []

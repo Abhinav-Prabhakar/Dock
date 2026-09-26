@@ -32,7 +32,10 @@ function feedWith(responses) {
 test('LiveFeed: real network + a real booking decision from the live stack', async () => {
   network = await API.policyNetwork();
   const res = await realLivePolicy(60);
-  bookingTemplate = res.decisions.find((d) => d.step === 'booking' && d.request);
+  // a booking that actually had voyage options (some requests have no sailing
+  // in their window) — the option/ETA assertions below need something to check
+  bookingTemplate = res.decisions.find((d) => d.step === 'booking' && d.request && (d.options || []).length)
+    || res.decisions.find((d) => d.step === 'booking' && d.request);
   assert.ok(bookingTemplate, 'need at least one real booking decision to clone');
 });
 

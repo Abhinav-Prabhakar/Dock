@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Static check for the browser-only ES modules (operator console, customer
-site): every relative `import {a, b} from './x.js'` must point at a file that
-really exports a and b. Node can't load these pages (three.js comes from a
-CDN), so this is what catches a renamed export or a deleted module."""
+"""Static check for the operator console's browser-only ES modules: every
+relative `import {a, b} from './x.js'` must point at a file that really
+exports a and b. Node can't load these pages (three.js comes from a CDN), so
+this is what catches a renamed export or a deleted module. (The customer site
+is a Next.js app now — its bundler build checks its own imports.)"""
 import pathlib
 import re
 import sys
@@ -21,8 +22,10 @@ def exports(path: pathlib.Path) -> set[str]:
 
 
 problems, checked = [], 0
-for root in sys.argv[1:] or ["drafts/cargo-ship/js", "customers"]:
+for root in sys.argv[1:] or ["drafts/cargo-ship/js"]:
     for f in pathlib.Path(root).rglob("*.js"):
+        if "node_modules" in f.parts:
+            continue
         for names, rel in IMPORT.findall(f.read_text()):
             checked += 1
             target = (f.parent / rel).resolve()
