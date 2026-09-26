@@ -86,12 +86,15 @@ export class ModelPage extends Page {
       this.showStatus(`<div><b>Live policy unavailable</b><div style="margin-top:8px;opacity:.75;font-weight:500">${(e && e.message) || String(e)}</div></div>`);
       return;
     }
-    this.awaitFirst();
+    this._booted = true;
+    // Polling /live/policy and awaiting the first decision only starts once
+    // the page is actually shown (onShow) — not at construction, since both
+    // pages are built eagerly at app start.
+    if (this.active) this.onShow();
   }
 
   awaitFirst() {
     const tryNext = () => {
-      if (this._stopped) return;
       const d = this.engine.next();
       if (d) {
         this.cur = d;
@@ -101,6 +104,7 @@ export class ModelPage extends Page {
         this.rotTo = this.rotFor(d.action);
         this.prepNet(d);
         this.hideStatus();
+        this._awaitTimer = null;
         return;
       }
       this._awaitTimer = setTimeout(tryNext, 300);
@@ -244,8 +248,17 @@ export class ModelPage extends Page {
     else this.phase = b.starts[s + 1] + 0.001;
     if (this.playing) this.togglePlay();
   }
-  onShow() { this.stage = -1; }
-  onHide() { this.tip(null); }
+  onShow() {
+    this.stage = -1;
+    if (!this._booted) return;             // boot() will call onShow() once it lands
+    this.engine.start();
+    if (!this.cur && !this._awaitTimer) this.awaitFirst();
+  }
+  onHide() {
+    this.tip(null);
+    this.engine.stop();
+    if (this._awaitTimer) { clearTimeout(this._awaitTimer); this._awaitTimer = null; }
+  }
 
   bounds() {
     const sum = STAGE_W.reduce((a, b) => a + b, 0);
@@ -360,11 +373,17 @@ export class ModelPage extends Page {
     if (s >= 7) {
       const o = d.outcome;
       this.k.outNote.textContent = o.key;
+      const ledgerHtml = d.ledger
+        ? `<div class="br-ledger"><span>ledger #${nf(d.ledger.seq)}</span><code>0x${d.ledger.hash.slice(0, 10)}…${d.ledger.hash.slice(-6)}</code><span class="mut">prev 0x${d.ledger.prev.slice(0, 6)}… · keccak-256 chained</span></div>
+        ${d.onchain ? `<div class="br-ledger chain"><span>deal registered</span><code>tx 0x${d.ledger.tx.slice(0, 10)}…</code><span class="mut">DockSettlement · window ±2 d · penalty 10%</span></div>` : ''}`
+        // fleet steps aren't ledgered (model internals, not an auditable
+        // event) and a booking step can reach this stage before its
+        // booking.decision has landed — no ledger entry yet either way
+        : `<div class="br-ledger mut">${d.type === 'fleet' ? 'not ledgered — fleet step' : 'awaiting the ledger entry…'}</div>`;
       this.k.out.innerHTML = `
         <div class="br-stamp ${o.ok ? 'ok' : o.key.startsWith('rejected') ? 'bad' : 'warn'}">${o.stamp}</div>
         <p>${d.explain}</p>
-        <div class="br-ledger"><span>ledger #${nf(d.ledger.seq)}</span><code>0x${d.ledger.hash.slice(0, 10)}…${d.ledger.hash.slice(-6)}</code><span class="mut">prev 0x${d.ledger.prev.slice(0, 6)}… · keccak-256 chained</span></div>
-        ${d.onchain ? `<div class="br-ledger chain"><span>deal registered</span><code>tx 0x${d.ledger.tx.slice(0, 10)}…</code><span class="mut">DockSettlement · window ±2 d · penalty 10%</span></div>` : ''}`;
+        ${ledgerHtml}`;
       this.k.cf.innerHTML = d.baselines
         ? d.baselines.map((q) => `<div class="br-cfc ${q.key === 'ppo' ? 'on' : ''}"><label>${q.label}</label><b>${q.kind}</b><span>${q.price ? `${usd(q.price)}/TEU` : '—'}</span><em>${kusd(q.ev)}</em></div>`).join('')
         : `<div class="br-cfc wide"><label>Fleet step</label><b>Baselines hold speed and never reposition proactively</b><span>Dock order: ${a.label}</span><em>${kusd(d.ev)}</em></div>`;
