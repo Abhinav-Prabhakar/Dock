@@ -1,4 +1,4 @@
-// Live decision engine for the Model page ("Inside the helm"): turns the real
+// Live decision data for the Model page (the decision inspector): turns the real
 // backend's policy-inspection API into exactly the shape model.js draws.
 // Nothing here is invented — every field is read from the trained
 // MaskablePPO's own forward pass (js/api.js -> /live/policy, /live/policy/network),
@@ -13,19 +13,6 @@ import { API } from '../api.js';
 // Real, fixed port codes (backend/data/calibration.py C.PORTS) — same order
 // _obs() uses, confirmed against /live/policy/network's obs_labels.
 export const PORTS = ['CNSHA', 'SGSIN', 'KRPUS', 'NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC'];
-
-// The 8-station replay is a fixed structural label set, independent of any
-// decision's content.
-export const STAGES = [
-  { key: 'request',  label: 'Request',     sub: 'booking arrives' },
-  { key: 'forecast', label: 'Forecast',    sub: 'DemandForecaster' },
-  { key: 'bid',      label: 'Bid price',   sub: 'BidPriceEngine' },
-  { key: 'observe',  label: 'Observe',     sub: '112-d state' },
-  { key: 'policy',   label: 'Policy',      sub: 'PPO forward' },
-  { key: 'mask',     label: 'Mask',        sub: 'action_masks()' },
-  { key: 'act',      label: 'Act',         sub: 'argmax π' },
-  { key: 'ledger',   label: 'Settle',      sub: 'customer · ledger' },
-];
 
 // Real observation layout, from backend/env/fleet_env.py `_obs()`:
 //   request(14) + options(4*5=20) + market(6) + ports(8*3=24) + vessels(4*6=24)
@@ -301,14 +288,10 @@ export function toDecision(trace, network) {
     { key: 'ppo', label: 'Dock · PPO', kind: action.label.replace('Counter · ', ''), price: pricing.price, ev },
   ] : null;
 
-  // Voyage strip latency: only 4 of the 8 stations carry a real measured
-  // number (bid/policy/mask/act) — the rest render without a "· N ms" tag.
-  const LAT_KEY = { request: null, forecast: null, bid: 'bid', observe: null, policy: 'policy', mask: 'mask', act: 'act', ledger: null };
-  const latency = STAGES.map((s) => {
-    const k = LAT_KEY[s.key];
-    const v = k && trace.latency_ms ? trace.latency_ms[k] : null;
-    return v == null ? null : v;
-  });
+  // Measured stage timings for this decision (ms), exactly as the backend
+  // recorded them: bid-price quote, policy forward pass, mask, counterfactual
+  // pricing, and act (applying the decision, incl. any customer round-trip).
+  const timings = trace.latency_ms ? { ...trace.latency_ms } : {};
 
   return {
     n: trace.n,
@@ -343,7 +326,7 @@ export function toDecision(trace, network) {
     quote,
     ev,
     baselines,
-    latency,
+    timings,
     repoPairs: trace.repo_pairs,
     outcome: { key, ok, stamp },
     onchain,
@@ -352,71 +335,68 @@ export function toDecision(trace, network) {
   };
 }
 
-// ---------------------------------------------------------------- LiveEngine
-const MAX_QUEUE = 30;
+// ---------------------------------------------------------------- LiveFeed
+// Keeps a rolling history of the live policy's recent decisions and keeps
+// it CURRENT: each poll re-reads the backend's trace window, so a decision
+// first seen as PENDING picks up its real outcome (booked / declined) when
+// the customer answers, and the ledger hash once it's chained. Nothing is
+// replayed on a timer — the page shows what the policy actually did.
 const POLL_MS = 2500;
+const WINDOW = 60;                          // /live/policy keeps the last 60
 
-export class LiveEngine {
+export class LiveFeed {
   constructor() {
     this.network = null;
-    this.W1 = null; this.W2 = null; this.W3 = null;
-    this.queue = [];
-    this.lastN = 0;
+    this.decisions = [];                    // newest first, toDecision() shape
     this.episodeId = null;
+    this.policy = null;
+    this.day = null;
+    this.error = null;
     this._timer = null;
     this._inFlight = false;
+    this._listeners = new Set();
   }
 
-  // Fetches the (mostly static) network shape once; does not start polling
-  // /live/policy — call start() for that, tied to the page being shown.
+  onChange(fn) { this._listeners.add(fn); return () => this._listeners.delete(fn); }
+  _emit(reset = false) { for (const fn of this._listeners) fn({ reset }); }
+
+  // The network shape/weights are fixed for a checkpoint: fetched once.
   async init() {
-    const network = await API.policyNetwork();
-    this.network = network;
-    this.W1 = network.w1; this.W2 = network.w2; this.W3 = network.w3;
+    this.network = await API.policyNetwork();
   }
 
   start() {
-    if (this._timer) return;               // idempotent
-    this._poll().catch(() => {});
-    this._timer = setInterval(() => { this._poll().catch(() => {}); }, POLL_MS);
-  }
-
-  async _poll() {
-    if (this._inFlight) return;             // no overlapping polls
-    this._inFlight = true;
-    try {
-      const res = await API.livePolicy(20);
-      if (res.episode_id && this.episodeId && res.episode_id !== this.episodeId) {
-        // a new live world: trace numbering restarts at 1, so the old
-        // cursor would never match again and the page would stall forever
-        this.queue = [];
-        this.lastN = 0;
-      }
-      this.episodeId = res.episode_id ?? this.episodeId;
-      const fresh = (res.decisions || []).filter((t) => t.n > this.lastN).sort((a, b) => a.n - b.n);
-      for (const trace of fresh) {
-        this.lastN = Math.max(this.lastN, trace.n);
-        this.queue.push(toDecision(trace, this.network));
-      }
-      // bounded: an idle Model page (or a slow tab) must not accumulate an
-      // unbounded backlog of stale decisions that then floods in on return
-      if (this.queue.length > MAX_QUEUE) this.queue.splice(0, this.queue.length - MAX_QUEUE);
-    } finally {
-      this._inFlight = false;
-    }
-  }
-
-  // Prefer a booking-step decision if one is queued; otherwise take whatever
-  // is next. Returns null when nothing new has arrived yet.
-  next() {
-    if (!this.queue.length) return null;
-    const bookingIdx = this.queue.findIndex((d) => d.type === 'booking');
-    const idx = bookingIdx >= 0 ? bookingIdx : 0;
-    return this.queue.splice(idx, 1)[0];
+    if (this._timer) return;
+    this.poll();
+    this._timer = setInterval(() => this.poll(), POLL_MS);
   }
 
   stop() {
     if (this._timer) clearInterval(this._timer);
     this._timer = null;
   }
+
+  async poll() {
+    if (this._inFlight || !this.network) return;
+    this._inFlight = true;
+    try {
+      const res = await API.livePolicy(WINDOW);
+      const reset = !!(this.episodeId && res.episode_id && res.episode_id !== this.episodeId);
+      this.episodeId = res.episode_id ?? this.episodeId;
+      this.policy = res.policy ?? this.policy;
+      this.day = res.day ?? this.day;
+      this.decisions = (res.decisions || [])
+        .map((t) => toDecision(t, this.network))
+        .sort((a, b) => b.n - a.n);
+      this.error = null;
+      this._emit(reset);
+    } catch (e) {
+      this.error = e.message || String(e);
+      this._emit(false);
+    } finally {
+      this._inFlight = false;
+    }
+  }
+
+  byN(n) { return this.decisions.find((d) => d.n === n) || null; }
 }
