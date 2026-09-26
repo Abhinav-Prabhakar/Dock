@@ -1272,20 +1272,275 @@ header {
 }
 
 /* ============================================================
+   SCHEDULING — stamped day-tiles + ± days stepper + segment stubs
+   (the intake-d register, fitted to the narrower canonical column:
+   tiles wrap onto two rows, fstep and segrow wrap when tight).
+   ============================================================ */
+.dayrow {
+  display: flex; align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+.dt {
+  position: relative;
+  width: 34px; height: 40px;
+  padding: 0;
+  background: linear-gradient(172deg, #faf6ea, #f0e9d4);
+  border: .8px solid rgba(28,24,16,.22);
+  border-radius: 2.5px;
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.6),
+              0 1px 2px rgba(50,40,25,.14);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  transition: transform .16s ease, box-shadow .16s ease,
+              background-color .18s ease, border-color .18s ease;
+}
+.dt::before {                        /* inner stamp ring */
+  content: "";
+  position: absolute; inset: 3px;
+  border: .8px dashed rgba(28,24,16,.20);
+  border-radius: 1.5px;
+  pointer-events: none;
+  transition: border-color .18s ease;
+}
+.dt i {
+  font-style: normal;
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 700;
+  color: var(--ink2);
+  line-height: 1;
+  transition: color .18s ease;
+}
+.dt small {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 4.8px; font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--faint);
+}
+.dt:hover { border-color: rgba(58,90,68,.55); transform: translateY(-1.5px); }
+.dt:focus-visible { outline: .9px solid rgba(58,90,68,.6); outline-offset: 2px; }
+/* stamped — sage ink fill, hand-tilted, slam on entry */
+.dt.sel {
+  background: linear-gradient(168deg, #415f4b, var(--accent));
+  border-color: rgba(20,30,24,.45);
+  box-shadow: inset 0 0 0 .5px rgba(0,0,0,.18),
+              inset 0 1px 0 rgba(255,255,255,.16),
+              0 2px 5px rgba(38,58,44,.3);
+  transform: rotate(var(--dt-rot));
+  animation: dt-stamp .3s cubic-bezier(.2,1.35,.4,1) both;
+}
+.dt.sel i { color: #f4f1e4; }
+.dt.sel small { color: rgba(244,241,228,.75); }
+.dt.sel::before { border-color: rgba(244,241,228,.4); }
+@keyframes dt-stamp {
+  0%   { transform: rotate(var(--dt-rot)) scale(1.55); opacity: .4; }
+  60%  { transform: rotate(var(--dt-rot)) scale(.92); opacity: 1; }
+  100% { transform: rotate(var(--dt-rot)) scale(1); }
+}
+
+/* sched-row holds the ± days stepper and the segment stubs side by side */
+.sched-row {
+  display: flex; align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+}
+.fstep {
+  flex: none;
+  display: flex; align-items: center; gap: 3px;
+  padding: 7px 9px 6px;
+  border: .8px dashed rgba(28,24,16,.22);
+  background: rgba(255,255,255,.22);
+}
+.fsb {
+  width: 18px; height: 20px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: #96907e;
+  transition: color .15s ease, transform .15s ease;
+}
+.fsb:hover { color: var(--terra); }
+.fsb:active { transform: scale(.86); }
+.fsb svg { width: 6px; height: 10px; display: block; }
+.fsb svg path {
+  fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+.fsv {
+  min-width: 4.6ch;
+  text-align: center;
+  cursor: ns-resize;
+}
+.fsv:focus-visible { outline: .8px solid rgba(58,90,68,.55); outline-offset: 2px; }
+.fsv b {
+  position: relative;
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 19px; font-weight: 700;
+  color: var(--ink);
+  opacity: .94;
+}
+.gnum::before, .gnum::after {
+  content: attr(data-t);
+  position: absolute; left: 0; top: 0;
+  pointer-events: none;
+}
+.gnum::before { color: rgba(196,84,60,.10); transform: translate(.6px, 0); }
+.gnum::after  { color: rgba(58,120,90,.10); transform: translate(-.6px, .3px); }
+.fsv .u {
+  display: block;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 6.4px; font-weight: 700;
+  letter-spacing: .2em;
+  color: #a49e8d;
+}
+
+/* segment chips — ticket stubs with a punch hole */
+.segrow { display: flex; gap: 12px; }
+.seg {
+  position: relative;
+  display: flex; align-items: center; gap: 8px;
+  height: 34px;
+  padding: 0 13px 0 11px;
+  background: linear-gradient(172deg, #faf6ea, #f0e9d4);
+  border: .8px solid rgba(28,24,16,.22);
+  border-radius: 2.5px;
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.6),
+              0 1px 2px rgba(50,40,25,.12);
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7.8px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--ink2);
+  transition: color .16s ease, border-color .16s ease, transform .16s ease,
+              box-shadow .18s ease;
+}
+.seg::before, .seg::after {          /* stub notches */
+  content: "";
+  position: absolute; top: 50%;
+  width: 8px; height: 8px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--wall);
+  box-shadow: inset 0 1px 2px rgba(50,40,25,.3),
+              0 0 0 .7px rgba(28,24,16,.14);
+}
+.seg::before { left: -5px; }
+.seg::after  { right: -5px; }
+.seg .ph {
+  flex: none;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  border: 1px dashed rgba(28,24,16,.35);
+  transition: all .16s ease;
+}
+.seg:hover { color: var(--terra); border-color: rgba(185,111,75,.55); }
+.seg:active { transform: translateY(1px); }
+.seg:focus-visible { outline: .9px solid rgba(58,90,68,.6); outline-offset: 2.5px; }
+.seg.sel {
+  color: var(--accent);
+  border-color: rgba(58,90,68,.55);
+  box-shadow: inset 0 0 0 .5px rgba(255,255,255,.6),
+              inset 0 0 0 1.1px rgba(58,90,68,.35),
+              0 1px 2px rgba(50,40,25,.12);
+}
+/* the punch is pressed — dark punched hole, sage cut-edge */
+.seg.sel .ph {
+  border: 1px solid rgba(58,90,68,.7);
+  background: radial-gradient(circle at 42% 34%, #57503f 0%, #3a342a 70%, #2b2620 100%);
+  box-shadow: inset 0 1px 1.5px rgba(0,0,0,.6);
+}
+.seg.urgent.sel { color: var(--terra); border-color: rgba(185,111,75,.6);
+                  box-shadow: inset 0 0 0 1.1px rgba(185,111,75,.35), 0 1px 2px rgba(50,40,25,.12); }
+.seg.urgent.sel .ph { border-color: rgba(185,111,75,.75); }
+
+/* ============================================================
    PORT PAIR + REQUEST PRICE — appended section, .pp- prefixed.
-   Two rubber datestamps pressed onto the sheet (sage origin ink,
-   terracotta destination ink, each hand-tilted) joined by a dashed
-   booked route with a faint terracotta alternate arc, like the
-   alt-hubs map. A little freighter rides the line; a ledger readout
-   under it gives miles + days at sea. Tapping a stamp slams down a
-   re-inked one with the next port. The price stepper reuses
-   .stepper/.sbtn/.sval untouched.
+   ORIGIN and DESTINATION are boxed selects letterpressed onto the
+   sheet (the intake-a .fld register), joined by a dashed booked
+   route arrow with a ledger readout under it giving miles + days
+   at sea. The price stepper reuses .stepper/.sbtn/.sval untouched.
    ============================================================ */
 .pp-row {
   display: flex; align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   margin-top: 18px;
 }
+
+/* ---------------- stamped field blocks ---------------- */
+/* ORIGIN / DESTINATION are boxed selects letterpressed onto the sheet —
+   the intake-a register (.fld/.fl/.fval/.fchev). .pp-fields wraps the
+   route row so the price stepper can sit at the right edge of .pp-row.  */
+.pp-fields { flex: 1 1 100%; min-width: 0; }
+.frow { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.farrow { flex: none; width: 30px; height: 10px; color: var(--accent); margin-top: 14px; }
+
+/* a stamped field block — dashed clerk's box, mono micro label */
+.fld {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 11px 9px;
+  border: .9px dashed rgba(28,24,16,.30);
+  background: rgba(255,255,255,.22);
+  transition: border-color .18s ease, background .18s ease;
+}
+.fld:focus-within { border-style: solid; border-color: rgba(58,90,68,.55); }
+.fl {
+  display: block;
+  font-size: 6.4px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--faint);
+}
+.fval { position: relative; margin-top: 5px; }
+.fval select {
+  appearance: none; -webkit-appearance: none;
+  width: 100%;
+  background: none; border: none; outline: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px; font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--ink);
+  cursor: pointer;
+  padding-right: 18px;
+}
+.fval select option { font-size: 13px; font-family: Georgia, serif; }
+.fchev {
+  position: absolute; right: 1px; top: 50%;
+  width: 10px; height: 6px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.fchev path {
+  fill: none; stroke: #96907e;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+}
+/* invalid — terracotta clerk's mark */
+.fld.bad {
+  border-style: solid;
+  border-color: rgba(185,111,75,.75);
+  background: rgba(185,111,75,.055);
+}
+.fld.bad::after {
+  content: "✕";
+  position: absolute; right: 7px; top: 6px;
+  font-size: 9px; font-weight: 700;
+  color: var(--terra);
+}
+/* ledger readout under the selects — miles + days at sea */
+.pp-dist2 {
+  margin-top: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px; font-weight: 600;
+  letter-spacing: .18em;
+  color: #8f947f;
+}
+
 .pp-map { position: relative; flex: 1 1 auto; min-width: 0; }
 .pp-svg { display: block; width: 100%; height: auto; }
 
@@ -1395,7 +1650,7 @@ header {
 }
 
 /* ---------------- request price ---------------- */
-.pp-price { flex: none; margin-left: 4px; }
+.pp-price { flex: none; margin-left: auto; }
 .pp-val { font-size: 25.5px; min-width: 8.4ch; }   /* room for USD 999,990 */
 .pp-val .u {
   margin-left: 0; margin-right: 4px;
