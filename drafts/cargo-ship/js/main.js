@@ -473,6 +473,18 @@ function setupUI() {
     next.delete('livery');
     location.search = next.toString();
   };
+  // The ◀ ▶ flanks cycle the same select — skipping hull-less vessels
+  // (disabled options) and wrapping around at the ends.
+  const stepVessel = (dir) => {
+    const sel = $('vessel-select');
+    const opts = [...sel.options].filter((o) => !o.disabled);
+    if (opts.length < 2) return;
+    const i = opts.findIndex((o) => o.value === sel.value);
+    sel.value = opts[(i + dir + opts.length) % opts.length].value;
+    sel.dispatchEvent(new Event('change'));
+  };
+  $('vessel-prev').onclick = () => stepVessel(-1);
+  $('vessel-next').onclick = () => stepVessel(1);
 
   $('btn-discharge-bay').onclick = () => {
     const b = selectedBay(); if (!b) return;

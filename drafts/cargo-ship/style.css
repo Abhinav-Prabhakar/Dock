@@ -197,6 +197,13 @@ button:disabled:hover { background: rgba(255, 255, 255, 0.07); border-color: var
 .stats label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .field-label { display: block; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin: 10px 0 5px; }
 
+/* vessel picker — select flanked by bare white cycle triangles */
+.vsel { display: flex; align-items: center; gap: 6px; }
+.vsel select { flex: 1; min-width: 0; }
+button.vsel-nav { background: none; border: none; border-radius: 0; padding: 4px 1px; color: #fff; line-height: 0; }
+button.vsel-nav:hover { background: none; border: none; color: var(--accent); }
+button.vsel-nav:active { transform: none; }
+
 select, button {
   font: inherit; color: var(--text);
   background: rgba(255, 255, 255, 0.07);

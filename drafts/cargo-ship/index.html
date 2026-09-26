@@ -63,7 +63,11 @@
           <div><span id="s-util">0%</span><label>Deck util.</label></div>
         </div>
         <label class="field-label" for="vessel-select">Vessel</label>
-        <select id="vessel-select"></select>
+        <div class="vsel">
+          <button class="vsel-nav" id="vessel-prev" type="button" aria-label="Previous vessel" title="Previous vessel"><svg viewBox="0 0 10 12" width="10" height="12" aria-hidden="true"><path d="M8.4 1 2.2 6l6.2 5z" fill="currentColor"/></svg></button>
+          <select id="vessel-select"></select>
+          <button class="vsel-nav" id="vessel-next" type="button" aria-label="Next vessel" title="Next vessel"><svg viewBox="0 0 10 12" width="10" height="12" aria-hidden="true"><path d="M1.6 1l6.2 5-6.2 5z" fill="currentColor"/></svg></button>
+        </div>
         <label class="field-label" for="bay-select">Bay</label>
         <select id="bay-select" title="Bay the Load / Discharge buttons act on"></select>
         <div class="btn-grid">
