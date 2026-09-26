@@ -377,44 +377,53 @@ is a maritime picture rather than a stock chart:
   customer segment, bow wave = speed.
 Data is seeded and synthetic (`buildStats`), shaped for a later API swap.
 
-## 6c. Model — the decision inspector (`pages/model.js`, `pages/liveDecision.js`)
+## 6c. Model — "The helm" (`pages/model.js`, `pages/liveDecision.js`)
 
-Night-bridge backdrop (navy radial + 48 px blueprint grid) with the HUD's own
-dark-glass `.panel` cards, `.sc-head` micro-labels, tabular numerals and status
-colours — no metaphors, one decision at a time, all of it live.
+The same paper chart as Statistics (cream paper + grain + 60 px chart grid,
+`lpanel` cream glass, ink type, `stow-stats` header figures, a `pg-controls`
+panel) — one live decision at a time, every idea carried by a sea metaphor.
+Controls: **Watch** (green = following live, amber = inspecting one, red =
+offline) · `All / Bookings / Fleet` · `‹ Follow live ›` (←/→, `L`).
 
-- **Header**: title + network shape (`112 → 256 → 256 → 44`); a bar with the
-  live state (green pulsing dot = following the newest decision, amber =
-  inspecting a chosen one, red = offline) · `All / Bookings / Fleet` filter ·
-  `‹ Live ›` (←/→ step older/newer, `L` returns to live).
-- **KPIs** over the backend's last-60 window: decisions seen, offer rate (and
-  how many offers the customer booked), mean π(chosen) + entropy, mean margin
-  over the bid-price floor, median policy forward-pass latency.
-- **Request** (5 cols): lane in bold with a drawn arrow, customer/segment tags,
-  a 3-up key-value grid, then the voyage options table (vessel, sails/arrives
-  relative to now, room, bid, feasible or why not); the priced option carries
-  an accent left rule. Fleet steps show vessel state + the busiest ports.
-- **Decision** (4): the action, an outlined outcome stamp (booked green,
-  declined amber, rejected red, pending muted, fleet orders accent), the
-  engine's own explanation, a quote/bid/market scale with the margin band,
-  figures, the ledger hash chain and measured stage timings.
-- **Policy output** (3): top legal actions as thin probability bars (chosen in
-  accent with a glow), legal-action count, V(s), entropy.
-- **Pricing** (7): the bid-price engine's real P(accept) (accent line) and
-  expected margin (green area) over price, with bid floor / market / quote
-  markers. **Same request, other strategies** (5): the four baselines priced on
-  this request vs Dock's row, best margin in green.
-- **Why this action** (7): gradient × input attributions as signed bars from a
-  centre line (accent = toward the action, red = away), then the full 112-float
-  observation as a strip coloured by block, attributed features ticked.
-  **Network** (5): 28 of 256 units per layer; edge width/opacity = |weight ×
-  activation|, accent excites, red inhibits; all edges into the chosen action.
-- **Decision log** (12): the last 20 (filtered) decisions, click to inspect.
+- **The passage** (full width, 312 px): the request's voyage options as ships
+  sailing dashed arcs from departure to arrival over a day scale; the green
+  gradient band is the customer's window; infeasible sailings ride at anchor
+  with the reason in red italic; the priced sailing is navy, flies a blue
+  pennant, trails a wake and sets out when the decision arrives. Paper objects
+  float over it: the **manifest tag** (left, tilted −1.4°, punched hole, lane,
+  a strip of boxes ∝ log TEU, cargo/service/window/market) and **the verdict**
+  (right: action, a rubber stamp that *slams* in on a new decision or outcome,
+  the engine's explanation, quote/floor/market/margin, the ledger hash chain).
+  Fleet steps sail the four ships instead (wake ∝ speed, stacks ∝ fill), with
+  an engine-order telegraph over the ordered ship or boxes hopping between ports.
+- **The compass** (5 cols): all 44 actions as bearings, grouped on the rim
+  (booking blue · engine orders green · empties amber); open bearings get a
+  petal ∝ √π, masked ones a faint tick; the top three are labelled. The needle
+  is a damped spring onto the chosen bearing and **trembles with the policy's
+  entropy**; the brass hub reads the confidence; entropy and V(s) at the foot.
+- **The tide** (7): P(accept) is the tideline over rising, rippling water;
+  prices below the bid floor are a hatched **reef** with rocks; the market rate
+  is a **lighthouse** sweeping its beam; the expected margin is a dashed green
+  line with a turning ★ at its best; the quote is a red **buoy** bobbing on the
+  swell. Fleet steps show the engine room instead (telegraph / box transfer).
+- **Soundings** (7): each top attributed input is a sounding line dropped from
+  the waterline, depth ∝ |gradient × input|, blue toward / red away, its name
+  on a float; a survey ship pings sonar; the seabed is all 112 inputs, with a
+  colour strip per input block.
+- **The regatta** (5): the four baselines and Dock race sailboats out from the
+  start line to their margin over the bid floor (staggered, eased); a strategy
+  that rejected stays anchored "in port".
+- **Currents** (12): input streams → 28 of 256 buoys → 28 of 256 buoys → the
+  top-5 action harbours; stream width/opacity = |weight × activation|, blue
+  drives / red holds back, particles drift downstream at a speed set by
+  strength; the chosen harbour glows.
+- **Ship's log** (12): ruled logbook rows (sticky header, sea-blue rules),
+  outcome as a tiny stamp; click or Enter to inspect.
 
-Data: `LiveFeed` re-polls `/live/policy?limit=60` every 2.5 s while the page is
-visible and rebuilds the history each time, so a PENDING decision picks up its
-real outcome and ledger hash when the customer answers. The DOM re-renders only
-on data/selection change; the three canvases repaint on the next frame.
+Motion: arrivals replay on every new decision (house `easeOut`, 1.4 s); the
+sea, buoys, pennant, lighthouse, sonar and currents animate continuously on the
+page's ~30 fps loop. Data: `LiveFeed` re-polls `/live/policy?limit=60` every
+2.5 s while visible, so outcomes and ledger hashes land as they happen.
 
 ## 7. Motion & interaction language
 
