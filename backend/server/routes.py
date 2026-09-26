@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 from pathlib import Path
 
@@ -73,16 +74,26 @@ def scenarios():
     return out
 
 
+# Reference data is fixed for the life of the process (data/generated and the
+# committed artifacts only change on a rebuild), so each file is parsed once.
+@functools.cache
+def _parquet_records(path: Path) -> list[dict]:
+    return pd.read_parquet(path).to_dict("records")
+
+
+@functools.cache
+def _json_file(path: Path):
+    return json.loads(path.read_text())
+
+
 @router.get("/ports")
 def ports():
-    df = pd.read_parquet(GENERATED / "ports.parquet")
-    return df.to_dict("records")
+    return _parquet_records(GENERATED / "ports.parquet")
 
 
 @router.get("/vessels")
 def vessels():
-    df = pd.read_parquet(GENERATED / "vessels.parquet")
-    return df.to_dict("records")
+    return _parquet_records(GENERATED / "vessels.parquet")
 
 
 @router.get("/routes")
@@ -97,7 +108,7 @@ def models_report():
     p = BACKEND / "models" / "artifacts" / "report.json"
     if not p.exists():
         raise HTTPException(404, "models/artifacts/report.json not found")
-    return json.loads(p.read_text())
+    return _json_file(p)
 
 
 @router.post("/episodes", status_code=201)
@@ -272,7 +283,8 @@ def live_snapshot(request: Request):
     with ep.sim_lock:
         snap = _mgr(request).snapshot(ep.id)
     return {**snap, "live": True, "speed_days_per_sec": ep.speed_days_per_sec,
-            "n_events": len(ep.events), "last_seq": ep.events[-1]["seq"] if ep.events else 0}
+            "n_events": len(ep.events), "last_seq": ep.events[-1]["seq"] if ep.events else 0,
+            "sim_lock": ep.sim_lock.stats()}
 
 
 @router.get("/live/events")
@@ -328,4 +340,4 @@ def compare(name: str):
     p = DEMO_DIR / f"{name}.json"
     if not p.exists():
         raise HTTPException(404, f"public/demo/{name}.json not found")
-    return json.loads(p.read_text())
+    return _json_file(p)
