@@ -32,6 +32,7 @@ import json
 import os
 import queue
 from collections import deque
+from contextlib import contextmanager
 import threading
 import time
 import uuid
@@ -70,6 +71,78 @@ def _clamp_speed(speed: float | None) -> float:
 
 class EpisodeConflict(RuntimeError):
     """Raised when a second live episode is requested."""
+
+
+def _pctl(xs, q: float) -> float | None:
+    if not xs:
+        return None
+    s = sorted(xs)
+    return round(s[min(len(s) - 1, int(q * len(s)))], 2)
+
+
+class SimLock:
+    """Reentrant lock around the sim, shared by the episode driver (one
+    hold per step, via step()) and request handlers (plain `with`).
+
+    A bare RLock is unfair here: the driver releases it and re-takes it on
+    the next loop iteration without ever dropping the GIL, so a blocked
+    handler almost never wins the race and sits out a whole burst of steps.
+    step() first parks the driver until every handler that was already
+    blocked has had its turn (bounded by HANDOFF_TIMEOUT_S)."""
+
+    HANDOFF_TIMEOUT_S = 0.25
+
+    def __init__(self):
+        self._lock = threading.RLock()
+        self._cv = threading.Condition()
+        self._waiting = 0                # handlers blocked in acquire
+        self.handler_wait_ms: deque = deque(maxlen=512)
+        self.step_wait_ms: deque = deque(maxlen=512)
+        self.step_hold_ms: deque = deque(maxlen=512)
+
+    def _acquire(self) -> float:
+        t0 = time.perf_counter()
+        if not self._lock.acquire(blocking=False):
+            with self._cv:
+                self._waiting += 1
+            try:
+                self._lock.acquire()
+            finally:
+                with self._cv:
+                    self._waiting -= 1
+                    self._cv.notify_all()
+        return (time.perf_counter() - t0) * 1000
+
+    def __enter__(self):
+        self.handler_wait_ms.append(self._acquire())
+        return self
+
+    def __exit__(self, *exc):
+        self._lock.release()
+
+    @contextmanager
+    def step(self):
+        t0 = time.perf_counter()
+        with self._cv:
+            self._cv.wait_for(lambda: self._waiting == 0,
+                              timeout=self.HANDOFF_TIMEOUT_S)
+        self._acquire()
+        t1 = time.perf_counter()
+        self.step_wait_ms.append((t1 - t0) * 1000)
+        try:
+            yield
+        finally:
+            self.step_hold_ms.append((time.perf_counter() - t1) * 1000)
+            self._lock.release()
+
+    def stats(self) -> dict:
+        def summary(d):
+            xs = list(d)
+            return {"n": len(xs), "p50": _pctl(xs, 0.5), "p95": _pctl(xs, 0.95),
+                    "max": round(max(xs), 2) if xs else None}
+        return {"handler_wait_ms": summary(self.handler_wait_ms),
+                "step_wait_ms": summary(self.step_wait_ms),
+                "step_hold_ms": summary(self.step_hold_ms)}
 
 
 class Episode:
@@ -120,7 +193,7 @@ class Episode:
         # it per sim-day (per env step for PPO) and customer quote/accept
         # calls hold it while they read or book, so a quote never sees a
         # half-advanced day.
-        self.sim_lock = threading.RLock()
+        self.sim_lock = SimLock()
         self.live = False                # the always-on episode the sites use
         self.trace: deque = deque(maxlen=60)   # recent policy decisions (live)
         self.quotes: dict[str, dict] = {}      # order_id -> open customer quote
@@ -798,7 +871,7 @@ class EpisodeManager:
             ep._wait_paused()
             if ep._stop.is_set():
                 break
-            with ep.sim_lock:
+            with ep.sim_lock.step():
                 self._policy_day(ep, sim, policy)
             ep._pace()
 
@@ -850,7 +923,7 @@ class EpisodeManager:
             ep._wait_paused()
             if ep._stop.is_set():
                 break
-            with ep.sim_lock:
+            with ep.sim_lock.step():
                 obs, term, advanced, last_day = self._ppo_step(
                     ep, env, model, obs, sim, last_day)
             ep._ctx["obs"] = obs
