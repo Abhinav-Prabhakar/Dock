@@ -524,12 +524,15 @@ function setupUI() {
   requestAnimationFrame(() => placeGlider());
   window.addEventListener('resize', placeGlider);
 
+  const typing = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+  const SCREENS = { 1: 'vessel', 2: 'stowage', 3: 'stats', 4: 'model' };
   window.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.metaKey || e.ctrlKey || e.altKey || typing(e.target)) return;
+    // 1-4 switch screens from anywhere — the same as clicking a tab
+    if (SCREENS[e.key]) { switchScreen(SCREENS[e.key]); return; }
     if (screen !== 'vessel' || busy) return;
     if (e.key === 'n' || e.key === 'N') (sky.state.night > 0.5 ? goDay : goNight)();
     if (e.key === 'h' || e.key === 'H') $('ui').classList.toggle('hidden');
-    if (screen !== 'vessel' || busy) return;
     if (e.key === 'c' || e.key === 'C') resetCamera();
     if (e.key === 'm' || e.key === 'M') panel.toggle();
   });
