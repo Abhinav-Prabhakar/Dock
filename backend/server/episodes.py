@@ -110,6 +110,12 @@ class Episode:
         self._reqs: dict[int, object] = {}  # request_id -> BookingRequest
         self._ctx: dict = {}             # prepared driver context
         self._settlement = None          # SettlementProcessor, if available
+        # request_id -> latest booking.decision / settlement.deal_registered
+        # payload, so the Model page's trace can look an outcome up directly
+        # instead of scanning a fixed window of recent events (a burst of
+        # day-boundary events can push either past a short lookback).
+        self._decision_by_req: dict[int, dict] = {}
+        self._deal_by_req: dict[int, dict] = {}
         # One lock around every mutation of the sim: the episode thread holds
         # it per sim-day (per env step for PPO) and customer quote/accept
         # calls hold it while they read or book, so a quote never sees a
@@ -205,6 +211,12 @@ class Episode:
 
     def _handle_event(self, ev: dict) -> None:
         t = ev.get("type")
+        rid = ev.get("request_id")
+        if t == "booking.decision" and rid is not None:
+            self._decision_by_req[rid] = ev
+        elif t in ("deal.registered", "settlement.deal_registered") \
+                and rid is not None:
+            self._deal_by_req[rid] = ev
         if t == "cargo.booked":
             # native sim event: a consignment was booked. Conditional
             # (contract-kind) bookings become tracked deals — unless the
@@ -868,6 +880,7 @@ class EpisodeManager:
             view["options"] = ctx.option_views(sim, req) if booking else []
             t_bid = time.perf_counter()
             view["counterfactuals"] = ctx.counterfactuals(sim, req) if booking else []
+            t_cf = time.perf_counter()
         else:
             a, _ = model.predict(obs, action_masks=mask)
             view = None
@@ -880,6 +893,7 @@ class EpisodeManager:
             view["latency_ms"] = {"mask": ms(t0, t_mask),
                                   "policy": ms(t_mask, t_policy),
                                   "bid": ms(t_policy, t_bid),
+                                  "counterfactuals": ms(t_bid, t_cf),
                                   "act": ms(t_act0, time.perf_counter())}
         if req is not None:
             ep._reqs[req.request_id] = req
@@ -928,6 +942,8 @@ class EpisodeManager:
                 "price": round(q.price * (1 - dec.discount_pct), 2),
                 "bid_price": q.bid_price, "market_rate": q.market_rate,
                 "reason": q.reason, "vessel_id": opt.vessel_id,
+                "dest": req.alt_dest if dec.kind is DecisionKind.ALT_HUB
+                        else req.dest,
                 "board_day": round(opt.board_day, 2),
                 "eta_day": round(opt.discharge_day_est, 2),
                 "legs": [{"leg": l.leg_idx, "pressure": round(l.pressure, 3),
@@ -941,21 +957,22 @@ class EpisodeManager:
         model internals, not an auditable event)."""
         outcome = None
         if req is not None:
-            for ev in reversed(ep.events[-12:]):
-                if (ev.get("type") == "booking.decision"
-                        and ev.get("request_id") == req.request_id):
-                    outcome = {k: ev.get(k) for k in
-                               ("outcome", "kind", "price", "reason",
-                                "seq", "hash", "prev_hash")}
-                    break
-            for ev in reversed(ep.events[-24:]):     # counter-offer deal on-chain
-                if (outcome is not None
-                        and ev.get("type") == "settlement.deal_registered"
-                        and ev.get("request_id") == req.request_id):
-                    outcome["deal"] = {k: ev.get(k) for k in
+            # Looked up by request_id (populated synchronously by
+            # _handle_event as the events are emitted inside env.step,
+            # before this runs) rather than scanned from a fixed window of
+            # recent events — a day-boundary burst of departures/deliveries
+            # can otherwise push the decision past a short lookback and the
+            # trace would wrongly show no outcome for a real booking.
+            ev = ep._decision_by_req.pop(req.request_id, None)
+            if ev is not None:
+                outcome = {k: ev.get(k) for k in
+                           ("outcome", "kind", "price", "reason",
+                            "seq", "hash", "prev_hash")}
+                deal_ev = ep._deal_by_req.pop(req.request_id, None)
+                if deal_ev is not None:
+                    outcome["deal"] = {k: deal_ev.get(k) for k in
                                        ("deal_id", "kind", "tx_hash",
                                         "contract", "terms")}
-                    break
         ep.trace.append({
             "n": (ep.trace[-1]["n"] + 1) if ep.trace else 1,
             "day": round(float(ep.day), 2),
