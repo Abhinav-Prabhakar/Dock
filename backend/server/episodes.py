@@ -851,20 +851,36 @@ class EpisodeManager:
         fleet_step = bool(env._fleet_step)
         outcomes_before = dict(sim.metrics.outcomes)
         log_before = len(sim.metrics.decision_log)
+        t0 = time.perf_counter()
         mask = env.action_masks()
+        t_mask = time.perf_counter()
         if ep.live:
             # deterministic (argmax) — the deployed policy — and keep the
             # network's view of this decision for the operator console
+            from . import decision_context as ctx
             from . import policy_view
             view = policy_view.evaluate(model, obs, mask)
             a = view["action"]
+            t_policy = time.perf_counter()
             repo = env._repo_pairs() if fleet_step else None
-            view["pricing"] = (None if fleet_step or req is None
-                               else self._decision_pricing(sim, req, a))
+            booking = not fleet_step and req is not None
+            view["pricing"] = self._decision_pricing(sim, req, a) if booking else None
+            view["options"] = ctx.option_views(sim, req) if booking else []
+            t_bid = time.perf_counter()
+            view["counterfactuals"] = ctx.counterfactuals(sim, req) if booking else []
         else:
             a, _ = model.predict(obs, action_masks=mask)
             view = None
+        t_act0 = time.perf_counter()
         obs, _r, term, _trunc, _ = env.step(int(a))
+        if view is not None:
+            ms = lambda x, y: round((y - x) * 1000, 2)  # noqa: E731
+            # measured per-stage wall time for this decision (ms); stages the
+            # step doesn't isolate are absent rather than estimated
+            view["latency_ms"] = {"mask": ms(t0, t_mask),
+                                  "policy": ms(t_mask, t_policy),
+                                  "bid": ms(t_policy, t_bid),
+                                  "act": ms(t_act0, time.perf_counter())}
         if req is not None:
             ep._reqs[req.request_id] = req
             if not ep._native:
@@ -904,7 +920,10 @@ class EpisodeManager:
             q = sim.pricer.quote(req, opt)
         except Exception:
             return None
+        from .decision_context import pricing_curve
         return {"kind": dec.kind.value, "discount_pct": dec.discount_pct,
+                "segment": req.segment.value, "teu": req.teu,
+                "curve": pricing_curve(req, q.bid_price, q.market_rate),
                 "list_price": q.price,
                 "price": round(q.price * (1 - dec.discount_pct), 2),
                 "bid_price": q.bid_price, "market_rate": q.market_rate,
@@ -928,6 +947,14 @@ class EpisodeManager:
                     outcome = {k: ev.get(k) for k in
                                ("outcome", "kind", "price", "reason",
                                 "seq", "hash", "prev_hash")}
+                    break
+            for ev in reversed(ep.events[-24:]):     # counter-offer deal on-chain
+                if (outcome is not None
+                        and ev.get("type") == "settlement.deal_registered"
+                        and ev.get("request_id") == req.request_id):
+                    outcome["deal"] = {k: ev.get(k) for k in
+                                       ("deal_id", "kind", "tx_hash",
+                                        "contract", "terms")}
                     break
         ep.trace.append({
             "n": (ep.trace[-1]["n"] + 1) if ep.trace else 1,

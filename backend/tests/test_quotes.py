@@ -133,10 +133,24 @@ def test_live_snapshot_policy_and_stowage(live):
     assert len(d["obs"]) == 112 and len(d["probs"]) == 44 and len(d["mask"]) == 44
     assert d["mask"][d["action"]]                       # chosen action was legal
     assert len(d["h1"]) == len(d["h2"]) == 28
+    assert set(d["latency_ms"]) == {"mask", "policy", "bid", "act"}
+    bookings = [x for x in pol["decisions"] if x["step"] == "booking"]
+    for x in bookings:                       # context the original panels draw
+        for o in x["options"]:
+            assert o["vessel_id"] and o["legs"] and o["bid"] is not None
+            assert all(l["from"] and l["to"] for l in o["legs"])
+            assert o["feasible"] or o["reason"]
+        for cf in x["counterfactuals"]:
+            assert cf["key"] in {"static", "greedy", "heuristic", "heuristic_bid"}
+    if bookings:
+        assert any(x["counterfactuals"] for x in bookings)
     priced = [x for x in pol["decisions"] if x.get("pricing")]
     if priced:                                    # booking steps with an offer
         pr = priced[-1]["pricing"]
         assert pr["bid_price"] >= 0 and pr["price"] > 0 and pr["reason"]
+        curve = pr["curve"]
+        assert len(curve) == 64 and all(0 <= pa <= 1 for _, pa, _ in curve)
+        assert [pa for _, pa, _ in curve] == sorted((pa for _, pa, _ in curve), reverse=True)
     booked = [x for x in pol["decisions"] if x.get("outcome")]
     if booked:                                    # tied to its ledger entry
         assert booked[-1]["outcome"]["hash"] and booked[-1]["outcome"]["seq"]

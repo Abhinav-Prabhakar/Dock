@@ -56,6 +56,8 @@ jobs:
           find customers drafts/cargo-ship -name '*.js' -not -path '*/node_modules/*' -print0 \
             | xargs -0 -n1 node --check
           echo "checked $(find customers drafts/cargo-ship -name '*.js' | wc -l) files"
+      - name: Every relative ES-module import resolves to a real export
+        run: python3 scripts/check_imports.py
       - name: No hard-coded API origin or local order cache in the customer site
         run: |
           if git grep -n "localhost:8399\|ml\.orders" -- 'customers/*.js' 'customers/*.html'; then
@@ -72,6 +74,13 @@ jobs:
         run: docker compose up -d --build --wait --wait-timeout 300
       - name: Smoke test through nginx
         run: scripts/smoke.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Operator console data adapters against the live API
+        run: node --test drafts/cargo-ship/tests/*.mjs
+        env:
+          DOCK_API_BASE: http://localhost:8080/api
       - name: Container logs on failure
         if: failure()
         run: docker compose logs --no-color --tail 200
