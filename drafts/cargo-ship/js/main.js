@@ -70,6 +70,13 @@ let metricsTimer = 0;
 
 const currentVessel = VESSEL_ID;  // fixed per page load — see the vessel-select handler
 let stowageKey = null;
+// What-if planning on the 3D model: the stowage buttons discharge / clear the
+// real live cargo locally (never sent to the simulator) so the loading
+// calculator shows the effect; "Restow all" returns to the live stowage.
+// liveSpecs is the last live layout, used to reload a single bay.
+let liveSpecs = [];
+let liveNote = '';
+let whatIf = null;             // null = showing live, else a description of the edit
 let vesselOptionsBuilt = false;
 const MAX_BOOKINGS = 14;          // simulated-demand rows under the divider
 const MAX_CUSTOMER_ROWS = 6;      // customer rows pinned on top — the whole
@@ -197,12 +204,35 @@ async function refreshStowage({ applySpeed = false, force = false } = {}) {
   if (!force && key === stowageKey) return;
   stowageKey = key;
   const { specs, summary } = layoutFromStowage(stow, cargo.bays, SHIP.holdTiers);
+  liveSpecs = specs;
+  const pct = Math.round(summary.fill * 100);
+  liveNote = `Live stowage of ${stow.name} — each bay mirrors its real fill, discharge mix, weights and cargo types (${pct}% of the hull's cells filled).`;
+  // a what-if edit in progress keeps the model as the operator left it; the
+  // new live layout is kept in liveSpecs for "Load bay" / "Restow all"
+  if (whatIf) return;
   cargo.clear({ hold: true });
   for (const spec of specs) cargo.place(spec);
-  const pct = Math.round(summary.fill * 100);
+  showCargoNote();
+}
+
+function showCargoNote() {
   const note = $('cargo-note');
   note.classList.remove('unavailable');
-  note.textContent = `Live stowage of ${stow.name} — each bay mirrors its real fill, discharge mix, weights and cargo types (${pct}% of the hull's cells filled).`;
+  note.classList.toggle('what-if', !!whatIf);
+  note.textContent = whatIf
+    ? `What-if: ${whatIf} — only on this model, not sent to the simulator. Restow all returns to the live stowage.`
+    : liveNote;
+}
+
+// Live specs belonging to one physical 40' bay (40' boxes carry the bay's own
+// number, 20' boxes its fore/aft 20' numbers).
+const specsForBay = (b) => liveSpecs.filter((s) => s.bay === b.bay || s.bay === b.foreBay20 || s.bay === b.aftBay20);
+const selectedBay = () => cargo.bays.find((b) => b.bay === +$('bay-select').value);
+const bayLabel = (b) => `bay ${String(b.bay).padStart(2, '0')}`;
+
+function setWhatIf(text) {
+  whatIf = text;
+  showCargoNote();
 }
 
 function syncVesselOptions(snap) {
@@ -390,6 +420,23 @@ function setupUI() {
     next.set('vessel', e.target.value);
     next.delete('livery');
     location.search = next.toString();
+  };
+
+  $('btn-discharge-bay').onclick = () => {
+    const b = selectedBay(); if (!b) return;
+    cargo.clearBay(b.bay, { hold: true });
+    setWhatIf(`${bayLabel(b)} discharged`);
+  };
+  $('btn-load-bay').onclick = () => {
+    const b = selectedBay(); if (!b) return;
+    cargo.clearBay(b.bay, { hold: true });
+    for (const spec of specsForBay(b)) cargo.place(spec);
+    if (whatIf) setWhatIf(`${bayLabel(b)} reloaded with its live cargo`);
+  };
+  $('btn-clear').onclick = () => { cargo.clear(); setWhatIf('all deck containers removed'); };
+  $('btn-restow').onclick = () => {
+    whatIf = null;
+    refreshStowage({ force: true }).catch((e) => setCargoUnavailable(e.message));
   };
 
   const bs = $('bay-select');
