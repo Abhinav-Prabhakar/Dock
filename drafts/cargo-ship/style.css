@@ -81,7 +81,10 @@ html, body {
 .delta b.down { color: #ff6b6b; }
 
 /* ---------- strategy comparison dialog */
-.sd-overlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; background: rgba(5, 9, 14, 0.45); opacity: 0; transition: opacity 0.25s; }
+/* above the screen switcher (40) while open; [hidden] must win over display:grid or the
+   invisible backdrop keeps swallowing every click on the HUD underneath */
+.sd-overlay { position: fixed; inset: 0; z-index: 46; display: grid; place-items: center; padding: 24px; background: rgba(5, 9, 14, 0.45); opacity: 0; transition: opacity 0.25s; }
+.sd-overlay[hidden] { display: none; }
 .sd-overlay.open { opacity: 1; }
 .sd { width: min(760px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; background: var(--glass-strong); transform: translateY(8px) scale(0.99); transition: transform 0.25s; }
 .sd-overlay.open .sd { transform: none; }
@@ -132,6 +135,9 @@ html, body {
 .cargo-panel.collapsed .panel-body { display: none; }
 .cargo-panel.collapsed .panel-head { border-bottom: none; }
 .unavailable { color: #ffc35a; }
+#cargo-note.what-if { color: #7cc4ff; }
+button:disabled, select:disabled { opacity: 0.45; cursor: not-allowed; }
+button:disabled:hover { background: rgba(255, 255, 255, 0.07); border-color: var(--line); }
 
 /* ---------- live bookings panel (left side, below the header block) */
 .bookings-panel { top: 210px; left: 26px; width: 268px; overflow: hidden; }

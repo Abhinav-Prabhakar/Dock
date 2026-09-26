@@ -77,12 +77,12 @@
       <label class="field-label" for="vessel-select">Vessel</label>
       <select id="vessel-select"></select>
       <label class="field-label" for="bay-select">Bay</label>
-      <select id="bay-select" disabled title="Stowage is set by the live simulation"></select>
+      <select id="bay-select" title="Bay the Load / Discharge buttons act on"></select>
       <div class="btn-grid">
-        <button id="btn-load-bay" disabled title="Stowage is set by the live simulation">Load bay</button>
-        <button id="btn-discharge-bay" disabled title="Stowage is set by the live simulation">Discharge bay</button>
-        <button id="btn-restow" disabled title="Stowage is set by the live simulation">Restow all</button>
-        <button id="btn-clear" disabled title="Stowage is set by the live simulation">Clear deck</button>
+        <button id="btn-load-bay" title="Reload this bay with its live cargo">Load bay</button>
+        <button id="btn-discharge-bay" title="What-if: discharge this bay (hold + deck) on the model">Discharge bay</button>
+        <button id="btn-restow" title="Return every bay to the live stowage">Restow all</button>
+        <button id="btn-clear" title="What-if: remove all deck containers on the model">Clear deck</button>
       </div>
       <label class="field-label">Colour boxes by</label>
       <div class="seg" id="color-mode"></div>
