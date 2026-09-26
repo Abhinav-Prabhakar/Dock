@@ -56,7 +56,7 @@ export class Copilot {
           <textarea rows="1" maxlength="1500" placeholder="Ask about this ship, the fleet or bookings…" aria-label="Message the copilot"></textarea>
           <button class="cp-send" type="submit" title="Send (Enter)" aria-label="Send">${ICON.send}</button>
         </form>
-        <div class="cp-foot"><span>Read-only · live simulation data</span><button type="button" data-a="clear">Clear</button></div>
+        <div class="cp-foot"><button type="button" data-a="clear">Clear</button></div>
       </section>`;
     root.appendChild(el);
     this.el = el;

@@ -125,8 +125,28 @@ unit` — SOG, HDG, heave, pitch, roll. Text shadow `0 1px 12px rgba(0,0,0,.45)`
 
 ### 4.3 Panels
 Glass card (`--glass`, blur, hairline, radius 14). Header row is uppercase
-micro-label + collapse `–` icon button; body padded 12–14 px. The stowage theme
-uses `.lpanel` — identical shape, cream glass.
+micro-label; body padded 12–14 px. The stowage theme uses `.lpanel` — identical
+shape, cream glass.
+
+**Right rail** (vessel screen): under the profit card, a 268 px column holding
+**Stowage** then **Bookings**. Both start **collapsed** on every load. The whole
+header is the toggle (`.ph-toggle`, chevron rotates −90° when closed); a
+collapsed header still reports its headline figure in muted tabular text
+(`3,165 TEU · 40%`, `189 booked · 19% win`). The rail's max-height tracks
+`--drawer-h`, so an open panel scrolls inside it instead of running under the
+metrics drawer.
+
+**Bookings** (`#bookings-panel`): KPI trio (Booked · Win rate · Avg $/TEU,
+since page load) → segmented filter **All · Customers · Won · Lost** (persisted
+per viewer) → a timeline feed. Each row: a status dot on one hairline spine
+(green booked, red rejected, amber declined, accent blue customer order steps;
+customer dots glow), the lane in bold with a drawn arrow (`CNSHA → NLRTM`), a
+muted meta line (`D24 · BK-2459-TC · 6 TEU · standard`), and on the right the
+price in tabular numerals over the outcome as coloured micro-text — no pills.
+New rows slide in (6 px, house ease); a customer event flashes the header and,
+while collapsed, raises an accent `N new` badge. Customer rows and the fleet's
+other decisions are capped separately (12 / 30) so the busy decision stream
+never flushes a customer's quote out of the feed.
 
 ### 4.4 Stats / KPI cards
 - `.stats`: 3-up grid of `rgba(255,255,255,0.05)` tiles — big tabular number

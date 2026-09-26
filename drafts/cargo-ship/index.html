@@ -41,21 +41,6 @@
     </div>
   </header>
 
-  <aside class="hud panel bookings-panel" id="bookings-panel">
-    <div class="panel-head">
-      <span class="live-title"><i class="live-dot"></i>Live bookings</span>
-      <button class="icon-btn" id="collapse-bookings" title="Collapse">–</button>
-    </div>
-    <div class="panel-body">
-      <div class="stats">
-        <div><span id="b-booked">0</span><label>Booked</label></div>
-        <div><span id="b-winrate">—</span><label>Win rate</label></div>
-        <div><span id="b-rate">—</span><label>Avg $/TEU</label></div>
-      </div>
-      <p class="hint unavailable" id="bookings-unavailable" hidden></p>
-      <ul class="booking-list" id="booking-list"></ul>
-    </div>
-  </aside>
 
   <aside class="hud panel profit-panel" id="profit-panel">
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -63,36 +48,62 @@
     <button class="delta" id="p-profit-delta" title="RL profit lift vs the static rate card (holdout evaluation) — click to compare all strategies">—</button>
   </aside>
 
-  <aside class="hud panel cargo-panel" id="cargo-panel">
-    <div class="panel-head">
-      <span>Stowage</span>
-      <button class="icon-btn" id="collapse-cargo" title="Collapse">–</button>
-    </div>
-    <div class="panel-body">
-      <div class="stats">
-        <div><span id="s-boxes">0</span><label>Boxes</label></div>
-        <div><span id="s-teu">0</span><label>TEU on deck</label></div>
-        <div><span id="s-util">0%</span><label>Deck util.</label></div>
-      </div>
-      <label class="field-label" for="vessel-select">Vessel</label>
-      <select id="vessel-select"></select>
-      <label class="field-label" for="bay-select">Bay</label>
-      <select id="bay-select" title="Bay the Load / Discharge buttons act on"></select>
-      <div class="btn-grid">
-        <button id="btn-load-bay" title="Reload this bay with its live cargo">Load bay</button>
-        <button id="btn-discharge-bay" title="What-if: discharge this bay (hold + deck) on the model">Discharge bay</button>
-        <button id="btn-restow" title="Return every bay to the live stowage">Restow all</button>
-        <button id="btn-clear" title="What-if: remove all deck containers on the model">Clear deck</button>
-      </div>
-      <label class="field-label">Colour boxes by</label>
-      <div class="seg" id="color-mode"></div>
-      <div class="legend" id="color-legend"></div>
-      <label class="field-label" for="livery-select">Livery</label>
-      <select id="livery-select"></select>
-      <p class="hint" id="cargo-note"></p>
-    </div>
-  </aside>
 
+  <div class="hud rail" id="rail">
+    <aside class="panel cargo-panel collapsed" id="cargo-panel">
+      <button class="panel-head ph-toggle" id="collapse-cargo" type="button" aria-expanded="false" aria-controls="cargo-body">
+        <span class="ph-title">Stowage</span>
+        <span class="ph-sum" id="cargo-sum"></span>
+        <svg class="chev" viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="panel-body" id="cargo-body">
+        <div class="stats">
+          <div><span id="s-boxes">0</span><label>Boxes</label></div>
+          <div><span id="s-teu">0</span><label>TEU on deck</label></div>
+          <div><span id="s-util">0%</span><label>Deck util.</label></div>
+        </div>
+        <label class="field-label" for="vessel-select">Vessel</label>
+        <select id="vessel-select"></select>
+        <label class="field-label" for="bay-select">Bay</label>
+        <select id="bay-select" title="Bay the Load / Discharge buttons act on"></select>
+        <div class="btn-grid">
+          <button id="btn-load-bay" title="Reload this bay with its live cargo">Load bay</button>
+          <button id="btn-discharge-bay" title="What-if: discharge this bay (hold + deck) on the model">Discharge bay</button>
+          <button id="btn-restow" title="Return every bay to the live stowage">Restow all</button>
+          <button id="btn-clear" title="What-if: remove all deck containers on the model">Clear deck</button>
+        </div>
+        <label class="field-label">Colour boxes by</label>
+        <div class="seg" id="color-mode"></div>
+        <div class="legend" id="color-legend"></div>
+        <label class="field-label" for="livery-select">Livery</label>
+        <select id="livery-select"></select>
+        <p class="hint" id="cargo-note"></p>
+      </div>
+    </aside>
+    <aside class="panel bookings-panel collapsed" id="bookings-panel">
+      <button class="panel-head ph-toggle" id="collapse-bookings" type="button" aria-expanded="false" aria-controls="bookings-body">
+        <span class="ph-title"><i class="live-dot" aria-hidden="true"></i>Bookings</span>
+        <span class="ph-new" id="bookings-new" hidden></span>
+        <span class="ph-sum" id="bookings-sum"></span>
+        <svg class="chev" viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="panel-body bk-body" id="bookings-body">
+        <div class="stats bk-kpis">
+          <div><span id="b-booked">0</span><label>Booked</label></div>
+          <div><span id="b-winrate">—</span><label>Win rate</label></div>
+          <div><span id="b-rate">—</span><label>Avg $/TEU</label></div>
+        </div>
+        <div class="seg bk-filter" id="bookings-filter" role="tablist" aria-label="Filter bookings">
+          <button type="button" data-f="all" role="tab">All</button>
+          <button type="button" data-f="customer" role="tab">Customers</button>
+          <button type="button" data-f="won" role="tab">Won</button>
+          <button type="button" data-f="lost" role="tab">Lost</button>
+        </div>
+        <p class="hint unavailable" id="bookings-unavailable" hidden></p>
+        <ol class="bk-feed" id="booking-list" aria-live="polite"></ol>
+      </div>
+    </aside>
+  </div>
   <footer class="hud panel controls">
     <div class="daynight" role="group" aria-label="Time of day">
       <button id="btn-day" class="active" title="Day (N)">

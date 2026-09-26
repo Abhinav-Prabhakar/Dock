@@ -79,24 +79,41 @@ let liveSpecs = [];
 let liveNote = '';
 let whatIf = null;             // null = showing live, else a description of the edit
 let vesselOptionsBuilt = false;
-const MAX_BOOKINGS = 14;          // simulated-demand rows under the divider
-const MAX_CUSTOMER_ROWS = 6;      // customer rows pinned on top — the whole
-                                  // point of the panel, so they never get
-                                  // flushed out by the sim's own churn
+// Bookings feed (right rail, under Stowage). Customer rows and the fleet's
+// other decisions are capped separately so the busy decision stream can
+// never flush a customer's quote/booking out of the feed; the list itself
+// stays chronological (newest first) and is filtered by the segmented
+// control, not split into sections.
+const MAX_OTHER_ROWS = 30;
+const MAX_CUSTOMER_ROWS = 12;
+const BK_FILTERS = {
+  all: () => true,
+  customer: (it) => it.customer,
+  won: (it) => it.tone === 'booked' || it.card?.status === 'Accepted',
+  lost: (it) => it.tone === 'rejected' || it.tone === 'declined' || it.card?.status === 'Declined',
+};
+const BK_EMPTY = {
+  all: 'No booking activity yet.',
+  customer: 'No customer quotes or bookings yet.',
+  won: 'Nothing booked yet.',
+  lost: 'Nothing turned away yet.',
+};
 let bookingItems = [];
+let bookingSeq = 0;                 // arrival counter: rows newer than the last paint slide in
+let bookingPainted = 0;
+let bookingNew = 0;                 // customer rows that arrived while the panel was collapsed
+let bookingFilter = 'all';
+try { if (localStorage.getItem('dock.bkFilter') in BK_FILTERS) bookingFilter = localStorage.getItem('dock.bkFilter'); } catch (e) { /* storage blocked */ }
 // running tally of the live sim's booking decisions since page load (or the
 // last episode reset) — the stat trio at the top of the bookings panel
 let bookingTally = { booked: 0, decided: 0, teu: 0, revenue: 0 };
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// keep the feed bounded per class: newest MAX_CUSTOMER_ROWS customer items +
-// newest MAX_BOOKINGS simulated ones (customer items already carry their own
-// newest-first order from the unshift below)
 function trimBookings() {
-  let c = 0, s = 0;
+  let c = 0, o = 0;
   bookingItems = bookingItems.filter((it) =>
-    it.customer ? ++c <= MAX_CUSTOMER_ROWS : ++s <= MAX_BOOKINGS);
+    it.customer ? ++c <= MAX_CUSTOMER_ROWS : ++o <= MAX_OTHER_ROWS);
 }
 
 function tallyBooking(ev) {
@@ -109,34 +126,45 @@ function tallyBooking(ev) {
 
 function renderBookingStats() {
   const t = bookingTally;
+  const win = t.decided ? `${Math.round((t.booked / t.decided) * 100)}%` : '—';
   $('b-booked').textContent = t.booked.toLocaleString();
-  $('b-winrate').textContent = t.decided ? `${Math.round((t.booked / t.decided) * 100)}%` : '—';
+  $('b-winrate').textContent = win;
   $('b-rate').textContent = t.teu ? `$${Math.round(t.revenue / t.teu).toLocaleString()}` : '—';
+  $('bookings-sum').textContent = t.decided ? `${t.booked.toLocaleString()} booked · ${win} win` : '';
+  const nb = $('bookings-new');
+  nb.hidden = !bookingNew;
+  nb.textContent = `${bookingNew} new`;
 }
+
+const ARROW = '<svg viewBox="0 0 16 8" width="14" height="7" aria-hidden="true"><path d="M1 4h13M10.5 1 14 4l-3.5 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function bookingRow(it) {
   const c = it.card || { title: it.text, route: null, meta: '', status: '', price: null };
   const title = c.route
-    ? `${escapeHtml(c.route[0])}<i class="arr">→</i>${escapeHtml(c.route[1])}`
-    : escapeHtml(c.title || '');
-  const ref = c.route && c.title ? `<span class="bk-ref">${escapeHtml(c.title)}</span>` : '';
-  const meta = [ref, c.meta ? escapeHtml(c.meta) : ''].filter(Boolean).join(' ');
+    ? `<span class="bk-title">${escapeHtml(c.route[0])}</span>${ARROW}<span class="bk-title">${escapeHtml(c.route[1])}</span>`
+    : `<span class="bk-title">${escapeHtml(c.title || '')}</span>`;
+  const meta = [`D${it.day}`, c.route && c.title ? `<span class="bk-ref">${escapeHtml(c.title)}</span>` : '', c.meta ? escapeHtml(c.meta) : '']
+    .filter(Boolean).join(' · ');
   const price = c.price ? `<span class="bk-price">${escapeHtml(c.price)}${c.unit ? `<small>${c.unit}</small>` : ''}</span>` : '';
-  return `<li class="bk tone-${it.tone}${it.customer ? ' customer' : ''}">
-    <span class="bk-day">D${it.day}</span>
-    <div class="bk-main"><div class="bk-title">${title}</div>${meta ? `<div class="bk-meta">${meta}</div>` : ''}</div>
-    <div class="bk-side">${price}${c.status ? `<span class="bk-chip">${escapeHtml(c.status)}</span>` : ''}</div>
+  const fresh = it.n > bookingPainted ? ' new' : '';
+  return `<li class="bk tone-${it.tone}${it.customer ? ' customer' : ''}${fresh}">
+    <span class="bk-dot" aria-hidden="true"></span>
+    <div class="bk-main"><div class="bk-route">${title}</div><div class="bk-meta">${meta}</div></div>
+    <div class="bk-side">${price}${c.status ? `<span class="bk-out">${escapeHtml(c.status)}</span>` : ''}</div>
   </li>`;
 }
 
 function renderBookings() {
-  const cust = bookingItems.filter((it) => it.customer);
-  const rest = bookingItems.filter((it) => !it.customer);
-  const head = (label) => `<li class="booking-sep">${label}</li>`;
-  $('booking-list').innerHTML = bookingItems.length
-    ? (cust.length ? head('Your customers') + cust.map(bookingRow).join('') : '')
-      + (rest.length ? head('Simulated demand') + rest.map(bookingRow).join('') : '')
-    : '<li class="booking-empty">No booking activity yet.</li>';
+  const shown = bookingItems.filter(BK_FILTERS[bookingFilter]);
+  $('booking-list').innerHTML = shown.length
+    ? shown.map(bookingRow).join('')
+    : `<li class="bk-empty">${BK_EMPTY[bookingFilter]}</li>`;
+  bookingPainted = bookingSeq;
+  $('bookings-filter').querySelectorAll('button').forEach((b) => {
+    const on = b.dataset.f === bookingFilter;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
   renderBookingStats();
 }
 
@@ -145,6 +173,13 @@ function flashBookings() {
   p.classList.remove('flash');
   void p.offsetWidth;
   p.classList.add('flash');
+}
+
+// Rail panels: the whole header toggles; both start collapsed on every load.
+function setPanelOpen(panel, open) {
+  panel.classList.toggle('collapsed', !open);
+  panel.querySelector('.ph-toggle').setAttribute('aria-expanded', String(open));
+  if (open && panel.id === 'bookings-panel') { bookingNew = 0; renderBookingStats(); }
 }
 
 // Destination when a vessel is at sea: the next call after the current one.
@@ -168,6 +203,7 @@ function updateStowageCard(stow) {
   $('s-teu').textContent = Math.round(stow.aboard_teu).toLocaleString();
   $('s-util').textContent = stow.capacity_teu > 0
     ? `${Math.round((stow.aboard_teu / stow.capacity_teu) * 100)}%` : '—';
+  $('cargo-sum').textContent = `${Math.round(stow.aboard_teu).toLocaleString()} TEU · ${$('s-util').textContent}`;
 }
 
 function setCargoUnavailable(message) {
@@ -272,10 +308,12 @@ function wireLive() {
       if (it) items.push(it);
     });
     if (!items.length) { renderBookingStats(); return; }
-    items.forEach((it) => bookingItems.unshift(it));
+    items.forEach((it) => { it.n = ++bookingSeq; bookingItems.unshift(it); });
     trimBookings();
+    const cust = items.filter((it) => it.customer).length;
+    if (cust && $('bookings-panel').classList.contains('collapsed')) bookingNew += cust;
     renderBookings();
-    if (items.some((it) => it.customer)) flashBookings();
+    if (cust) flashBookings();
   });
   live.onStatus((s) => {
     const el = $('bookings-unavailable');
@@ -284,7 +322,7 @@ function wireLive() {
   });
   // A new live episode: drop items from the old one rather than mixing the
   // two (its request ids and event seq numbers restart from scratch).
-  live.onReset(() => { bookingItems = []; bookingTally = { booked: 0, decided: 0, teu: 0, revenue: 0 }; renderBookings(); });
+  live.onReset(() => { bookingItems = []; bookingNew = 0; bookingTally = { booked: 0, decided: 0, teu: 0, revenue: 0 }; renderBookings(); });
 }
 
 function recomputeMetrics() {
@@ -408,8 +446,19 @@ function setupUI() {
     $('v-sea').textContent = seaNames.find(([m]) => v <= m)[1];
   };
   $('btn-cam').onclick = resetCamera;
-  $('collapse-cargo').onclick = () => $('cargo-panel').classList.toggle('collapsed');
-  $('collapse-bookings').onclick = () => $('bookings-panel').classList.toggle('collapsed');
+  for (const id of ['cargo-panel', 'bookings-panel']) {
+    const panel = $(id);
+    panel.querySelector('.ph-toggle').onclick = () => setPanelOpen(panel, panel.classList.contains('collapsed'));
+  }
+  $('bookings-filter').onclick = (e) => {
+    const b = e.target.closest('button[data-f]');
+    if (!b || b.dataset.f === bookingFilter) return;
+    bookingFilter = b.dataset.f;
+    try { localStorage.setItem('dock.bkFilter', bookingFilter); } catch (err) { /* storage blocked */ }
+    bookingPainted = bookingSeq;               // a filter switch isn't news: no slide-in
+    renderBookings();
+  };
+  renderBookings();
   const strategies = new StrategyDialog($('strategy-dialog'));
   $('p-profit-delta').onclick = () => strategies.open();
 

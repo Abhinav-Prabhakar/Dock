@@ -112,7 +112,7 @@ export class StrategyDialog {
           ${cell(r, Math.round(r.accepted).toLocaleString())}</tr>`;
       }).join('')}</tbody></table>`;
     return `
-      <p class="sd-lead">Profit of the <b>Dock RL policy</b> against simpler strategies, run on the <b>identical</b> simulated demand${ctx ? ` <span class="mut">(${ctx})</span>` : ''}.</p>
+      <p class="sd-lead">Profit of the <b>Dock RL policy</b> against simpler strategies, each run on <b>identical</b> demand${ctx ? ` <span class="mut">(${ctx})</span>` : ''}.</p>
       <div class="sd-lifts">${hero}</div>
       <div class="field-label">Mean profit per episode</div>
       <div class="sd-bars">${bars}</div>
