@@ -238,10 +238,21 @@ A deliberately quiet side feature: a small mono `BOOKING DESK` tag in the
 bottom-right corner unfolds into a pinned `.paper` slip (brass pin, Georgia
 title, letterpress rules). The customer's messages are sage-inked cards;
 the desk's replies are typed straight onto the slip; whatever the agent
-actually did (quote / booked / declined) is shown as terracotta or sage
-rubber stamps under the reply, and order ids are links that focus the order
-on the chart (`window.DockDashboard.focus`). Palette discipline holds: no
-colours beyond the dashboard tokens.
+actually did (quote / booked / declined) is shown as a ledger receipt under
+the reply — a rule in the action's ink (terracotta / sage / ink), a small
+boxed mono label (`QUOTED`), then the details at reading size (11.5 px mono:
+order id, lane, TEU, offers). Receipts use `.desk-receipt`, never `.stamp`
+(that class is the register's SVG status stamp). Order ids are links that
+focus the order on the chart (`window.DockDashboard.focus`). Palette
+discipline holds: no colours beyond the dashboard tokens.
+
+**Dashboard legibility rule:** small text is never set below ~9 px for
+reading copy (labels, table headers, cell captions: 9.2–10.8 px) and small
+greys stay at least `#827d6f` on the cream sheet. When a label grows, its
+letter-spacing is retuned so its width is unchanged — for mono text
+`new_ls = (0.6 + ls) / k − 0.6` for a size factor `k` — so the layout
+still fits one screen. Only decorative micro-text over the chart (soundings,
+microtext lines) sits smaller.
 
 Replies stream (`POST /api/chat/customer/stream`, server-sent events): a
 mono status line (`PRICING AGAINST THE LIVE FLEET…`) while tools run, the

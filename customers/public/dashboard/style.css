@@ -57,9 +57,9 @@ body::before {
 
 /* ---------------- shared registers ---------------- */
 .lbl {
-  font-size: 9.5px; font-weight: 600;
-  letter-spacing: .24em;
-  color: #9a9587;
+  font-size: 10.8px; font-weight: 600;
+  letter-spacing: .137em;
+  color: #7e796c;
   text-transform: uppercase;
   font-family: inherit;
 }
@@ -123,8 +123,8 @@ body::before {
 }
 .org span {
   display: block;
-  font-size: 8.6px; font-weight: 600;
-  letter-spacing: .30em;
+  font-size: 9.8px; font-weight: 600;
+  letter-spacing: .189em;
   color: var(--accent);
   margin-top: 3px;
 }
@@ -153,8 +153,8 @@ body::before {
 .vseg-b {
   appearance: none;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.0px; font-weight: 700;
-  letter-spacing: .22em;
+  font-size: 10.8px; font-weight: 700;
+  letter-spacing: .159em;
   padding: 7px 12px 6px 13px;
   border: none;
   background: #fbf7ea;
@@ -311,9 +311,9 @@ body::before {
   white-space: nowrap;
   text-overflow: ellipsis;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.6px; font-weight: 700;
-  letter-spacing: .24em;
-  color: #a19d90;
+  font-size: 9.8px; font-weight: 700;
+  letter-spacing: .137em;
+  color: #817c70;
 }
 .lhead .rh { text-align: center; }
 
@@ -372,9 +372,9 @@ body::before {
   margin-top: 3px;
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.1px; font-weight: 600;
-  letter-spacing: .18em;
-  color: #a49e8d;
+  font-size: 9.2px; font-weight: 600;
+  letter-spacing: .084em;
+  color: #827d6f;
 }
 
 /* ROUTE — mono port codes + tiny dashed leg */
@@ -385,8 +385,8 @@ body::before {
   overflow: hidden;
   white-space: nowrap;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.5px; font-weight: 700;
-  letter-spacing: .12em;
+  font-size: 11.3px; font-weight: 700;
+  letter-spacing: .067em;
   color: var(--ink);
 }
 .c-route svg { flex: none; display: block; }
@@ -406,9 +406,9 @@ body::before {
   flex: none;
   white-space: nowrap;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.4px; font-weight: 700;
-  letter-spacing: .16em;
-  color: #a49e8d;
+  font-size: 9.6px; font-weight: 700;
+  letter-spacing: .067em;
+  color: #827d6f;
 }
 .chips { display: flex; gap: 3px; flex: none; }
 .cg {
@@ -428,8 +428,8 @@ body::before {
 .c-vessel b {
   display: block;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.0px; font-weight: 700;
-  letter-spacing: .12em;
+  font-size: 10.8px; font-weight: 700;
+  letter-spacing: .067em;
   color: var(--ink2);
   white-space: nowrap;
   overflow: hidden;
@@ -440,9 +440,9 @@ body::before {
   margin-top: 3px;
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.1px; font-weight: 600;
-  letter-spacing: .18em;
-  color: #a49e8d;
+  font-size: 9.2px; font-weight: 600;
+  letter-spacing: .084em;
+  color: #827d6f;
 }
 
 /* WINDOW / ETA — serif eta over mono window */
@@ -459,9 +459,9 @@ body::before {
   margin-top: 3px;
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.1px; font-weight: 600;
-  letter-spacing: .12em;
-  color: #a49e8d;
+  font-size: 9.2px; font-weight: 600;
+  letter-spacing: .032em;
+  color: #827d6f;
   white-space: nowrap;
 }
 
@@ -472,8 +472,8 @@ body::before {
 .st-i { fill: none; stroke: var(--st-ink); stroke-width: .7; opacity: .85; }
 .st-t {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.1px; font-weight: 700;
-  letter-spacing: .14em;
+  font-size: 8.7px; font-weight: 700;
+  letter-spacing: .085em;
   fill: var(--st-ink);
 }
 
@@ -511,8 +511,8 @@ body::before {
 .sh-h {
   display: flex; align-items: baseline; gap: 9px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.0px; font-weight: 700;
-  letter-spacing: .24em;
+  font-size: 10.8px; font-weight: 700;
+  letter-spacing: .178em;
   color: var(--ink);
 }
 .sh-h::after {
@@ -529,15 +529,15 @@ body::before {
 .rt-svg { display: block; width: 100%; height: auto; }
 .rt-p {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.6px; font-weight: 700;
-  letter-spacing: .18em;
+  font-size: 9.8px; font-weight: 700;
+  letter-spacing: .084em;
   fill: #55503f;
 }
 .rt-cap {
   margin-top: 4px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.2px; font-weight: 600;
-  letter-spacing: .18em;
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .084em;
   color: #8f947f;
   text-align: center;
 }
@@ -574,8 +574,8 @@ body::before {
   display: block;
   margin-top: 5px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.6px; font-weight: 700;
-  letter-spacing: .14em;
+  font-size: 8.2px; font-weight: 700;
+  letter-spacing: .085em;
   color: #8f8a78;
 }
 .mile.now .ms-cap { color: var(--terra); }
@@ -593,8 +593,8 @@ body::before {
 .consig-stack { width: 62px; height: 19px; display: block; }
 .consig-cap {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.6px; font-weight: 700;
-  letter-spacing: .2em;
+  font-size: 9.8px; font-weight: 700;
+  letter-spacing: .102em;
   color: var(--accent);
 }
 .consig-hot { position: relative; cursor: help; }
@@ -609,8 +609,8 @@ body::before {
   background: #0e0d0b;
   color: #f0ebdc;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.2px; font-weight: 600;
-  letter-spacing: .16em;
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .067em;
   white-space: nowrap;
   box-shadow: 0 3px 8px rgba(22,17,9,.45);
   opacity: 0;
@@ -642,10 +642,10 @@ body::before {
 }
 .lrows .r span {
   width: 74px; flex: none;
-  font-size: 8.9px; font-weight: 600;
-  letter-spacing: .18em;
+  font-size: 10.1px; font-weight: 600;
+  letter-spacing: .084em;
   text-transform: uppercase;
-  color: #a19d90;
+  color: #817c70;
 }
 .lrows .r b {
   flex: 1 1 auto;
@@ -674,9 +674,9 @@ body::before {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
   display: flex; gap: 26px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.9px; font-weight: 600;
-  letter-spacing: .22em;
-  color: #a49e8d;
+  font-size: 10.1px; font-weight: 600;
+  letter-spacing: .119em;
+  color: #827d6f;
 }
 .reg-foot span:last-child { margin-left: auto; }
 
@@ -713,8 +713,8 @@ body::before {
 #map canvas { outline: none; }
 #map .maplibregl-ctrl-attrib {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.4px;
-  letter-spacing: .1em;
+  font-size: 8.0px;
+  letter-spacing: .048em;
   background: rgba(244,240,228,.85);
 }
 #map .maplibregl-ctrl-attrib-button { filter: grayscale(1) opacity(.6); }
@@ -794,8 +794,8 @@ body::before {
 }
 .ct-line {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.0px; font-weight: 600;
-  letter-spacing: .14em;
+  font-size: 7.6px; font-weight: 600;
+  letter-spacing: .085em;
   color: var(--ink2);
   line-height: 1.9;
 }
@@ -890,8 +890,8 @@ body::before {
 .d-cities {
   margin-top: 3px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.4px; font-weight: 600;
-  letter-spacing: .18em;
+  font-size: 9.6px; font-weight: 600;
+  letter-spacing: .084em;
   color: var(--faint);
 }
 .d-stamp {
@@ -946,9 +946,9 @@ body::before {
 }
 .dms-l {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.3px; font-weight: 700;
-  letter-spacing: .09em;
-  color: #a49e8d;
+  font-size: 6.8px; font-weight: 700;
+  letter-spacing: .039em;
+  color: #827d6f;
 }
 .dms.now .dms-l { color: var(--terra); }
 .dms.done .dms-l { color: var(--accent); }
@@ -971,8 +971,8 @@ body::before {
 .dmc {
   display: flex; align-items: center; gap: 3.5px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.3px; font-weight: 700;
-  letter-spacing: .1em;
+  font-size: 11.1px; font-weight: 700;
+  letter-spacing: .048em;
   color: var(--ink2);
 }
 .dmc svg { width: 9px; height: 9px; display: block; }
@@ -993,12 +993,12 @@ body::before {
 .d-rows .r span {
   width: 58px; flex: none;
   display: flex; align-items: center; gap: 4px;
-  font-size: 8.4px; font-weight: 600;
-  letter-spacing: .18em;
+  font-size: 9.6px; font-weight: 600;
+  letter-spacing: .084em;
   text-transform: uppercase;
-  color: #a19d90;
+  color: #817c70;
 }
-.d-rows .r span svg { width: 8px; height: 8px; color: #b2ab98; }
+.d-rows .r span svg { width: 8px; height: 8px; color: #9d9784; }
 .d-rows .r b {
   flex: 1 1 auto;
   min-width: 0;
@@ -1066,8 +1066,8 @@ body::before {
   top: 100%; left: 50%;
   transform: translateX(-50%);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.0px; font-weight: 700;
-  letter-spacing: .14em;
+  font-size: 7.6px; font-weight: 700;
+  letter-spacing: .085em;
   color: var(--ink2);
   text-shadow: 0 0 3px rgba(244,240,228,.95), 0 0 5px rgba(244,240,228,.8);
   white-space: nowrap;
@@ -1086,8 +1086,8 @@ body::before {
 .plab b {
   display: block;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.7px; font-weight: 700;
-  letter-spacing: .2em;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .141em;
   color: var(--ink);
   text-shadow: 0 0 3px rgba(244,240,228,.95), 0 0 6px rgba(244,240,228,.85);
 }
@@ -1095,8 +1095,8 @@ body::before {
   display: block;
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.5px; font-weight: 600;
-  letter-spacing: .18em;
+  font-size: 7.0px; font-weight: 600;
+  letter-spacing: .122em;
   color: var(--faint);
   margin-top: 1px;
   text-shadow: 0 0 3px rgba(244,240,228,.95);
@@ -1104,8 +1104,8 @@ body::before {
 /* seeded depth soundings — faint chart numerals on the ocean */
 .snd {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.6px; font-weight: 600;
-  letter-spacing: .04em;
+  font-size: 8.2px; font-weight: 600;
+  letter-spacing: .020em;
   color: rgba(69,66,58,.45);
   pointer-events: none;
 }
@@ -1147,9 +1147,9 @@ body::before {
 /* microtext footer line */
 .micro {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.3px;
-  letter-spacing: .06em;
-  color: #b2ab98;
+  font-size: 7.9px;
+  letter-spacing: .020em;
+  color: #9d9784;
   white-space: nowrap;
   overflow: hidden;
   padding: 0 4px;
@@ -1228,8 +1228,8 @@ body::before {
 .wall-count {
   margin-left: auto;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.2px; font-weight: 600;
-  letter-spacing: .22em;
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .119em;
   color: var(--faint);
 }
 .view-creds > .rule { margin: 12px 6px 0; }
@@ -1366,16 +1366,16 @@ body::before {
 }
 .badge .b-org span {
   display: block;
-  font-size: 6.8px; font-weight: 600;
-  letter-spacing: .30em;
+  font-size: 7.3px; font-weight: 600;
+  letter-spacing: .233em;
   color: var(--accent);
   margin-top: 2px;
 }
 .badge .tag {
   margin-left: auto;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.4px; font-weight: 600;
-  letter-spacing: .2em;
+  font-size: 9.1px; font-weight: 600;
+  letter-spacing: .141em;
   color: #f4f1e4;
   background: var(--accent);
   padding: 3px 5.5px 2.5px 6.5px;
@@ -1418,8 +1418,8 @@ body::before {
   display: block;
   margin: 3px 14px 0;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.6px; font-weight: 600;
-  letter-spacing: .19em;
+  font-size: 9.3px; font-weight: 600;
+  letter-spacing: .131em;
   color: var(--faint);
 }
 
@@ -1436,14 +1436,14 @@ body::before {
 .badge .brows .r span {
   width: 48px; flex: none;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.8px; font-weight: 600;
-  letter-spacing: .18em;
-  color: #a19d90;
+  font-size: 8.4px; font-weight: 600;
+  letter-spacing: .122em;
+  color: #817c70;
 }
 .badge .brows .r b {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.3px; font-weight: 600;
-  letter-spacing: .08em;
+  font-size: 11.1px; font-weight: 600;
+  letter-spacing: .030em;
   color: #26241e;
   white-space: nowrap;
   overflow: hidden;
@@ -1454,8 +1454,8 @@ body::before {
 .badge .rts { display: block; width: 100%; height: 46px; }
 .badge .rts .hp {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.6px; font-weight: 600;
-  letter-spacing: .12em;
+  font-size: 9.3px; font-weight: 600;
+  letter-spacing: .067em;
   fill: #55503f;
 }
 .badge .rts .hp-alt { fill: #b96f4b; }
@@ -1464,9 +1464,9 @@ body::before {
   display: block;
   margin: 6px 14px 0;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 6.5px;
-  letter-spacing: .06em;
-  color: #b2ab98;
+  font-size: 7.0px;
+  letter-spacing: .020em;
+  color: #9d9784;
   white-space: nowrap;
   overflow: hidden;
   padding: 0;
@@ -1486,8 +1486,8 @@ body::before {
 .badge .bcap {
   margin-top: 3px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.8px;
-  letter-spacing: .24em;
+  font-size: 8.4px;
+  letter-spacing: .178em;
   color: #77756c;
   text-align: center;
 }
@@ -1516,8 +1516,8 @@ body::before {
 }
 .badge .band-t {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.5px; font-weight: 700;
-  letter-spacing: .2em;
+  font-size: 10.3px; font-weight: 700;
+  letter-spacing: .141em;
   color: #eae6d6;
   white-space: nowrap;
   overflow: hidden;
@@ -1645,8 +1645,8 @@ body::before {
 }
 .msh-tag {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.5px; font-weight: 700;
-  letter-spacing: .2em;
+  font-size: 10.8px; font-weight: 700;
+  letter-spacing: .102em;
   color: #f4f1e4;
   background: var(--accent);
   padding: 3px 6.5px 2.5px 7.5px;
@@ -1694,8 +1694,8 @@ body::before {
   width: 100%;
   margin-top: 5px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.9px; font-weight: 600;
-  letter-spacing: .19em;
+  font-size: 10.1px; font-weight: 600;
+  letter-spacing: .093em;
   color: var(--faint);
 }
 
@@ -1705,7 +1705,7 @@ body::before {
 .sm-alt { fill: none; stroke: var(--terra); stroke-width: .9; stroke-dasharray: 2.6 3; opacity: .5; }
 .sm-route { fill: none; stroke: var(--accent); stroke-width: 1.1; stroke-dasharray: 3.4 3; }
 .sm-dist { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-           font-size: 9.5px; font-weight: 600; letter-spacing: .18em; fill: #8f947f; }
+           font-size: 10.8px; font-weight: 600; letter-spacing: .084em; fill: #8f947f; }
 .sm-stamp { transform-box: fill-box; transform-origin: center; transform: rotate(var(--pp-rot)); }
 .sm-org  { --pp-ink: var(--accent); --pp-ghost: var(--terra); --pp-rot: -3.5deg; }
 .sm-dest { --pp-ink: var(--terra);  --pp-ghost: var(--accent); --pp-rot:  2.5deg; }
@@ -1716,11 +1716,11 @@ body::before {
 .sm-code { font-family: Georgia, "Times New Roman", serif; font-size: 15.1px;
            font-weight: 700; letter-spacing: .04em; fill: var(--pp-ink); }
 .sm-city { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-           font-size: 9.5px; font-weight: 700; letter-spacing: .2em; fill: var(--pp-ink); }
+           font-size: 10.8px; font-weight: 700; letter-spacing: .102em; fill: var(--pp-ink); }
 .sm-role { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-           font-size: 8.4px; font-weight: 700; letter-spacing: .26em; fill: var(--pp-ink); opacity: .88; }
+           font-size: 9.1px; font-weight: 700; letter-spacing: .196em; fill: var(--pp-ink); opacity: .88; }
 .sm-date { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-           font-size: 7.8px; font-weight: 600; letter-spacing: .14em; fill: var(--pp-ink); opacity: .88; }
+           font-size: 8.4px; font-weight: 600; letter-spacing: .085em; fill: var(--pp-ink); opacity: .88; }
 .sm-ship { animation: sm-bob 2.8s ease-in-out infinite; }
 @keyframes sm-bob {
   0%, 100% { transform: translateY(0); }
@@ -1777,9 +1777,9 @@ body::before {
 .tms-lb {
   margin-top: 5px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.3px; font-weight: 700;
-  letter-spacing: .14em;
-  color: #b2ab98;
+  font-size: 7.9px; font-weight: 700;
+  letter-spacing: .085em;
+  color: #9d9784;
   text-align: center;
 }
 .tms.done .tms-lb { color: var(--accent); }
@@ -1797,14 +1797,14 @@ body::before {
 .mrow .lk {
   width: 128px; flex: none;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 9.2px; font-weight: 600;
-  letter-spacing: .2em;
-  color: #a19d90;
+  font-size: 10.5px; font-weight: 600;
+  letter-spacing: .102em;
+  color: #817c70;
 }
 .mrow .lv {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.1px; font-weight: 600;
-  letter-spacing: .1em;
+  font-size: 10.9px; font-weight: 600;
+  letter-spacing: .048em;
   color: #26241e;
 }
 .mrow .lv.serif {
@@ -1818,9 +1818,9 @@ body::before {
 .mrow .lv.serif i {
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.6px; font-weight: 700;
-  letter-spacing: .14em;
-  color: #a49e8d;
+  font-size: 9.8px; font-weight: 700;
+  letter-spacing: .049em;
+  color: #827d6f;
   margin-left: 4px;
 }
 
@@ -1850,15 +1850,15 @@ body::before {
 .mchip.reefer .mchip-ic { color: #4a7f9e; background: rgba(74,127,158,.16); }
 .mchip b {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 10.0px; font-weight: 700;
-  letter-spacing: .14em;
+  font-size: 10.8px; font-weight: 700;
+  letter-spacing: .085em;
   color: var(--ink2);
 }
 .mchip i {
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 8.4px; font-weight: 600;
-  letter-spacing: .12em;
+  font-size: 9.6px; font-weight: 600;
+  letter-spacing: .032em;
   color: var(--faint);
 }
 
@@ -1881,9 +1881,9 @@ body::before {
 .msh-micro {
   margin-top: 14px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 7.0px;
-  letter-spacing: .06em;
-  color: #b2ab98;
+  font-size: 7.6px;
+  letter-spacing: .020em;
+  color: #9d9784;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -1909,11 +1909,11 @@ body::before {
   max-width: min(640px, calc(100vw - 32px)); padding: 9px 16px; border-radius: 3px;
   background: #fbf8ef; color: var(--terra); border: 1px solid rgba(185, 111, 75, .55);
   box-shadow: 0 1px 0 #fff inset, 0 8px 24px rgba(60, 44, 20, .18);
-  font: 9px/1.5 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase;
+  font: 10.3px/1.5 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .049em; text-transform: uppercase;
 }
 .review-quote {
   margin-top: 12px; padding: 8px 14px; border-radius: 3px; cursor: pointer;
   border: 1px solid var(--accent); background: var(--accent); color: #fff;
-  font: 9px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .16em; text-transform: uppercase;
+  font: 10.3px ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .067em; text-transform: uppercase;
 }
 .review-quote:active { transform: translateY(1px) scale(.98); }
