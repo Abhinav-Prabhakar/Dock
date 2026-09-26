@@ -20,9 +20,6 @@ realization — and writes pre-aggregated, pre-rounded JSON artifacts to
                     when --model is given); each record carries the full
                     BidPriceEngine.explain() per-leg breakdown — the
                     plan.md §4.5 explainability deliverable
-    shock.json      the technical.md §4.3 precomputed A/B shock replay:
-                    static vs the lead policy on an identical scenario
-                    with a forced mid-horizon NLRTM closure + demand spike
     meta.json       provenance: git SHA, seed, timestamp, scenario/policy
                     lists, demand model artifact
 
@@ -37,7 +34,6 @@ Usage (from backend/):
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import subprocess
 import sys
@@ -91,14 +87,6 @@ OFFER_KIND_ORDER = [
     "counter_declined:alt_hub", "counter_declined:flex_window",
     "counter_declined:split",
 ]
-
-# technical.md §4.3: forced mid-horizon disruption on a fixed calendar
-# (start_week=40 -> closure weeks 46-49 land on episode days 42-63).
-SHOCK_START_WEEK = 40
-SHOCK_PORT = "NLRTM"                    # served by VES1/VES4 loops
-SHOCK_CLOSE_WK = (46, 49)
-SHOCK_SPIKE_WK = (46, 52)
-SHOCK_SPIKE_MULT = 2.0
 
 
 # ---------------------------------------------------------------------------
@@ -381,66 +369,6 @@ def _sample_offers(records: list[dict], n: int = N_OFFERS) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Shock replay (technical.md §4.3)
-# ---------------------------------------------------------------------------
-
-def _shock_scenario(configs: dict, first_scen: str) -> dict:
-    """Copy of the first holdout scenario config plus a forced mid-horizon
-    disruption: NLRTM closure weeks 46-49 + a 2x demand spike weeks 46-52.
-    With start_week=40 pinned that is episode days ~42-63 of a 90d run."""
-    cfg = copy.deepcopy(configs[first_scen])
-    cfg["port_closures"] = list(cfg.get("port_closures") or []) + [
-        (SHOCK_PORT, *SHOCK_CLOSE_WK)]
-    cfg["demand_spike_events"] = list(
-        cfg.get("demand_spike_events") or []) + [
-        (*SHOCK_SPIKE_WK, SHOCK_SPIKE_MULT, None)]
-    cfg["description"] = (
-        f"SHOCK REPLAY on '{first_scen}': {SHOCK_PORT} port closure "
-        f"weeks {SHOCK_CLOSE_WK[0]}-{SHOCK_CLOSE_WK[1]} + "
-        f"{SHOCK_SPIKE_MULT}x demand spike weeks "
-        f"{SHOCK_SPIKE_WK[0]}-{SHOCK_SPIKE_WK[1]} "
-        f"(start_week={SHOCK_START_WEEK} pinned).")
-    return cfg
-
-
-def _run_shock(configs, first_scen, policies, model, lead, seed,
-               horizon) -> dict:
-    scen = _shock_scenario(configs, first_scen)
-    shock_seed = seed * 1000              # episode-0 seed, identical runs
-    runs = {}
-    rep, daily, _ = run_policy_episode(policies["static"], scen,
-                                       shock_seed, horizon,
-                                       start_week=SHOCK_START_WEEK)
-    runs["static"] = {"daily": daily, "summary": rep}
-    if lead and lead != "static":
-        if lead == "ppo":
-            rep, daily, _ = run_ppo_episode(model, scen, shock_seed,
-                                            horizon,
-                                            start_week=SHOCK_START_WEEK)
-        else:
-            rep, daily, _ = run_policy_episode(policies[lead], scen,
-                                               shock_seed, horizon,
-                                               start_week=SHOCK_START_WEEK)
-        runs[lead] = {"daily": daily, "summary": rep}
-    return {
-        "event": {
-            "port": SHOCK_PORT,
-            "day_lo": (SHOCK_CLOSE_WK[0] - SHOCK_START_WEEK) * 7,
-            "day_hi": (SHOCK_CLOSE_WK[1] - SHOCK_START_WEEK) * 7,
-            "description": (
-                f"{SHOCK_PORT} port closure weeks "
-                f"{SHOCK_CLOSE_WK[0]}-{SHOCK_CLOSE_WK[1]} (episode days "
-                f"{(SHOCK_CLOSE_WK[0] - SHOCK_START_WEEK) * 7}-"
-                f"{(SHOCK_CLOSE_WK[1] - SHOCK_START_WEEK) * 7}) plus a "
-                f"{SHOCK_SPIKE_MULT}x all-lane demand spike weeks "
-                f"{SHOCK_SPIKE_WK[0]}-{SHOCK_SPIKE_WK[1]}, injected into "
-                f"holdout scenario '{first_scen}'."),
-        },
-        "runs": runs,
-    }
-
-
-# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -491,7 +419,7 @@ def main() -> int:
         selected = list(canonical)
 
     demand_model = _demand_model_path()
-    # ppo is also the shock/offers lead whenever --model is given, even if
+    # ppo is also the offers lead whenever --model is given, even if
     # it is not in --policies — gate it too (env.reset requires the
     # forecaster unconditionally)
     needs_forecaster = [p for p in selected if p in FORECASTER_POLICIES]
@@ -513,7 +441,7 @@ def main() -> int:
         "heuristic_bid": heuristic_bid,
     }
 
-    # lead policy drives offers.json and the shock A/B: ppo when a model is
+    # lead policy drives offers.json: ppo when a model is
     # given, else heuristic_bid, else the best available heuristic fallback
     lead = ("ppo" if model is not None else next(
         (p for p in ("heuristic_bid", "heuristic", "greedy")
@@ -564,9 +492,6 @@ def main() -> int:
 
     offers = _sample_offers(offer_records, N_OFFERS)
 
-    shock = _run_shock(configs, scenarios[0], policies, model, lead,
-                       args.seed, args.horizon)
-
     meta = {
         "git_sha": _git_sha(),
         "generated_at": datetime.now(timezone.utc)
@@ -581,15 +506,13 @@ def main() -> int:
             "Artifact-driven demo export (technical.md §4.1, Decision A). "
             "Identical simulator seeds across policies: ep_seed = "
             "seed*1000 + ep*101 (same scheme as rl/evaluate.py). "
-            "shock.json replays a forced NLRTM closure + 2x demand spike "
-            "mid-horizon (technical.md §4.3). All numbers pre-rounded and "
-            "pre-aggregated — the frontend must not recompute."),
+            "All numbers pre-rounded and pre-aggregated — the frontend "
+            "must not recompute."),
     }
 
     _write(out_dir, "summary.json", summary)
     _write(out_dir, "timeline.json", timeline)
     _write(out_dir, "offers.json", offers)
-    _write(out_dir, "shock.json", shock)
     _write(out_dir, "meta.json", meta)
     print(f"done ({time.time() - t0:.0f}s total) -> {out_dir}")
     return 0

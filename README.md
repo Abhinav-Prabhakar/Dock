@@ -94,7 +94,7 @@ backend/                 Python backend (this is the core system)
   tests/                 145 pytest tests
   runs/                  Trained checkpoints (ppo_c1..c5) + eval_results.json
   demo/                  Exported demo artifacts (summary/timeline/offers/
-                         shock/meta JSON) — served via GET /compare/*
+                         meta JSON) — served via GET /compare/*
 customers/               Customer booking site (static; served at /customers)
 drafts/cargo-ship/       Port-operator console (static; live 3D vessel + bookings,
                          stowage, statistics, model views)
@@ -200,7 +200,7 @@ open http://localhost:8399/customers/       # customer booking site (the backend
 ```
 
 - **`customers/`** — the customer booking site (Meridian Line): file a cargo booking, receive a live offer slip (shared `customers/shared/offers.js`; accept / flex-window / alt-hub / split counter-offers plus the PPO recommendation), and track orders through delivery on the fleet dashboard. Every `fetch` targets the backend same-origin.
-- **`drafts/cargo-ship/`** — the port-operator console: a real-time 3D vessel view with a Live bookings panel (customer quotes, accepts, and the settlement of their deals), a stowage screen (side elevation + 2D top/plan view), a statistics page (5-policy comparison + shock replay), and a model page that visualizes the live PPO policy's inputs, network and outputs.
+- **`drafts/cargo-ship/`** — the port-operator console: a real-time 3D vessel view with a Live bookings panel (customer quotes, accepts, and the settlement of their deals), a stowage screen (side elevation + 2D top/plan view), a statistics page (5-policy holdout comparison), and a model page that visualizes the live PPO policy's inputs, network and outputs.
 
 Both sites run on live data only — no mock or cached fallbacks; if the API is down they say so. `frontend.md` maps every screen to its endpoints.
 
@@ -218,10 +218,9 @@ Five policies run the **identical simulator on identical demand scenarios**
 | `ppo` | Dock — learned sequential policy on top of all of it |
 
 Headline metrics: profit, revenue/TEU, utilization %, reject→counter-offer
-conversions, empty container-miles, CO₂/TEU, and profit retained under shock.
-A precomputed **shock replay** (port closure + demand spike mid-simulation,
-identical seed A/B) is the wow moment: the static policy sails into it; Dock
-reprices, reroutes, and issues reason-coded counter-offers.
+conversions, empty container-miles, CO₂/TEU. (The precomputed shock-replay
+A/B was removed on 2026-09-26; demand shocks remain part of the simulated
+market and of the `volatile-shocks` holdout scenario.)
 
 Latest holdout evaluation (`runs/ppo_c5/eval_results.json`, 5 episodes × 90
 days, holdout scenarios only):

@@ -5,13 +5,8 @@
 import { Page, fit, clamp, lerp, ease, easeOut, nf, money, roundRect, spline, along, mulberry32, drawShip, grainURL } from './page.js';
 import { loadStats, SEGMENTS } from './statsLive.js';
 
-// The scenario selector offers exactly two live sources: a holdout replay
-// (5 policies, pre-aggregated over 2 unseen scenarios x 3 seeds) and a shock
-// replay (2 policies, a forced NLRTM closure). See statsLive.js.
-const SOURCES = [
-  { key: 'holdout', label: 'Holdout · 2 unseen scenarios × 3 seeds' },
-  { key: 'shock', label: 'Shock replay · NLRTM closure' },
-];
+// The page renders the holdout comparison: 5 policies, pre-aggregated over
+// the export's unseen scenarios x seeds (label built from its meta.json).
 
 const ink = (a) => `rgba(43,36,25,${a})`;
 const sea = (a) => `rgba(44,110,170,${a})`;
@@ -42,7 +37,6 @@ function sliceModel(raw, days) {
 export class StatsPage extends Page {
   constructor(root) {
     super(root);
-    this.scenario = 'holdout';
     this.days = 90;
     this.segment = 'all';
     this.hover = {};
@@ -68,8 +62,6 @@ export class StatsPage extends Page {
             <div class="stow-stats" data-k="head"></div>
           </div>
           <div class="lpanel pg-controls">
-            <label class="field-label">Scenario</label>
-            <div class="seg light" data-k="scenSeg">${SOURCES.map((s) => `<button data-v="${s.key}">${s.label}</button>`).join('')}</div>
             <label class="field-label">Horizon</label>
             <div class="seg light" data-k="rangeSeg"><button data-v="7">7 days</button><button data-v="30">30 days</button><button data-v="90">90 days</button></div>
           </div>
@@ -128,7 +120,6 @@ export class StatsPage extends Page {
       el.querySelectorAll('button').forEach((b) => (b.onclick = () => { sync(b.dataset.v); fn(b.dataset.v); }));
       sync(cur);
     };
-    seg(this.k.scenSeg, this.scenario, (v) => { this.scenario = v; this.load(); });
     seg(this.k.rangeSeg, this.days, (v) => { this.days = +v; if (this.raw) this.setData(); });
     seg(this.k.segSeg, this.segment, (v) => { this.segment = v; this.locksT = this.time; });
     r.querySelector('[data-a="replay"]').onclick = () => { this.scrub = null; this.raceT = this.time; };
@@ -176,18 +167,18 @@ export class StatsPage extends Page {
     t.classList.add('show', 'light');
   }
 
-  // Fetch from the live backend for the current scenario source. No mock, no
+  // Fetch the holdout comparison + live world from the backend. No mock, no
   // cached fallback — a failed call renders an explicit unavailable state.
   async load() {
-    // A scenario switch mid-load must not let an older, slower response
-    // land after a newer one and overwrite it under the current selector.
+    // A reload mid-load must not let an older, slower response land after a
+    // newer one and overwrite it.
     const token = ++this._loadToken;
     this.k.status.style.display = '';
     this.k.status.textContent = 'Loading statistics from the Dock backend…';
     this.k.grid.style.display = 'none';
     this.raw = null; this.d = null;
     try {
-      const raw = await loadStats(this.scenario);
+      const raw = await loadStats();
       if (token !== this._loadToken) return;
       this.raw = raw;
       this.k.status.style.display = 'none';
@@ -318,21 +309,6 @@ export class StatsPage extends Page {
     for (let y = pad.t, k = 0; y < h - pad.b; y += 5, k++) for (let j = 0; j < 2; j++) { g.fillStyle = (k + j) % 2 ? ink(0.75) : '#fffaf0'; g.fillRect(fin + j * 5 - 5, y, 5, 5); }
     g.save(); g.translate(sx - 6, pad.t + 22); g.rotate(-Math.PI / 2); g.fillStyle = ink(0.55); g.font = '700 8.5px Inter, sans-serif'; g.textAlign = 'right'; g.fillText('START', 0, 0); g.restore();
 
-    // storm over the course during the shock window
-    const sh = d.scenario.shock;
-    if (sh && day >= sh.lo && day <= sh.hi + 3) {
-      const a = clamp(Math.min(day - sh.lo, sh.hi + 3 - day) / 3) * 0.9;
-      const gr = g.createLinearGradient(0, pad.t, 0, h);
-      gr.addColorStop(0, `rgba(60,64,72,${0.22 * a})`); gr.addColorStop(1, `rgba(60,64,72,${0.04 * a})`);
-      g.fillStyle = gr; g.fillRect(pad.l - 10, pad.t, w - pad.l - pad.r + 20, h - pad.t - pad.b);
-      g.strokeStyle = `rgba(70,90,110,${0.22 * a})`; g.lineWidth = 1;
-      g.beginPath();
-      for (let k = 0; k < 90; k++) { const x = pad.l + ((k * 97 + t * 260) % (w - pad.l - pad.r)); const y = pad.t + ((k * 53 + t * 420) % (h - pad.t - 20)); g.moveTo(x, y); g.lineTo(x - 4, y + 12); }
-      g.stroke();
-      g.fillStyle = `rgba(200,69,47,${a})`; g.font = '700 9.5px Inter, sans-serif'; g.textAlign = 'center';
-      g.fillText(`STORM · ${sh.text.toUpperCase()}`, (pad.l + w - pad.r) / 2, pad.t + 12);
-    }
-
     // boats
     const vals = P.map((p) => this.valAt(p, day));
     const rank = vals.map((v) => vals.filter((q) => q > v).length + 1);
@@ -380,16 +356,6 @@ export class StatsPage extends Page {
     const X = (day) => l + (day / d.days) * ww;
     const y = 18;
     g.fillStyle = ink(0.06); roundRect(g, l, y - 4, ww, 8, 4); g.fill();
-    const sh = d.scenario.shock;
-    if (sh && sh.lo < d.days) {
-      const x0 = X(sh.lo), x1 = X(Math.min(d.days, sh.hi));
-      g.save(); g.beginPath(); g.rect(x0, y - 9, x1 - x0, 18); g.clip();
-      g.fillStyle = 'rgba(200,69,47,0.08)'; g.fillRect(x0, y - 9, x1 - x0, 18);
-      g.strokeStyle = 'rgba(200,69,47,0.35)'; g.lineWidth = 1;
-      for (let s = x0 - 20; s < x1 + 20; s += 5) { g.beginPath(); g.moveTo(s, y + 9); g.lineTo(s + 10, y - 9); g.stroke(); }
-      g.restore();
-      g.fillStyle = RED; g.font = '700 8.5px Inter, sans-serif'; g.textAlign = 'center'; g.fillText('SHOCK', (x0 + x1) / 2, y + 22);
-    }
     const px = X(this.raceDay);
     g.fillStyle = sea(0.3); roundRect(g, l, y - 4, px - l, 8, 4); g.fill();
     g.font = '600 9px Inter, sans-serif'; g.textAlign = 'center';
@@ -598,11 +564,6 @@ export class StatsPage extends Page {
       this.mapHits.push({ x, y, i });
       const hov = this.hover.map === i;
       const r = 5 + 9 * Math.sqrt(p.throughput / maxThroughput);
-      if (p.shocked) {
-        const pu = (t * 0.8) % 1;
-        g.strokeStyle = `rgba(200,69,47,${0.6 * (1 - pu)})`; g.lineWidth = 2;
-        g.beginPath(); g.arc(x, y, r + 4 + pu * 14, 0, Math.PI * 2); g.stroke();
-      }
       g.fillStyle = '#fffaf0'; g.beginPath(); g.arc(x, y, r + 3, 0, Math.PI * 2); g.fill();
       g.strokeStyle = ink(0.15); g.lineWidth = 3; g.beginPath(); g.arc(x, y, r + 1.5, 0, Math.PI * 2); g.stroke();
       g.strokeStyle = cc(p.congestion); g.beginPath(); g.arc(x, y, r + 1.5, -Math.PI / 2, -Math.PI / 2 + p.congestion * Math.PI * 2 * this.appear); g.stroke();
@@ -612,8 +573,8 @@ export class StatsPage extends Page {
       g.textAlign = up ? 'center' : side > 0 ? 'left' : 'right';
       g.fillStyle = ink(0.9); g.font = '700 10px Inter, sans-serif';
       g.fillText(p.code, lx, ly);
-      g.fillStyle = p.shocked ? RED : ink(0.5); g.font = '600 8.5px Inter, sans-serif';
-      g.fillText(p.shocked ? 'CLOSED' : `${nf(p.throughput / 1000, 1)}k TEU`, lx, ly + 10);
+      g.fillStyle = ink(0.5); g.font = '600 8.5px Inter, sans-serif';
+      g.fillText(`${nf(p.throughput / 1000, 1)}k TEU`, lx, ly + 10);
     });
     // compass rose ornament + scale bar
     this.rose(g, pad + 44, h - pad - 44, 30);
@@ -820,16 +781,6 @@ export class StatsPage extends Page {
     g.strokeStyle = ink(0.07); g.lineWidth = 1; g.font = '600 8.5px Inter, sans-serif'; g.textAlign = 'right';
     const step = niceStep(maxV - minV, 4);
     for (let v = Math.ceil(minV / step) * step; v <= maxV; v += step) { g.beginPath(); g.moveTo(pad.l, Y(v)); g.lineTo(w - pad.r, Y(v)); g.stroke(); g.fillStyle = ink(0.45); g.fillText(kfmt(v), pad.l - 8, Y(v) + 3); }
-    // shock band
-    const sh = d.scenario.shock;
-    if (sh && sh.lo < n) {
-      const x0 = X(sh.lo - 1), x1 = X(Math.min(n - 1, sh.hi - 1));
-      g.save(); g.beginPath(); g.rect(x0, pad.t, x1 - x0, hh); g.clip();
-      g.fillStyle = 'rgba(200,69,47,0.05)'; g.fillRect(x0, pad.t, x1 - x0, hh);
-      g.strokeStyle = 'rgba(200,69,47,0.14)';
-      for (let s = x0 - hh; s < x1; s += 7) { g.beginPath(); g.moveTo(s, pad.t + hh); g.lineTo(s + hh, pad.t); g.stroke(); }
-      g.restore();
-    }
     // moons, one per week
     for (let wk = 0; wk * 7 < n; wk++) {
       const x = X(Math.min(n - 1, wk * 7 + 3)), p = ((wk * 7) % 29.5) / 29.5;

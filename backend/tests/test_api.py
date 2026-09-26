@@ -225,11 +225,16 @@ def test_episode_validation(client):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("name",
-                         ["summary", "timeline", "offers", "shock", "meta"])
+                         ["summary", "timeline", "offers", "meta"])
 def test_compare(client, name):
     r = client.get(f"/compare/{name}")
     assert r.status_code == 200
     assert r.json()  # non-empty JSON document
+
+
+def test_compare_shock_replay_is_gone(client):
+    """The precomputed shock replay was removed from the product."""
+    assert client.get("/compare/shock").status_code == 404
 
 
 def test_compare_unknown(client):

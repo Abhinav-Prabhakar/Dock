@@ -376,7 +376,7 @@ layout is the frontend's job.
 
 ### Comparison artifacts (precomputed)
 
-`GET /compare/{name}` — `name ∈ {summary, timeline, offers, shock, meta}`;
+`GET /compare/{name}` — `name ∈ {summary, timeline, offers, meta}` (the `shock` replay was removed);
 serves `backend/demo/{name}.json` verbatim (schemas in `backend.md` §Artifacts).
 `404` if the export hasn't been run.
 
