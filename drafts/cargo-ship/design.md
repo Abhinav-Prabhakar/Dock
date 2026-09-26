@@ -1,14 +1,14 @@
 # Dock — Vessel View · Design Document
 
-A four-screen port-operator console for a ~366 m ultra-large container ship
-("DOCK PIONEER", IMO 9876543, flag Monrovia). **Vessel** is a real-time 3D view
+A four-screen port-operator console for the four-ship Dock fleet (one vessel
+on screen at a time, `?vessel=VES1…VES4`; see §5.1). **Vessel** is a real-time 3D view
 with an instrument HUD and a load-metrics drawer; **Stowage** is a light,
 paper-textured "technical drawing" with a side-elevation profile *and* a top-down
 plan, both driven by an animated crane timeline; **Statistics** is the operator's
 ledger drawn as an Admiralty chart; **Model** replays the decision engine one
 decision at a time on a dark "night bridge". One design language, two treatments
 — dark glass over a living sea, and warm ink-on-paper for the engineering and
-reporting views. All data outside the 3D vessel is mocked (seeded) for now.
+reporting views. All data comes from the live backend simulation (no mocks).
 
 No image, font, or audio assets are loaded. Every texture, icon, sound, and
 pixel of the ship is generated procedurally at runtime.
@@ -194,6 +194,20 @@ cross-section where each row is a proportional weight bar; click to select.
 ## 5. The 3D world
 
 ### 5.1 Ship model (`ship.js`, `textures.js`)
+- **The fleet** (`config.js` `VESSELS`, matching `backend/data/calibration.py`):
+  every hull, bay layout, superstructure and hydrostatic set is per vessel, and
+  each ship has its own silhouette —
+
+  | Vessel | Class | Hull | Drawn TEU | Signature |
+  |---|---|---|---|---|
+  | VES1 Pacific Aurora | 8,000 TEU post-Panamax | 334 × 42.8 m | 7,740 | magenta NOVA livery, two-island (bridge forward), round funnel |
+  | VES2 Meridian Star | 5,500 TEU post-Panamax | 277 × 40 m | 5,346 | deep-blue MERIDIAN, island aft, twin side-by-side stacks |
+  | VES3 Atlantic Pioneer | 4,000 TEU Panamax | 260 × 32.2 m | 3,650 | black ATLAS, all-aft island, tall raked funnel |
+  | VES4 Coral Empress | 2,500 TEU geared feeder | 208 × 30 m | 2,212 | coral CORAL, two pedestal deck cranes, square funnel |
+
+  Fittings were authored on a 366 × 51 × 30.2 m reference hull and scale via
+  `kL/kB/kD/kT`. Switching vessel reloads the page (geometry is computed once
+  at module load).
 - Parametric hull: `halfBreadth(x, z)` drives a lofted mesh — parallel
   midbody, bulbous bow, transom stern, raked stem, rounded bilge. Same function
   feeds rendering, hydrostatics, and the waterline texture profile — one truth.

@@ -1,6 +1,6 @@
 // Seakeeping model: the hull's waterplane samples the same Gerstner field that is rendered, and
 // heave / pitch / roll respond as damped oscillators with realistic natural periods for the active hull
-// (tuned on the 366 m VES1; heave/pitch periods scale with √L like any wave-following hull, roll comes from GM).
+// (tuned on the 366 m reference hull; heave/pitch periods scale with √L like any wave-following hull, roll comes from GM).
 // Long hulls average out short waves, so motions stay small and slow — as they do in reality.
 import { SHIP } from './config.js';
 import { halfBreadth } from './ship.js';

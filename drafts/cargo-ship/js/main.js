@@ -39,7 +39,7 @@ $('viewport').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.5, 60000);
-// framed for the 366 m VES1 and scaled to the active hull's length
+// framed for the 366 m reference hull and scaled to the active hull's length
 const DEFAULT_TARGET = new THREE.Vector3(18, 20, 0).multiplyScalar(SHIP.L / 366);
 const DEFAULT_CAM = new THREE.Vector3(395, 78, -395).multiplyScalar(SHIP.L / 366); // front-left (port bow) quarter
 camera.position.copy(DEFAULT_CAM);

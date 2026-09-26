@@ -6,7 +6,7 @@
 // each with its own hull, bay layout, superstructure and hydrostatics so the
 // 3D ship, stowage drawings and loading calculator all match the selected
 // vessel's real class. Dimensions follow typical ships of each size:
-//   VES1  8,000 TEU  (the original 366 m model hull, kept as-is)
+//   VES1  8,000 TEU  post-Panamax, 334 × 42.8 m, two-island (the pink ship)
 //   VES2  5,500 TEU  post-Panamax, 277 × 40 m
 //   VES3  4,000 TEU  Panamax, 260 × 32.2 m (13 rows on deck — the old lock limit)
 //   VES4  2,500 TEU  feeder-max, 208 × 30 m
@@ -23,37 +23,41 @@
 const bays = (...tiers) => tiers.map((t) => ({ type: 'bay', tiers: t }));
 
 export const VESSELS = {
+  // Post-Panamax 8,000 TEU, two-island: bridge well forward (five bays ahead
+  // of it) so the tall deck stacks behind it never block the view, engine
+  // casing and funnel aft. x: house 71.5..57.5, casing -81.5..-93.5,
+  // aft bays -93.5..-135.2.
   VES1: {
     id: 'VES1', name: 'PACIFIC AURORA', port: 'MONROVIA', imo: 'IMO 9876543', livery: 'magenta',
-    L: 366,          // length overall
-    B: 51,           // moulded beam
-    D: 30.2,         // moulded depth (keel -> main deck)
-    T: 14.5,         // design draught
-    bilgeRadius: 2.6,
-    forecastle: 30,  // clear foredeck length from the stem to the first bay
+    L: 334,          // length overall
+    B: 42.8,         // moulded beam
+    D: 24.6,         // moulded depth (keel -> main deck)
+    T: 14.5,         // design draught (backend draft_m)
+    bilgeRadius: 2.3,
+    forecastle: 26,  // clear foredeck length from the stem to the first bay
     layout: [
-      ...bays(6, 7, 8, 8, 9, 9, 9),
-      { type: 'house', length: 15 },
-      ...bays(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10),
-      { type: 'casing', length: 13 },
-      ...bays(9, 8, 7),
+      ...bays(6, 7, 7, 8, 8),
+      { type: 'house', length: 14 },
+      ...bays(8, 8, 8, 8, 8, 8, 8, 8, 8, 8),
+      { type: 'casing', length: 12 },
+      ...bays(8, 7, 6),
     ],
-    maxRows: 20,
-    holdTiers: 9,    // logical below-deck tiers (02..18), not rendered while hatches are closed
-    super: { towerH: 38, baseW: 44, towerW: 30, casingH: 20, casingW: 28, funnelH: 13, funnelR: 7.2, funnel: 'round' },
+    maxRows: 17,
+    holdTiers: 7,    // logical below-deck tiers (02..14), not rendered while hatches are closed
+    super: { towerH: 34, baseW: 38, towerW: 26, casingH: 18, casingW: 24, funnelH: 12, funnelR: 6.4, funnel: 'round' },
     hydro: {
-      summerDraft: 16.0, tankTop: 2.2, reeferPlugs: 560,
+      summerDraft: 15.2, tankTop: 2.0, reeferPlugs: 560,
       lightship: [
-        { name: 'Hull steel',        w: 30500, x0: -178, x1: 178, vcg: 14.2, shape: 'hull' },
-        { name: 'Machinery',         w: 3800,  x0: -152, x1: -122, vcg: 8.5 },
-        { name: 'Accommodation',     w: 2300,  house: true, vcg: 38 },
-        { name: 'Casing & funnel',   w: 900,   casing: true, vcg: 40 },
-        { name: 'Hatches & lashing', w: 1900,  x0: -168, x1: 152, vcg: 32 },
+        { name: 'Hull steel',        w: 23000, x0: -165, x1: 165, vcg: 11.6, shape: 'hull' },
+        { name: 'Machinery',         w: 3000,  x0: -118, x1: -90, vcg: 6.9 },
+        { name: 'Accommodation',     w: 1700,  house: true, vcg: 31.5 },
+        { name: 'Casing & funnel',   w: 700,   casing: true, vcg: 33.5 },
+        { name: 'Hatches & lashing', w: 1400,  x0: -135, x1: 141, vcg: 26.5 },
       ],
       consumables: [
-        { name: 'Heavy fuel oil',   w: 6200, x0: -112, x1: -38, vcg: 4.5 },
-        { name: 'MGO, FW & stores', w: 1700, x0: -158, x1: -126, vcg: 11 },
-        { name: 'Ballast water',    w: 2400, x0: -150, x1: 150, vcg: 1.4 },
+        { name: 'Heavy fuel oil',   w: 5000, x0: -88, x1: -30, vcg: 3.7 },
+        { name: 'MGO, FW & stores', w: 1400, x0: -150, x1: -120, vcg: 9 },
+        { name: 'Ballast water',    w: 2000, x0: -150, x1: 150, vcg: 1.2 },
       ],
     },
   },
