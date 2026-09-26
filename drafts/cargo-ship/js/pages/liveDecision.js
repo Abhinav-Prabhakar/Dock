@@ -87,7 +87,11 @@ function stampFor(step, actionDesc, outcome) {
     if (actionDesc.kind === 'reposition') return 'REPOSITION';
     return 'HOLD';
   }
-  const o = outcome && outcome.outcome;
+  // No outcome recorded yet for this request — true for a genuine reject
+  // (nothing ever books it) but not for an accept/counter, so only stamp
+  // REJECTED once the outcome event has actually been seen.
+  if (outcome == null) return actionDesc.kind === 'reject' ? 'REJECTED' : 'PENDING';
+  const o = outcome.outcome;
   if (o === 'booked') return 'BOOKED';
   if (o === 'declined' || o === 'counter_declined' || o === 'price_reject') return 'DECLINED';
   return 'REJECTED';
@@ -258,10 +262,11 @@ export function toDecision(trace, network) {
   const stamp = stampFor(trace.step, action, outcome);
   const key = trace.step === 'fleet'
     ? `fleet:${action.kind}`
-    : action.kind === 'reject'
-      ? (options.some((o) => o.feasible) ? 'rejected:below_floor_or_full' : 'rejected:infeasible')
-      : (outcome && outcome.outcome === 'booked') ? `booked:${action.kind}`
-        : action.kind === 'accept' ? 'declined' : `counter_declined:${action.kind}`;
+    : stamp === 'PENDING' ? `pending:${action.kind}`
+      : action.kind === 'reject'
+        ? (options.some((o) => o.feasible) ? 'rejected:below_floor_or_full' : 'rejected:infeasible')
+        : (outcome && outcome.outcome === 'booked') ? `booked:${action.kind}`
+          : action.kind === 'accept' ? 'declined' : `counter_declined:${action.kind}`;
   const ok = stamp === 'BOOKED' || trace.step === 'fleet';
   const onchain = !!(outcome && outcome.deal);
   const ledger = (outcome && outcome.seq != null)
@@ -348,29 +353,56 @@ export function toDecision(trace, network) {
 }
 
 // ---------------------------------------------------------------- LiveEngine
+const MAX_QUEUE = 30;
+const POLL_MS = 2500;
+
 export class LiveEngine {
   constructor() {
     this.network = null;
     this.W1 = null; this.W2 = null; this.W3 = null;
     this.queue = [];
     this.lastN = 0;
+    this.episodeId = null;
     this._timer = null;
+    this._inFlight = false;
   }
 
+  // Fetches the (mostly static) network shape once; does not start polling
+  // /live/policy — call start() for that, tied to the page being shown.
   async init() {
     const network = await API.policyNetwork();
     this.network = network;
     this.W1 = network.w1; this.W2 = network.w2; this.W3 = network.w3;
-    await this._poll();
-    this._timer = setInterval(() => { this._poll().catch(() => {}); }, 2500);
+  }
+
+  start() {
+    if (this._timer) return;               // idempotent
+    this._poll().catch(() => {});
+    this._timer = setInterval(() => { this._poll().catch(() => {}); }, POLL_MS);
   }
 
   async _poll() {
-    const res = await API.livePolicy(20);
-    const fresh = (res.decisions || []).filter((t) => t.n > this.lastN).sort((a, b) => a.n - b.n);
-    for (const trace of fresh) {
-      this.lastN = Math.max(this.lastN, trace.n);
-      this.queue.push(toDecision(trace, this.network));
+    if (this._inFlight) return;             // no overlapping polls
+    this._inFlight = true;
+    try {
+      const res = await API.livePolicy(20);
+      if (res.episode_id && this.episodeId && res.episode_id !== this.episodeId) {
+        // a new live world: trace numbering restarts at 1, so the old
+        // cursor would never match again and the page would stall forever
+        this.queue = [];
+        this.lastN = 0;
+      }
+      this.episodeId = res.episode_id ?? this.episodeId;
+      const fresh = (res.decisions || []).filter((t) => t.n > this.lastN).sort((a, b) => a.n - b.n);
+      for (const trace of fresh) {
+        this.lastN = Math.max(this.lastN, trace.n);
+        this.queue.push(toDecision(trace, this.network));
+      }
+      // bounded: an idle Model page (or a slow tab) must not accumulate an
+      // unbounded backlog of stale decisions that then floods in on return
+      if (this.queue.length > MAX_QUEUE) this.queue.splice(0, this.queue.length - MAX_QUEUE);
+    } finally {
+      this._inFlight = false;
     }
   }
 

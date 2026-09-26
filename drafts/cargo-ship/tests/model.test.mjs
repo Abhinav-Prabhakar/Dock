@@ -6,7 +6,7 @@ globalThis.DOCK_API_BASE = process.env.DOCK_API_BASE || 'http://localhost:8080/a
 const { API } = await import('../js/api.js');
 const { actionsFromNetwork, toDecision, curveAt } = await import('../js/pages/liveDecision.js');
 
-const ALLOWED_STAMPS = ['BOOKED', 'DECLINED', 'REJECTED', 'ENGINE ORDER', 'REPOSITION', 'HOLD'];
+const ALLOWED_STAMPS = ['BOOKED', 'DECLINED', 'REJECTED', 'PENDING', 'ENGINE ORDER', 'REPOSITION', 'HOLD'];
 
 function assertAllFinite(value, path = 'root') {
   if (Array.isArray(value)) {
@@ -126,6 +126,16 @@ test('toDecision shapes every fetched decision correctly', () => {
       });
 
       if (trace.pricing) {
+        // findChosenOpt matches once the backend sends pricing.dest (a
+        // counter-offer's dest can differ from the request's original
+        // dest, e.g. an alt_hub decision) — before that field existed this
+        // always missed for alt_hub decisions and the option ring never
+        // highlighted a chosen option.
+        assert.ok(d.chosenOpt >= 0 && d.chosenOpt < 4, `decision ${trace.n}: pricing present => a chosen option slot (0-3) is found, got ${d.chosenOpt}`);
+        assert.equal(d.quote.opt, d.chosenOpt, `decision ${trace.n}: quote.opt mirrors chosenOpt`);
+        assert.equal(d.options[d.chosenOpt].vessel.id, trace.pricing.vessel_id, `decision ${trace.n}: chosen option's vessel matches pricing.vessel_id`);
+        assert.equal(d.options[d.chosenOpt].dest, trace.pricing.dest, `decision ${trace.n}: chosen option's dest matches pricing.dest`);
+
         assert.ok(d.quote, `decision ${trace.n}: pricing present => quote built`);
         assert.ok(Array.isArray(d.quote.curve) && d.quote.curve.length > 0, `decision ${trace.n}: quote carries the real acceptance/margin curve`);
         d.quote.curve.forEach((row, i) => {
