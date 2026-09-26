@@ -76,6 +76,10 @@ const KIND_API  = { dry: 'dry', haz: 'hazmat', hazmat: 'hazmat',
                     reef: 'reefer', reefer: 'reefer' };
 const MONTH_AB  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
+/* port flag prefix — 'CNSHA' → '🇨🇳 CNSHA', 'SHANGHAI' → '🇨🇳 SHANGHAI' */
+const flag = c => (window.DockAPI && DockAPI.portFlag ? DockAPI.portFlag(c) : '');
+const flagged = (c, name = c) => (flag(c) ? `${flag(c)} ${name}` : name);
+
 /* re-ink the hanging credential — face fields, stats, hub labels,
    barcode + stack re-seed, band state, CONFIRM gate                  */
 function syncCard() {
@@ -84,7 +88,7 @@ function syncCard() {
   const setT = (id, t) => { const el = $(id); if (!el) return;
     el.textContent = t; if (el.dataset.t !== undefined) el.dataset.t = String(t); };
 
-  setT('cRoute', `${A.n} → ${B.n}`);
+  setT('cRoute', `${flagged(S.origin, A.n)} → ${flagged(S.dest, B.n)}`);
   setT('cDept', `FCL · ${S.segment.toUpperCase()} SERVICE`);
   const td = new Date();
   setT('cIssued', `${td.getUTCDate()} ${MONTH_AB[td.getUTCMonth()]} ${td.getUTCFullYear()}`);
@@ -107,11 +111,11 @@ function syncCard() {
 
   /* hub-map labels — booked ends + other servable lanes as alts */
   const setH = (id, t) => { const el = $(id); if (el) el.textContent = t; };
-  setH('hpA', S.origin); setH('hpB', S.dest);
+  setH('hpA', flagged(S.origin)); setH('hpB', flagged(S.dest));
   const others = (PAIRS[S.origin] || []).filter(c => c !== S.dest);
-  setH('hpMid', others[0] || '—');
-  setH('hpM1', others[1] || '—');
-  setH('hpM2', others[2] || '—');
+  setH('hpMid', others[0] ? flagged(others[0]) : '—');
+  setH('hpM1', others[1] ? flagged(others[1]) : '—');
+  setH('hpM2', others[2] ? flagged(others[2]) : '—');
 
   /* generated print re-seeded from the whole spec */
   const seed = hash([S.origin, S.dest, teu, Math.round(wt * 10),
@@ -1116,7 +1120,7 @@ requestAnimationFrame(frame);
 
   const fill = (sel, codes, cur) => {
     sel.innerHTML = codes.map(c =>
-      `<option value="${c}"${c === cur ? ' selected' : ''}>${c} · ${PORT_G[c].n}</option>`).join('');
+      `<option value="${c}"${c === cur ? ' selected' : ''}>${flagged(c)} · ${PORT_G[c].n}</option>`).join('');
   };
   const fillD = () => fill(selD, PAIRS[S.origin] || [], S.dest);
   fill(selO, Object.keys(PORT_G), S.origin);
@@ -1143,6 +1147,7 @@ requestAnimationFrame(frame);
     dist(); syncCard();
   });
   dist();
+  syncCard();   /* re-ink route/hub labels once real port names are in */
 
   /* ---- request price — vertical stepper, buildType mechanics ---- */
   let price = 4820;

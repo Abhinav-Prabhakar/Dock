@@ -76,8 +76,16 @@
   const post = (path, data) =>
     call(path, { method: 'POST', body: data === undefined ? undefined : JSON.stringify(data) });
 
+  /* port_id → flag emoji — anywhere a port is named on the customer site */
+  const PORT_FLAGS = {
+    CNSHA: '🇨🇳', SGSIN: '🇸🇬', KRPUS: '🇰🇷',
+    NLRTM: '🇳🇱', DEHAM: '🇩🇪', BEANR: '🇧🇪',
+    USLAX: '🇺🇸', USNYC: '🇺🇸',
+  };
+
   window.DockAPI = {
     base: BASE,
+    portFlag: id => PORT_FLAGS[String(id || '').toUpperCase()] || '',
     ports:   () => call('/ports'),
     routes:  () => call('/routes'),
     orders:  () => call('/orders'),
