@@ -1,6 +1,8 @@
-// Procedural ultra-large container vessel: faired hull with bulbous bow and transom stern,
+// Procedural container vessel: faired hull with bulbous bow and transom stern,
 // accommodation block with bridge, engine casing + funnel, lashing bridges, hatch covers,
-// deck machinery, railings and a full night lighting rig.
+// deck machinery, railings and a full night lighting rig. Every dimension derives from the
+// active vessel's SHIP config; the fitting positions below were authored on the 366 m VES1
+// hull and scale with the kL / kB / kD / kT ratios (all exactly 1 for VES1).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SHIP, HYDRO } from './config.js';
@@ -11,6 +13,8 @@ import {
 
 const { L, B, D, T } = SHIP;
 const HB = B / 2;
+const SS = SHIP.super;
+const kL = L / 366, kB = B / 51, kD = D / 30.2, kT = T / 14.5;
 export const Y_DECK = D - T;                  // main deck height above the waterline
 export const Y_CARGO = Y_DECK + SHIP.hatchHeight;
 export const Y_HOLD = HYDRO.tankTop - T;          // tank top (hold floor) relative to the waterline
@@ -19,11 +23,11 @@ export const Y_HOLD = HYDRO.tankTop - T;          // tank top (hold floor) relat
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
-export const Z_TRANSOM = 12.2;                       // transom bottom, height above keel
+export const Z_TRANSOM = 12.2 * kD;                      // transom bottom, height above keel
 const X_FWD_BODY = L / 2 - 0.3 * L;           // end of parallel midbody (fwd)
 const X_AFT_BODY = -L / 2 + 0.27 * L;         // start of parallel midbody (aft)
-const BULB = { xc: L / 2 - 12.5, len: 11.8, zc: 6.4, rz: 5.3, ry: 3.9, back: L / 2 - 36 };
-const STEM = [[0, L / 2 - 17], [2.5, L / 2 - 11], [9.5, L / 2 - 8], [T, L / 2 - 5.5], [22, L / 2 - 2.3], [D + 3, L / 2 + 0.6]];
+const BULB = { xc: L / 2 - 12.5 * kL, len: 11.8 * kL, zc: 6.4 * kT, rz: 5.3 * kT, ry: 3.9 * kB, back: L / 2 - 36 * kL };
+const STEM = [[0, L / 2 - 17 * kL], [2.5 * kT, L / 2 - 11 * kL], [9.5 * kT, L / 2 - 8 * kL], [T, L / 2 - 5.5 * kL], [22 * kD, L / 2 - 2.3 * kL], [D + 3 * kD, L / 2 + 0.6 * kL]];
 
 function interp(pts, z) {
   if (z <= pts[0][0]) return pts[0][1];
@@ -35,7 +39,7 @@ function interp(pts, z) {
 }
 
 export const stemX = (z) => interp(STEM, z);
-export const aftX = (z) => (z >= Z_TRANSOM ? -L / 2 : -L / 2 + 24 * Math.pow(1 - z / Z_TRANSOM, 0.65));
+export const aftX = (z) => (z >= Z_TRANSOM ? -L / 2 : -L / 2 + 24 * kL * Math.pow(1 - z / Z_TRANSOM, 0.65));
 function bulbTipX(z) {
   const dz = Math.abs(z - BULB.zc);
   return dz >= BULB.rz ? -Infinity : BULB.xc + BULB.len * Math.sqrt(1 - (dz / BULB.rz) ** 2);
@@ -45,7 +49,7 @@ export const foreX = (z) => Math.max(stemX(z), bulbTipX(z));
 function bulbHalf(x, z) {
   let s = 0;
   if (x > BULB.xc) s = Math.sqrt(Math.max(0, 1 - ((x - BULB.xc) / BULB.len) ** 2));
-  else if (x > BULB.back) s = smooth(BULB.back, BULB.back + 12, x);
+  else if (x > BULB.back) s = smooth(BULB.back, BULB.back + 12 * kL, x);
   if (s <= 0) return 0;
   const q = 1 - ((z - BULB.zc) / (BULB.rz * Math.max(s, 0.3))) ** 2;
   return q > 0 ? BULB.ry * s * Math.sqrt(q) : 0;
@@ -61,7 +65,7 @@ export function halfBreadth(x, z) {
     w = 1 - Math.pow(t, lerp(1.75, 3.6, Math.min(1, z / (D + 3))));
   } else if (x < X_AFT_BODY) {
     const t = Math.min(1, Math.max(0, (X_AFT_BODY - x) / (X_AFT_BODY - aftX(z))));
-    const m = smooth(Z_TRANSOM, Z_TRANSOM + 6, z);
+    const m = smooth(Z_TRANSOM, Z_TRANSOM + 6 * kD, z);
     w = 1 - lerp(1, 0.14, m) * Math.pow(t, lerp(1.7, 5.5, m));
   }
   return Math.max(base * Math.max(w, 0), bulbHalf(x, z));
@@ -110,9 +114,9 @@ function buildHullGeometry() {
 // Forecastle bulwark rising from the deck edge towards the stem.
 function buildBulwark() {
   const pos = [], uv = [], idx = [];
-  const x0 = L / 2 - 52, x1 = stemX(D);
+  const x0 = L / 2 - 52 * kL, x1 = stemX(D);
   const N = 60;
-  const hgt = (x) => 2.6 * smooth(x0, x0 + 18, x);
+  const hgt = (x) => 2.6 * smooth(x0, x0 + 18 * kL, x);
   for (const sgn of [1, -1]) {
     const base = pos.length / 3;
     for (let i = 0; i <= N; i++) {
@@ -433,19 +437,19 @@ export class Ship {
       }
     }
     // foremast
-    const fx = L / 2 - 11;
+    const fx = L / 2 - 11 * kL;
     b.cyl('super', 0.35, 0.7, 16, fx, Y_DECK + 8, 0);
     b.box('super', 2.4, 0.2, 2.4, fx, Y_DECK + 12, 0);
     b.box('super', 3.6, 0.25, 0.25, fx, Y_DECK + 14.5, 0);
     this.foremastTop = new THREE.Vector3(fx, Y_DECK + 16.3, 0);
     // windlasses, chain pipes, mooring winches
     for (const s of [1, -1]) {
-      const wx = L / 2 - 19, wz = s * 6.5;
+      const wx = L / 2 - 19 * kL, wz = s * 6.5 * kB;
       b.box('winch', 3.2, 1.4, 4.2, wx, Y_DECK + 0.7, wz);
       b.cyl('winch', 1.2, 1.2, 1.6, wx, Y_DECK + 2.1, wz - s * 0.8, 20, 'z');
       b.cyl('dark', 0.9, 0.9, 0.8, wx, Y_DECK + 2.1, wz + s * 1.3, 16, 'z');
       b.cyl('dark', 0.35, 0.35, 9, wx + 4.3, Y_DECK + 0.3, wz + s * 3.6, 8, 'x');
-      for (const mx of [L / 2 - 30, L / 2 - 40, -L / 2 + 9, -L / 2 + 17]) {
+      for (const mx of [L / 2 - 30 * kL, L / 2 - 40 * kL, -L / 2 + 9 * kL, -L / 2 + 17 * kL]) {
         const mz = s * (halfBreadth(mx, D) * 0.45);
         b.box('winch', 2.4, 1.1, 3.4, mx, Y_DECK + 0.55, mz);
         b.cyl('winch', 0.9, 0.9, 2.6, mx, Y_DECK + 1.8, mz, 18, 'z');
@@ -453,7 +457,7 @@ export class Ship {
         b.cyl('dark', 1.0, 1.0, 0.12, mx, Y_DECK + 1.8, mz - 1.35, 18, 'z');
       }
       // bollards + fairleads along the edges fore & aft
-      for (const bx of [L / 2 - 26, L / 2 - 36, L / 2 - 46, -L / 2 + 5, -L / 2 + 13, -L / 2 + 21, -60, 0, 60]) {
+      for (const bx of [L / 2 - 26 * kL, L / 2 - 36 * kL, L / 2 - 46 * kL, -L / 2 + 5 * kL, -L / 2 + 13 * kL, -L / 2 + 21 * kL, -60 * kL, 0, 60 * kL]) {
         const bz = s * (halfBreadth(bx, D) - 1.4);
         b.box('dark', 1.6, 0.35, 0.8, bx, Y_DECK + 0.17, bz);
         b.cyl('dark', 0.3, 0.3, 0.9, bx - 0.45, Y_DECK + 0.6, bz, 10);
@@ -467,6 +471,26 @@ export class Ship {
     }
     b.cyl('super', 0.15, 0.2, 5, -L / 2 + 1.5, Y_DECK + 2.5, 0);
     this.sternLightPos = new THREE.Vector3(-L / 2 + 1.5, Y_DECK + 5.2, 0);
+    // pedestal deck cranes (geared vessels): port-side pedestal in the gap between
+    // two hatches, slewing cab, and a jib raised forward over the stack
+    this.cranes = [];
+    for (const blk of this.layout.blocks.filter((q) => q.type === 'crane')) {
+      const cx = (blk.fore + blk.aft) / 2, cz = -(HB - 3.2);
+      const pedH = 9 + Math.max(...this.layout.bays.map((q) => q.tiers)) * 1.1;
+      const top = Y_DECK + pedH;
+      b.cyl('yellow', 1.5, 1.8, pedH, cx, Y_DECK + pedH / 2, cz, 18);
+      b.box('yellow', 5, 4, 4.2, cx, top + 2, cz);                              // slewing house
+      b.box('dark', 1.8, 1.4, 0.1, cx + 1.2, top + 2.6, cz + 2.12);            // cab window
+      const jib = 26, ang = 0.42;
+      const g = new THREE.BoxGeometry(jib, 0.9, 1.1);
+      g.translate(jib / 2, 0, 0); g.rotateZ(ang); g.translate(cx + 1.5, top + 1, cz + 1);
+      b.add('yellow', g);
+      b.box('yellow', 1, 3.2, 1, cx - 1.5, top + 5.4, cz);                      // A-frame
+      const tipX = cx + 1.5 + jib * Math.cos(ang), tipY = top + 1 + jib * Math.sin(ang);
+      b.cyl('dark', 0.06, 0.06, tipY - top - 2, tipX, (tipY + top + 2) / 2, cz + 1, 4);   // hoist wire
+      b.box('dark', 1.2, 0.5, 2.4, tipX, top + 2, cz + 1);                      // hook block
+      this.cranes.push({ x: cx, z: cz, top, tipX, tipY });
+    }
     // access walkways along the side (catwalk along the hatch coamings)
     b.build(this.mat, this.group);
   }
@@ -478,10 +502,10 @@ export class Ship {
     const b = new Bucket();
     const tile = [24, 23.2];
     const fb = (w, h, d, x, y, z) => { const g = facadeBox(w, h, d, tile[0], tile[1]); g.translate(x, y, z); b.add('facade', g); };
-    const towerTop = Y_DECK + 38;
-    fb(44, 6, depth - 0.5, xc, Y_DECK + 3, 0);                      // stores / base
-    fb(30, towerTop - Y_DECK - 6, depth - 2, xc, (towerTop + Y_DECK + 6) / 2, 0); // accommodation tower
-    fb(18, 5, depth - 4, xc - 1, towerTop + 2.5 + 3.6, 0);         // wheelhouse top deck
+    const towerTop = Y_DECK + SS.towerH;
+    fb(SS.baseW, 6, depth - 0.5, xc, Y_DECK + 3, 0);                     // stores / base
+    fb(SS.towerW, towerTop - Y_DECK - 6, depth - 2, xc, (towerTop + Y_DECK + 6) / 2, 0); // accommodation tower
+    fb(18 * kB, 5, depth - 4, xc - 1, towerTop + 2.5 + 3.6, 0);         // wheelhouse top deck
     // bridge (full width, windows)
     const bw = B + 3.2, bd = 9, bh = 3.8, bx = blk.fore - bd / 2;
     const bg = facadeBox(bd, bh, bw, 6, 3.8);
@@ -490,13 +514,13 @@ export class Ship {
     b.box('super', bd + 0.8, 0.35, bw + 0.8, bx, towerTop + bh + 0.17, 0);       // bridge roof
     b.box('super', bd + 0.4, 0.5, bw, bx, towerTop - 0.25, 0);                  // bridge floor slab
     for (const s of [1, -1]) {                                                   // wing supports
-      b.box('super', 1.2, 0.6, (bw - 30) / 2, bx, towerTop - 0.8, s * (15 + (bw - 30) / 4));
-      b.box('super', 0.6, 5, 0.6, bx - 2, towerTop - 3, s * 15.5, 0, s * 0.0);
+      b.box('super', 1.2, 0.6, (bw - SS.towerW) / 2, bx, towerTop - 0.8, s * (SS.towerW / 2 + (bw - SS.towerW) / 4));
+      b.box('super', 0.6, 5, 0.6, bx - 2, towerTop - 3, s * (SS.towerW / 2 + 0.5), 0, s * 0.0);
     }
     // radar mast
     const mx = xc - 1, my = towerTop + 8.6;
     b.box('super', 1.0, 10, 1.0, mx, my + 5, 0);
-    b.box('super', 2.6, 0.25, 9, mx, my + 5.5, 0);
+    b.box('super', 2.6, 0.25, 9 * kB, mx, my + 5.5, 0);
     b.box('super', 2.2, 0.25, 6, mx, my + 8.6, 0);
     b.box('super', 0.2, 3.5, 0.2, mx, my + 11.5, 0);
     this.mastTop = new THREE.Vector3(mx, my + 13.4, 0);
@@ -512,16 +536,17 @@ export class Ship {
       this.radars.push({ obj: radar, speed: dz > 0 ? 2.6 : 2.1 });
     }
     // sat domes + whip antennas
-    for (const [dx, dz] of [[-3, 7], [-3, -7], [2, 8.5]]) {
+    for (const [dx, dz] of [[-3, 7 * kB], [-3, -7 * kB], [2, 8.5 * kB]]) {
       b.cyl('super', 0.18, 0.18, 1.6, xc + dx, towerTop + 8.6 + 0.8, dz, 8);
       const s = new THREE.SphereGeometry(0.95, 18, 12); s.translate(xc + dx, towerTop + 8.6 + 2.2, dz); b.add('white', s);
     }
-    for (let i = 0; i < 5; i++) b.cyl('dark', 0.03, 0.05, 6, xc - 4 + i * 1.6, towerTop + 11.6, -8 + (i % 2) * 16, 5);
+    for (let i = 0; i < 5; i++) b.cyl('dark', 0.03, 0.05, 6, xc - 4 + i * 1.6, towerTop + 11.6, (-8 + (i % 2) * 16) * kB, 5);
     // rescue boat + davit on starboard
     const boat = new THREE.CapsuleGeometry(1.4, 5.5, 6, 12); boat.rotateZ(Math.PI / 2); boat.scale(1, 0.7, 1);
-    boat.translate(xc + 1, Y_DECK + 13, 16.6); b.add('orange', boat);
-    b.box('super', 0.5, 5, 0.5, xc + 4, Y_DECK + 13.5, 15.4);
-    b.box('super', 0.5, 0.5, 2.8, xc + 4, Y_DECK + 16, 16.6);
+    const boatZ = SS.towerW / 2 + 1.6, boatY = Y_DECK + 13 * (SS.towerH / 38);
+    boat.translate(xc + 1, boatY, boatZ); b.add('orange', boat);
+    b.box('super', 0.5, 5, 0.5, xc + 4, boatY + 0.5, boatZ - 1.2);
+    b.box('super', 0.5, 0.5, 2.8, xc + 4, boatY + 3, boatZ);
     // funnel-like mast casing for pipes on top of the tower
     b.box('super', 2.5, 4, 2.5, xc - 5, towerTop + 7.5, -3);
     b.build(this.mat, this.group);
@@ -534,28 +559,54 @@ export class Ship {
     const xc = (blk.fore + blk.aft) / 2, depth = blk.fore - blk.aft;
     this.casing = blk;
     const b = new Bucket();
-    const cg = facadeBox(depth - 0.6, 20, 28, 24, 23.2);
-    cg.translate(xc, Y_DECK + 10, 0);
+    const cg = facadeBox(depth - 0.6, SS.casingH, SS.casingW, 24, 23.2);
+    cg.translate(xc, Y_DECK + SS.casingH / 2, 0);
     b.add('super', cg);
     // louvres
-    for (const s of [1, -1]) for (let i = 0; i < 4; i++) b.box('dark', 1.8, 2.2, 0.1, xc - 4 + i * 2.6, Y_DECK + 15, s * 14.05);
+    for (const s of [1, -1]) for (let i = 0; i < 4; i++) b.box('dark', 1.8, 2.2, 0.1, xc - 4 + i * 2.6, Y_DECK + SS.casingH * 0.75, s * (SS.casingW / 2 + 0.05));
     // funnel
-    const fg = new THREE.CylinderGeometry(6.5, 7.2, 13, 24, 1);
-    fg.scale(0.75, 1, 1.05);
-    fg.translate(xc - 0.5, Y_DECK + 26.5, 0);
-    b.add('funnel', fg);
-    for (let i = 0; i < 4; i++) {
-      b.cyl('dark', 0.85, 0.85, 3.2, xc - 2 + (i % 2) * 2.6, Y_DECK + 33.4, (i < 2 ? -1.6 : 1.6), 14);
+    const fr = SS.funnelR, fBase = Y_DECK + SS.casingH, fTop = fBase + SS.funnelH;
+    const fcx = xc - 0.5;
+    let pipeX = xc - 0.7;                       // exhaust pipe cluster centre (moves aft on a raked funnel)
+    if (SS.funnel === 'twin') {
+      // two slim stacks side by side, joined by a crossbar
+      for (const s of [1, -1]) {
+        const g = new THREE.CylinderGeometry(fr * 0.42, fr * 0.48, SS.funnelH, 20, 1);
+        g.translate(fcx, fBase + SS.funnelH / 2, s * fr * 0.62);
+        b.add('funnel', g);
+        b.cyl('dark', 0.8, 0.8, 2.4, fcx, fTop + 0.6, s * fr * 0.62, 14);
+      }
+      b.box('super', fr * 0.5, 0.8, fr * 1.3, fcx, fBase + SS.funnelH * 0.62, 0);
+    } else if (SS.funnel === 'raked' || SS.funnel === 'square') {
+      // box funnel; 'raked' shears it aft with height (a classic older profile)
+      const rake = SS.funnel === 'raked' ? 0.32 : 0;
+      const g = new THREE.BoxGeometry(fr * 1.5, SS.funnelH, fr * 1.55, 1, 4, 1);
+      const pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) pos.setX(i, pos.getX(i) - (pos.getY(i) + SS.funnelH / 2) * rake);
+      g.computeVertexNormals();
+      g.translate(fcx, fBase + SS.funnelH / 2, 0);
+      b.add('funnel', g);
+      pipeX = fcx - SS.funnelH * rake - 0.2;
+      for (let i = 0; i < 2; i++) b.cyl('dark', 0.7, 0.7, 2.6, pipeX, fTop + 0.8, i ? 1.3 : -1.3, 14);
+    } else {
+      const fg = new THREE.CylinderGeometry(fr * (6.5 / 7.2), fr, SS.funnelH, 24, 1);
+      fg.scale(0.75, 1, 1.05);
+      fg.translate(fcx, fBase + SS.funnelH / 2, 0);
+      b.add('funnel', fg);
+      for (let i = 0; i < 4; i++) {
+        b.cyl('dark', 0.85, 0.85, 3.2, xc - 2 + (i % 2) * 2.6, fTop + 0.4, (i < 2 ? -1.6 : 1.6), 14);
+      }
     }
-    this.funnelTop = new THREE.Vector3(xc - 0.8, Y_DECK + 35, 0);
+    this.funnelTop = new THREE.Vector3(pipeX - 0.1, fTop + 2, 0);
     // free-fall lifeboat on the aft face
     const lb = new THREE.CapsuleGeometry(1.7, 6.5, 6, 14);
     lb.rotateZ(Math.PI / 2 + 0.55);
-    lb.translate(blk.aft - 3.2, Y_DECK + 7.5, 7);
+    const lbz = SS.casingW / 4;
+    lb.translate(blk.aft - 3.2, Y_DECK + 7.5, lbz);
     b.add('orange', lb);
-    b.box('steel', 7, 0.4, 3.6, blk.aft - 3.2, Y_DECK + 5.4, 7, 0, 0.55);
-    b.box('steel', 0.4, 6, 0.4, blk.aft - 5.8, Y_DECK + 3, 5.3);
-    b.box('steel', 0.4, 6, 0.4, blk.aft - 5.8, Y_DECK + 3, 8.7);
+    b.box('steel', 7, 0.4, 3.6, blk.aft - 3.2, Y_DECK + 5.4, lbz, 0, 0.55);
+    b.box('steel', 0.4, 6, 0.4, blk.aft - 5.8, Y_DECK + 3, lbz - 1.7);
+    b.box('steel', 0.4, 6, 0.4, blk.aft - 5.8, Y_DECK + 3, lbz + 1.7);
     b.build(this.mat, this.group);
   }
 
@@ -614,7 +665,7 @@ export class Ship {
     const posts = [];
     const railPts = { 1: [], '-1': [] };
     for (const s of [1, -1]) {
-      for (let x = -L / 2 + 1; x < L / 2 - 50; x += 2.2) {
+      for (let x = -L / 2 + 1; x < L / 2 - 50 * kL; x += 2.2) {
         const z = s * (halfBreadth(x, D) - 0.15);
         posts.push(new THREE.Vector3(x, Y_DECK, z));
         railPts[s].push(new THREE.Vector3(x, 0, z));
@@ -650,18 +701,19 @@ export class Ship {
     const spots = this.lampSpots;
     const R = rng(11);
     // accommodation front / sides floodlights and deck-edge lamps
+    const kH = SS.towerH / 38, casingLampY = Y_DECK + SS.casingH * 0.9;
     for (let lvl = 0; lvl < 4; lvl++) {
-      for (const z of [-12, -4, 4, 12]) spots.push({ pos: new THREE.Vector3(house.fore + 0.2, Y_DECK + 8 + lvl * 8, z), delay: 0.05 + R() * 0.05 });
+      for (const z of [-12, -4, 4, 12]) spots.push({ pos: new THREE.Vector3(house.fore + 0.2, Y_DECK + (8 + lvl * 8) * kH, z * kB), delay: 0.05 + R() * 0.05 });
     }
-    for (const z of [-12, 0, 12]) spots.push({ pos: new THREE.Vector3(house.aft - 0.2, Y_DECK + 10, z), delay: 0.07 });
+    for (const z of [-12, 0, 12]) spots.push({ pos: new THREE.Vector3(house.aft - 0.2, Y_DECK + 10 * kH, z * kB), delay: 0.07 });
     for (const z of [-10, 0, 10]) {
-      spots.push({ pos: new THREE.Vector3(casing.fore + 0.2, Y_DECK + 18, z), delay: 0.1 });
-      spots.push({ pos: new THREE.Vector3(casing.aft - 0.2, Y_DECK + 18, z), delay: 0.1 });
+      spots.push({ pos: new THREE.Vector3(casing.fore + 0.2, casingLampY, z * kB), delay: 0.1 });
+      spots.push({ pos: new THREE.Vector3(casing.aft - 0.2, casingLampY, z * kB), delay: 0.1 });
     }
-    for (let x = -L / 2 + 12; x < L / 2 - 40; x += 18) {
+    for (let x = -L / 2 + 12; x < L / 2 - 40 * kL; x += 18) {
       for (const s of [1, -1]) spots.push({ pos: new THREE.Vector3(x, Y_DECK + 3.2, s * (halfBreadth(x, D) - 0.4)), delay: 0.3 + R() * 0.2 });
     }
-    spots.push({ pos: new THREE.Vector3(L / 2 - 11, Y_DECK + 12.2, 0), delay: 0.02 });
+    spots.push({ pos: new THREE.Vector3(this.foremastTop.x, Y_DECK + 12.2, 0), delay: 0.02 });
 
     const bulb = new THREE.SphereGeometry(0.26, 8, 6);
     this.bulbs = new THREE.InstancedMesh(bulb, new THREE.MeshBasicMaterial({ color: 0xffffff }), spots.length);
@@ -673,12 +725,12 @@ export class Ship {
     // virtual lamps for the deck-light shader: one per lashing bridge + structure floods
     const lamps = [];
     this.layout.bridges.forEach((br) => lamps.push([br.x, Y_CARGO + br.levels * 2.85 + 0.9, 0, 1.0]));
-    for (let lvl = 0; lvl < 3; lvl++) lamps.push([house.fore + 1, Y_DECK + 8 + lvl * 10, 0, 1.6]);
-    lamps.push([house.aft - 1, Y_DECK + 10, 0, 1.2]);
-    lamps.push([casing.fore + 1, Y_DECK + 18, 0, 1.3]);
-    lamps.push([casing.aft - 1, Y_DECK + 18, 0, 1.3]);
+    for (let lvl = 0; lvl < 3; lvl++) lamps.push([house.fore + 1, Y_DECK + (8 + lvl * 10) * kH, 0, 1.6]);
+    lamps.push([house.aft - 1, Y_DECK + 10 * kH, 0, 1.2]);
+    lamps.push([casing.fore + 1, casingLampY, 0, 1.3]);
+    lamps.push([casing.aft - 1, casingLampY, 0, 1.3]);
     lamps.push([this.layout.bays[0].fore + 2, Y_DECK + 10, 0, 1.2]);
-    lamps.push([L / 2 - 20, Y_DECK + 8, 0, 0.8]);
+    lamps.push([L / 2 - 20 * kL, Y_DECK + 8, 0, 0.8]);
     lamps.push([-L / 2 + 10, Y_DECK + 6, 0, 0.8]);
     const u = deckLightUniforms;
     lamps.slice(0, MAX_LAMPS).forEach((l, i) => u.uLamps.value[i].set(...l));
@@ -711,7 +763,7 @@ export class Ship {
 
     // floodlights from the accommodation onto the forward cargo
     this.floods = [];
-    for (const z of [-9, 9]) {
+    for (const z of [-9 * kB, 9 * kB]) {
       const s = new THREE.SpotLight(0xffd6a0, 0, 220, 0.55, 0.7, 1.6);
       s.position.set(house.fore + 0.5, this.towerTop - 4, z);
       s.target.position.set(house.fore + 70, Y_CARGO + 8, z * 1.5);

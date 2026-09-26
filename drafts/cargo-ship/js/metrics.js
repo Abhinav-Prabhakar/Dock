@@ -195,8 +195,8 @@ export function computeMetrics(cargo, ship) {
   if (bmPct > 100) push('crit', `Bending moment ${bmPct.toFixed(0)}% of permissible (${maxBM > 0 ? 'hog' : 'sag'})`);
   else if (bmPct > 88) push('warn', `Bending moment ${bmPct.toFixed(0)}% of permissible`);
   if (sfPct > 100) push('crit', `Shear force ${sfPct.toFixed(0)}% of permissible`);
-  if (blind > HYDRO.visibilityLimit) push('crit', `Bridge blind sector ${Number.isFinite(blind) ? blind.toFixed(0) + ' m' : '∞'} > 500 m${blindBay ? ` (bay ${fmt(blindBay)})` : ''}`);
-  else if (blind > HYDRO.visibilityLimit * 0.85) push('warn', `Blind sector ${blind.toFixed(0)} m close to 500 m limit`);
+  if (blind > HYDRO.visibilityLimit) push('crit', `Bridge blind sector ${Number.isFinite(blind) ? blind.toFixed(0) + ' m' : '∞'} > ${HYDRO.visibilityLimit} m${blindBay ? ` (bay ${fmt(blindBay)})` : ''}`);
+  else if (blind > HYDRO.visibilityLimit * 0.85) push('warn', `Blind sector ${blind.toFixed(0)} m close to ${HYDRO.visibilityLimit} m limit`);
   if (overweight) push('warn', `${overweight} stack${overweight > 1 ? 's' : ''} over weight limit`);
   if (heavyOverLight) push('warn', `${heavyOverLight} heavy-over-light stow${heavyOverLight > 1 ? 's' : ''}`);
   if (reefers > HYDRO.reeferPlugs) push('crit', `${reefers} reefers exceed ${HYDRO.reeferPlugs} plugs`);

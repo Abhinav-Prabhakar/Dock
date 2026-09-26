@@ -75,7 +75,55 @@ html, body {
 .profit-panel { top: 22px; right: 22px; width: 268px; display: flex; align-items: center; gap: 10px; padding: 11px 14px; }
 .profit-panel > svg { color: #5fe39a; flex: none; }
 #p-profit { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.delta { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.delta { margin-left: auto; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+.delta b { font-weight: 700; }
+.delta b.up { color: #5fe39a; }
+.delta b.down { color: #ff6b6b; }
+
+/* ---------- strategy comparison dialog */
+.sd-overlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; background: rgba(5, 9, 14, 0.45); opacity: 0; transition: opacity 0.25s; }
+.sd-overlay.open { opacity: 1; }
+.sd { width: min(760px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; background: var(--glass-strong); transform: translateY(8px) scale(0.99); transition: transform 0.25s; }
+.sd-overlay.open .sd { transform: none; }
+.sd-body { padding: 14px 18px 18px; overflow-y: auto; }
+.sd-lead { font-size: 13px; line-height: 1.5; margin: 0 0 12px; color: var(--text); }
+.sd-lead .mut, .sd .mut { color: var(--muted); }
+.sd-lifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.sd-lift { background: rgba(95,227,154,0.08); border: 1px solid rgba(95,227,154,0.22); border-radius: 10px; padding: 10px 12px; }
+.sd-lift span { display: block; font-size: 20px; font-weight: 700; color: #5fe39a; font-variant-numeric: tabular-nums; }
+.sd-lift.neg { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.22); }
+.sd-lift.neg span { color: #ff6b6b; }
+.sd-lift label { font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.sd .field-label { margin-top: 18px; }
+.sd-bars { display: flex; flex-direction: column; gap: 6px; }
+.sd-row { display: grid; grid-template-columns: 210px 1fr 92px; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 9px; }
+.sd-row.ours { background: rgba(124,196,255,0.1); border: 1px solid rgba(124,196,255,0.22); }
+.sd-name { display: grid; grid-template-columns: 8px 1fr; column-gap: 8px; align-items: center; min-width: 0; }
+.sd-name i, .sd-table td i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.sd-name b { font-size: 12px; }
+.sd-name small { grid-column: 2; font-size: 10.5px; line-height: 1.35; color: var(--muted); }
+.sd-track { position: relative; height: 14px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+.sd-bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; opacity: 0.9; }
+.sd-err { position: absolute; top: 50%; height: 0; border-top: 1px solid rgba(255,255,255,0.7); }
+.sd-err::before, .sd-err::after { content: ''; position: absolute; top: -5px; width: 1px; height: 9px; background: rgba(255,255,255,0.7); }
+.sd-err::before { left: 0; } .sd-err::after { right: 0; }
+.sd-val { text-align: right; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sd-val small { display: block; font-size: 10px; font-weight: 500; color: var(--muted); }
+.sd-table { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.sd-table th { text-align: right; font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0 8px 6px; }
+.sd-table th:first-child, .sd-table td:first-child { text-align: left; }
+.sd-table td { text-align: right; padding: 7px 8px; border-top: 1px solid var(--line); color: var(--muted); }
+.sd-table td:first-child { color: var(--text); font-weight: 600; white-space: nowrap; }
+.sd-table td:first-child i { margin-right: 8px; }
+.sd-table td.best { color: var(--text); font-weight: 700; }
+.sd-table tr.ours td { background: rgba(124,196,255,0.08); }
+.sd-note { font-size: 11px; line-height: 1.5; color: var(--muted); margin: 14px 0 0; }
+@media (max-width: 640px) {
+  .sd-lifts { grid-template-columns: 1fr; }
+  .sd-row { grid-template-columns: 1fr 76px; }
+  .sd-row .sd-track { grid-column: 1 / -1; grid-row: 2; }
+  .sd-table th:nth-child(4), .sd-table td:nth-child(4), .sd-table th:nth-child(5), .sd-table td:nth-child(5) { display: none; }
+}
 
 /* ---------- cargo panel */
 .cargo-panel { top: 78px; right: 22px; width: 268px; overflow: hidden; }
@@ -90,14 +138,30 @@ html, body {
 .bookings-panel.collapsed .panel-body { display: none; }
 .bookings-panel.collapsed .panel-head { border-bottom: none; }
 .bookings-panel.flash .panel-head { background-color: rgba(124,196,255,0.4); }
-.booking-list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-.booking-list li { font-size: 11px; line-height: 1.4; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); border-left: 2px solid transparent; color: var(--muted); }
-.booking-list li .day { display: inline-block; min-width: 26px; color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
-.booking-list li.tone-booked { border-left-color: #5fe39a; }
-.booking-list li.tone-rejected { border-left-color: #ff6b6b; }
-.booking-list li.tone-declined { border-left-color: #ffc35a; }
-.booking-list li.tone-order { border-left-color: rgba(255,255,255,0.2); }
-.booking-list li.customer { background: rgba(124,196,255,0.12); color: var(--text); }
+.live-title { display: flex; align-items: center; gap: 8px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: #5fe39a; box-shadow: 0 0 8px #5fe39a; animation: livePulse 2s ease-in-out infinite; }
+@keyframes livePulse { 50% { opacity: 0.35; } }
+.bookings-panel .stats { margin-bottom: 4px; }
+.bookings-panel .stats span { font-size: 15px; }
+.booking-list { list-style: none; margin: 0 -4px 0 0; padding: 0 4px 0 0; max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
+.booking-list li.booking-sep { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin: 10px 0 2px; }
+.booking-list li.booking-empty { font-size: 11px; color: var(--muted); padding: 10px 2px; }
+.bk { --tone: rgba(255,255,255,0.35); display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 9px; background: rgba(255,255,255,0.05); border: 1px solid transparent; font-size: 11px; line-height: 1.35; }
+.bk.tone-booked { --tone: #5fe39a; }
+.bk.tone-rejected { --tone: #ff6b6b; }
+.bk.tone-declined { --tone: #ffc35a; }
+.bk.tone-order { --tone: var(--accent); }
+.bk.customer { background: rgba(124,196,255,0.1); border-color: rgba(124,196,255,0.22); }
+.bk-day { font-size: 10px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bk-main { min-width: 0; }
+.bk-title { font-weight: 600; color: var(--text); letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-title .arr { font-style: normal; color: var(--muted); margin: 0 4px; }
+.bk-meta { color: var(--muted); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-ref { color: var(--accent); font-weight: 600; margin-right: 2px; }
+.bk-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.bk-price { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+.bk-price small { font-weight: 500; font-size: 9px; color: var(--muted); margin-left: 1px; }
+.bk-chip { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 6px; border-radius: 6px; color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
 .stats div { background: rgba(255,255,255,0.05); border-radius: 9px; padding: 8px 8px 6px; }
