@@ -251,7 +251,7 @@ The hint line reads `DRAG THE BADGE · FLING IT · GRAB THE CORD`.
 - **Deck transform states:** hidden at `translateX(calc(col-w * 2 + 40px))`; `.on.step-1` shows column 1 (deck offset by one column); `.on.step-2` at `translateX(0)` reveals both columns — CONTINUE doesn't cover col1, it **pushes it left and slides col2 in beside it**.
 - **Reveal cascade:** every panel element carries `.rvl` (opacity 0, translateY 9 px); `rvlShow()` staggers `classList.add('on')` per group (head → questions → buttons) with 140–250 ms steps. Reveals replay only the first time per open (`col2Revealed` latch); afterwards they snap on.
 - **Step-2 polish:** col1's button row fades/slides out and its buttons get `tabindex="-1"`; returning to step-1 restores them with a delayed ease.
-- **CANCEL:** in step-2 it steps back to step-1; in step-1 it collapses the whole deck (`setSplit(false)`) — everything glides home, `.rvl.on` classes are stripped so the next open re-cascades, and a tap on the badge reopens.
+- **CANCEL** (column 1's footer) abandons the request and returns to the fleet dashboard (`dashboard/`); column 2's **← BACK** steps back to step-1.
 
 ### Shared deck components
 

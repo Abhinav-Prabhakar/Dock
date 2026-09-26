@@ -791,28 +791,64 @@ function panToOrder(o) {
 
 /* ==================== MAPLIBRE CHART ==================== */
 const routeOrders = () => orders.filter(o => o._segs);
+
+/* Orders on the same port pair share the identical great-circle arc, so
+   drawing one line per order stacked N translucent copies on one path — a
+   "dimmed" lane then read as strongly as the selected order and the
+   highlight vanished. Lanes are drawn once; the selection is drawn on its
+   own layer on top. */
+const laneKey = o => `${o.from}>${o.to}`;
+function lanes() {
+  const by = new Map();
+  routeOrders().forEach(o => {                      // orders are newest-first
+    const k = laneKey(o);
+    if (!by.has(k)) by.set(k, { key: k, segs: o._segs, ids: [], att: false, fin: true });
+    const l = by.get(k);
+    l.ids.push(o.id);
+    l.att = l.att || ATTN.has(o.status);
+    l.fin = l.fin && o.status === 'DELIVERED';
+  });
+  return by;
+}
+const selOrder = () => (selId ? routeOrders().find(o => o.id === selId) : null);
 const routesSource = () => ({
   type: 'FeatureCollection',
-  features: routeOrders().map(o => ({
+  features: [...lanes().values()].map(l => ({
     type: 'Feature',
     properties: {
-      oid: o.id,
-      sel:  o.id === selId ? 1 : 0,
-      dim:  selId && o.id !== selId ? 1 : 0,
-      att:  ATTN.has(o.status) ? 1 : 0,
-      fin:  o.status === 'DELIVERED' ? 1 : 0,
+      lane: l.key,
+      dim:  selId && !l.ids.includes(selId) ? 1 : 0,
+      att:  l.att ? 1 : 0,
+      fin:  l.fin ? 1 : 0,
     },
-    geometry: { type: 'MultiLineString', coordinates: o._segs },
+    geometry: { type: 'MultiLineString', coordinates: l.segs },
   })),
 });
+const selSource = () => {
+  const o = selOrder();
+  return { type: 'FeatureCollection', features: o ? [{
+    type: 'Feature',
+    properties: { att: ATTN.has(o.status) ? 1 : 0, fin: o.status === 'DELIVERED' ? 1 : 0 },
+    geometry: { type: 'MultiLineString', coordinates: o._segs },
+  }] : [] };
+};
+/* progress-so-far: every order when nothing is selected, only the
+   selected one otherwise (same stacking problem as the lanes) */
 const doneSource = () => ({
   type: 'FeatureCollection',
-  features: routeOrders().filter(o => o._vt > 0).map(o => ({
+  features: routeOrders().filter(o => o._vt > 0 && (!selId || o.id === selId)).map(o => ({
     type: 'Feature',
-    properties: { oid: o.id, sel: o.id === selId ? 1 : 0, dim: selId && o.id !== selId ? 1 : 0 },
+    properties: { oid: o.id, sel: o.id === selId ? 1 : 0 },
     geometry: { type: 'MultiLineString', coordinates: o._done },
   })),
 });
+/* a click on a shared lane: newest order first, then cycle through the rest */
+function pickOnLane(key) {
+  const l = lanes().get(key);
+  if (!l) return null;
+  const i = l.ids.indexOf(selId);
+  return l.ids[(i + 1) % l.ids.length];
+}
 const gratSource = () => {
   const lines = [];
   for (let lon = -180; lon <= 180; lon += 20) {
@@ -846,6 +882,7 @@ function chartStyle(land) {
       land ? { land: { type: 'geojson', data: land } } : {},
       { grat:  { type: 'geojson', data: gratSource() },
         routes:{ type: 'geojson', data: routesSource() },
+        sel:   { type: 'geojson', data: selSource() },
         done:  { type: 'geojson', data: doneSource() },
         ports: { type: 'geojson', data: portsSource() } }),
     layers: [
@@ -860,26 +897,39 @@ function chartStyle(land) {
       { id: 'grat', type: 'line', source: 'grat',
         paint: { 'line-color': '#908d81', 'line-width': 0.45,
                  'line-opacity': 0.34, 'line-dasharray': [1.4, 3.4] } },
-      { id: 'done', type: 'line', source: 'done',
-        paint: {
-          'line-color': '#3a5a44',
-          'line-width': ['case', ['==', ['get', 'sel'], 1], 2.4, 1.3],
-          'line-opacity': ['case', ['==', ['get', 'dim'], 1], 0.16, 0.6],
-        } },
-      { id: 'routes-casing', type: 'line', source: 'routes',
-        filter: ['==', ['get', 'sel'], 1],
-        paint: { 'line-color': 'rgba(58,90,68,.16)', 'line-width': 7 } },
       { id: 'routes', type: 'line', source: 'routes',
         paint: {
           'line-color': ['case',
             ['==', ['get', 'att'], 1], '#b96f4b',
             ['==', ['get', 'fin'], 1], '#908d81',
             '#3a5a44'],
-          'line-width': ['case', ['==', ['get', 'sel'], 1], 2.2, 1.05],
+          'line-width': 1.05,
           'line-opacity': ['case',
-            ['==', ['get', 'dim'], 1], 0.22,
+            ['==', ['get', 'dim'], 1], 0.2,
             ['==', ['get', 'fin'], 1], 0.4, 0.85],
           'line-dasharray': [3.4, 2.8],
+        } },
+      /* the selected order, drawn once, on top: paper halo + sage wash + ink */
+      { id: 'sel-halo', type: 'line', source: 'sel',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#f8f4e7', 'line-width': 7, 'line-opacity': 0.95 } },
+      { id: 'sel-casing', type: 'line', source: 'sel',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': 'rgba(58,90,68,.2)', 'line-width': 11, 'line-blur': 1.5 } },
+      { id: 'done', type: 'line', source: 'done',
+        paint: {
+          'line-color': '#3a5a44',
+          'line-width': ['case', ['==', ['get', 'sel'], 1], 3, 1.3],
+          'line-opacity': ['case', ['==', ['get', 'sel'], 1], 0.9, 0.6],
+        } },
+      { id: 'sel-line', type: 'line', source: 'sel',
+        paint: {
+          'line-color': ['case',
+            ['==', ['get', 'att'], 1], '#b96f4b',
+            ['==', ['get', 'fin'], 1], '#908d81',
+            '#3a5a44'],
+          'line-width': 2.6,
+          'line-dasharray': [3.2, 2],
         } },
       { id: 'routes-hit', type: 'line', source: 'routes',
         paint: { 'line-color': '#000', 'line-width': 15, 'line-opacity': 0 } },
@@ -897,6 +947,7 @@ function chartStyle(land) {
 function refreshRoutes() {
   if (map && map.getSource('routes')) {
     map.getSource('routes').setData(routesSource());
+    map.getSource('sel').setData(selSource());
     map.getSource('done').setData(doneSource());
   }
   paintFB();
@@ -998,7 +1049,8 @@ function initGL(land) {
 
     refreshRoutes();
     map.on('click', 'routes-hit', e => {
-      if (e.features && e.features.length) select(e.features[0].properties.oid, true);
+      const id = e.features && e.features.length && pickOnLane(e.features[0].properties.lane);
+      if (id) select(id, true);
     });
     map.on('mouseenter', 'routes-hit', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'routes-hit', () => { map.getCanvas().style.cursor = ''; });
@@ -1065,15 +1117,23 @@ function drawFB(host, land) {
     s += `<path d="${ld}" fill="#e4ddc8" stroke="rgba(69,66,58,.55)" stroke-width=".7"/>`;
   }
 
+  /* one line per lane (orders on a port pair share one arc — see lanes()) */
+  lanes().forEach(l => {
+    const col = l.att ? '#b96f4b' : l.fin ? '#908d81' : '#3a5a44';
+    s += `<path class="fbr" data-lane="${esc(l.key)}" d="${fbPath(l.segs)}" fill="none"
+      stroke="${col}" stroke-width="1.4" stroke-dasharray="4 3.4" opacity="${l.fin ? '.4' : '.85'}"/>`;
+  });
+  /* selected order on top: paper halo, sage wash, ink (filled in by paintFB) */
+  s += `<path class="fbsel-casing" fill="none" stroke="rgba(58,90,68,.2)" stroke-width="10" stroke-linecap="round"/>` +
+       `<path class="fbsel-halo" fill="none" stroke="#f8f4e7" stroke-width="6" stroke-linecap="round" opacity=".95"/>`;
   routeOrders().forEach(o => {
-    const ink = stOf(o).ink;
-    const col = ink === 'terra' ? '#b96f4b' : ink === 'faint' ? '#908d81' : '#3a5a44';
-    s += `<path class="fbr" data-oid="${esc(o.id)}" d="${fbPath(o._segs)}" fill="none"
-      stroke="${col}" stroke-width="1.4" stroke-dasharray="4 3.4" opacity=".85"/>`;
     if (o._vt > 0)
       s += `<path class="fbd" data-oid="${esc(o.id)}" d="${fbPath(o._done)}" fill="none"
         stroke="#3a5a44" stroke-width="1.6" opacity=".6"/>`;
-    s += `<path class="fbh" data-oid="${esc(o.id)}" d="${fbPath(o._segs)}" fill="none"
+  });
+  s += `<path class="fbsel" fill="none" stroke-width="2.6" stroke-dasharray="3.6 2.2"/>`;
+  lanes().forEach(l => {
+    s += `<path class="fbh" data-lane="${esc(l.key)}" d="${fbPath(l.segs)}" fill="none"
       stroke="rgba(0,0,0,0)" stroke-width="16" pointer-events="stroke"/>`;
   });
 
@@ -1112,21 +1172,33 @@ function drawFB(host, land) {
   paintFB();
   host.querySelectorAll('[data-oid]').forEach(el =>
     el.addEventListener('click', () => select(el.dataset.oid, true)));
+  host.querySelectorAll('.fbh[data-lane]').forEach(el =>
+    el.addEventListener('click', () => { const id = pickOnLane(el.dataset.lane); if (id) select(id, true); }));
 }
 
 function paintFB() {
   const host = document.getElementById('map');
   if (!host || !host.querySelector('.fbmap')) return;
+  lanes().forEach(l => {
+    const r = host.querySelector(`.fbr[data-lane="${CSS.escape(l.key)}"]`);
+    if (r) r.setAttribute('opacity', selId && !l.ids.includes(selId) ? 0.2 : l.fin ? 0.4 : 0.85);
+  });
+  const so = selOrder();
+  const selD = so ? fbPath(so._segs) : '';
+  host.querySelectorAll('.fbsel, .fbsel-halo, .fbsel-casing').forEach(p => p.setAttribute('d', selD));
+  const fs = host.querySelector('.fbsel');
+  if (fs && so) {
+    const ink = stOf(so).ink;
+    fs.setAttribute('stroke', ink === 'terra' ? '#b96f4b' : ink === 'faint' ? '#908d81' : '#3a5a44');
+  }
   orders.forEach(o => {
     const sel = o.id === selId, dim = selId && !sel;
-    const r = host.querySelector(`.fbr[data-oid="${CSS.escape(o.id)}"]`);
     const d = host.querySelector(`.fbd[data-oid="${CSS.escape(o.id)}"]`);
     const v = host.querySelector(`.fbv[data-oid="${CSS.escape(o.id)}"]`);
-    if (r) {
-      r.setAttribute('stroke-width', sel ? 2.6 : 1.4);
-      r.setAttribute('opacity', dim ? 0.22 : 0.9);
+    if (d) {
+      d.setAttribute('opacity', dim ? 0 : sel ? 0.9 : 0.6);
+      d.setAttribute('stroke-width', sel ? 3 : 1.6);
     }
-    if (d) d.setAttribute('opacity', dim ? 0.12 : sel ? 0.95 : 0.6);
     if (v) {
       v.setAttribute('opacity', dim ? 0.35 : 1);
       const ring = v.querySelector('.fbvring');

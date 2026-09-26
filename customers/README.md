@@ -192,6 +192,11 @@ the same layers; selection restyles both renderers via `refreshRoutes()`.
 
 Selection is global: register row ↔ wall badge ↔ route line ↔ vessel
 marker ↔ detail note all select the same `order.id`. `Esc` releases it.
+Orders on the same port pair share one great-circle arc, so each lane is
+drawn once (`lanes()`) and the selected order is drawn on its own layer on
+top — paper halo, sage wash, status-ink line — otherwise N stacked "dimmed"
+copies of a busy lane read as strongly as the selection. Clicking a shared
+lane selects its newest order, then cycles through the rest.
 
 ### View switch
 
