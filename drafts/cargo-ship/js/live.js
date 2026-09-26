@@ -26,18 +26,24 @@ class Live {
     this._snapshotListeners = new Set();
     this._eventListeners = new Set();
     this._statusListeners = new Set();
+    this._resetListeners = new Set();
     this._started = false;
     // request_id -> order_id for customer bookings; settlement events carry only request_id.
     this.customerReqs = new Map();
     this._seededFor = null;
+    this._lastSentSeq = 0;
+    this._snapshotInFlight = false;
+    this._eventsInFlight = false;
   }
 
   get snapshot() { return this._snapshot; }
 
   _resetEpisode() {
     this._afterSeq = 0;
+    this._lastSentSeq = 0;
     this.customerReqs.clear();
     this._seededFor = null;
+    this._resetListeners.forEach((fn) => fn());
   }
 
   onSnapshot(fn) {
@@ -49,6 +55,14 @@ class Live {
   onEvents(fn) {
     this._eventListeners.add(fn);
     return () => this._eventListeners.delete(fn);
+  }
+
+  // Fired when a new live episode is detected — callers should drop any
+  // state they built from the previous episode's events (e.g. the bookings
+  // panel's item list) rather than mix it with the new one's.
+  onReset(fn) {
+    this._resetListeners.add(fn);
+    return () => this._resetListeners.delete(fn);
   }
 
   onStatus(fn) {
@@ -67,6 +81,8 @@ class Live {
   }
 
   async _pollSnapshot() {
+    if (this._snapshotInFlight) return;    // a slow poll must not overlap the next tick
+    this._snapshotInFlight = true;
     try {
       const snap = await API.live();
       if (this._episodeId && snap.id !== this._episodeId) this._resetEpisode();
@@ -76,25 +92,43 @@ class Live {
       this._setStatus({ ok: true });
     } catch (e) {
       this._setStatus({ ok: false, message: e.message });
+    } finally {
+      this._snapshotInFlight = false;
     }
   }
 
   async _pollEvents() {
+    if (this._eventsInFlight) return;
+    this._eventsInFlight = true;
     try {
       // /live/events returns only the latest `limit` matches, so an order quoted
       // before this page opened is learned from /orders, not from the feed.
       const res = await API.liveEvents(this._afterSeq, CUSTOMER_EVENT_TYPES, 1000);
       const restarted = this._episodeId && res.episode_id && res.episode_id !== this._episodeId;
-      if (restarted) this._resetEpisode();
+      if (restarted) {
+        this._resetEpisode();
+        // set immediately (not just on the next snapshot poll, up to
+        // SNAPSHOT_INTERVAL_MS away) so this check doesn't keep firing —
+        // and re-resetting, and re-seeding from /orders — on every events
+        // poll until the snapshot poll catches up
+        this._episodeId = res.episode_id;
+      }
       if (res.episode_id && this._seededFor !== res.episode_id) {
         seedCustomers(await API.orders(), res.episode_id, this.customerReqs);
         this._seededFor = res.episode_id;
       }
       if (!restarted) this._afterSeq = res.next_seq ?? this._afterSeq;
-      if (res.events && res.events.length) this._eventListeners.forEach((fn) => fn(res.events));
+      // belt-and-suspenders dedupe on top of the after_seq cursor: never
+      // hand a listener the same event twice within this episode
+      const fresh = (res.events || [])
+        .filter((ev) => ev.seq == null || ev.seq > this._lastSentSeq);
+      for (const ev of fresh) if (ev.seq != null) this._lastSentSeq = Math.max(this._lastSentSeq, ev.seq);
+      if (fresh.length) this._eventListeners.forEach((fn) => fn(fresh));
       this._setStatus({ ok: true });
     } catch (e) {
       this._setStatus({ ok: false, message: e.message });
+    } finally {
+      this._eventsInFlight = false;
     }
   }
 

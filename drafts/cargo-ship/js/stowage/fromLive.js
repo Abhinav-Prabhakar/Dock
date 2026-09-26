@@ -128,7 +128,12 @@ export function layoutFromStowage(stow, bays, holdTiers) {
       .map((x) => x.u);
 
     const f = units.length / (backendIdx.length * stow.bay_height);
-    const T = Math.round(f * cap);
+    // Capped at units.length: a real container is never drawn twice. On a
+    // small vessel (its real per-bay-group capacity « this fixed hull's),
+    // f * cap can exceed the number of real units aboard — the honest
+    // choice is to show that group less full than its real fill fraction,
+    // not to fabricate repeated containers just to fill the model hull.
+    const T = Math.min(Math.round(f * cap), units.length);
     if (T <= 0) continue;
 
     const resampled = [];
