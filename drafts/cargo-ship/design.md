@@ -377,37 +377,44 @@ is a maritime picture rather than a stock chart:
   customer segment, bow wave = speed.
 Data is seeded and synthetic (`buildStats`), shaped for a later API swap.
 
-## 6c. Model — "Inside the helm" (`pages/model.js`, `engine.js`)
+## 6c. Model — the decision inspector (`pages/model.js`, `pages/liveDecision.js`)
 
-A night-bridge treatment (navy radial + 48 px blueprint grid, dark glass cards)
-that replays a mocked MaskablePPO engine decision by decision. A **voyage strip**
-at the top sails a small ship through eight stations — Request → Forecast → Bid
-price → Observe → Policy → Mask → Act → Settle — with per-stage latency; cards
-below un-dim (`.pending` → lit) as their stage is reached. Transport: play/pause
-(`Space`), step (`→`), 0.5–4× speed.
-- **01 · What the agent sees** — the request as a container (reefer unit, IMDG
-  diamond), voyage options as leg bars coloured by bid-price pressure with
-  hatched infeasibility, the harbour as buoys whose colour/blink = congestion
-  and the fleet at sea, and a teal swell for the 18-slot demand forecast with a
-  calendar dial. Each card is tagged with its `obs[a:b]` slice.
-- **02 · How it thinks** — the 112-float observation as a colour-banded tape,
-  then two hidden layers (28 of 256 units shown) and the 44-row policy head.
-  Edges are *currents*: width = |weight × activation|, blue positive / red
-  negative, particles drift at a speed set by strength, and a wavefront sweeps
-  the forward pass. Masked rows get struck out. After acting, glowing dashed
-  **attribution streams** run from the top input features through the network
-  into the chosen action, listed below as signed bars.
-- **03 · What it does** — **the helm**: a teak ship's wheel whose 44 spokes are
-  the action space (booking / speed / reposition arcs), spoke length = π,
-  masked spokes collapse to anchored stubs, and the wheel turns until the chosen
-  action sits under the lubber line. Then the top-5 policy bars, a pricing
-  swell (expected margin = P(accept)·(p − bid) with bid, market and guard lines;
-  or the v³ fuel curve for speed orders; or empties before/after for
-  repositioning), and a settlement card with a rubber-stamp outcome and chained
-  ledger hash.
-- **Wake** — recent decisions float astern of a ship, height = expected margin,
-  dashed = customer walked; beside it, the same request priced by the baseline
-  "captains" as counterfactuals.
+Night-bridge backdrop (navy radial + 48 px blueprint grid) with the HUD's own
+dark-glass `.panel` cards, `.sc-head` micro-labels, tabular numerals and status
+colours — no metaphors, one decision at a time, all of it live.
+
+- **Header**: title + network shape (`112 → 256 → 256 → 44`); a bar with the
+  live state (green pulsing dot = following the newest decision, amber =
+  inspecting a chosen one, red = offline) · `All / Bookings / Fleet` filter ·
+  `‹ Live ›` (←/→ step older/newer, `L` returns to live).
+- **KPIs** over the backend's last-60 window: decisions seen, offer rate (and
+  how many offers the customer booked), mean π(chosen) + entropy, mean margin
+  over the bid-price floor, median policy forward-pass latency.
+- **Request** (5 cols): lane in bold with a drawn arrow, customer/segment tags,
+  a 3-up key-value grid, then the voyage options table (vessel, sails/arrives
+  relative to now, room, bid, feasible or why not); the priced option carries
+  an accent left rule. Fleet steps show vessel state + the busiest ports.
+- **Decision** (4): the action, an outlined outcome stamp (booked green,
+  declined amber, rejected red, pending muted, fleet orders accent), the
+  engine's own explanation, a quote/bid/market scale with the margin band,
+  figures, the ledger hash chain and measured stage timings.
+- **Policy output** (3): top legal actions as thin probability bars (chosen in
+  accent with a glow), legal-action count, V(s), entropy.
+- **Pricing** (7): the bid-price engine's real P(accept) (accent line) and
+  expected margin (green area) over price, with bid floor / market / quote
+  markers. **Same request, other strategies** (5): the four baselines priced on
+  this request vs Dock's row, best margin in green.
+- **Why this action** (7): gradient × input attributions as signed bars from a
+  centre line (accent = toward the action, red = away), then the full 112-float
+  observation as a strip coloured by block, attributed features ticked.
+  **Network** (5): 28 of 256 units per layer; edge width/opacity = |weight ×
+  activation|, accent excites, red inhibits; all edges into the chosen action.
+- **Decision log** (12): the last 20 (filtered) decisions, click to inspect.
+
+Data: `LiveFeed` re-polls `/live/policy?limit=60` every 2.5 s while the page is
+visible and rebuilds the history each time, so a PENDING decision picks up its
+real outcome and ledger hash when the customer answers. The DOM re-renders only
+on data/selection change; the three canvases repaint on the next frame.
 
 ## 7. Motion & interaction language
 

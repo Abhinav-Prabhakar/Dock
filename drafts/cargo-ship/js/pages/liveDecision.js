@@ -138,6 +138,7 @@ function mapOpt(k, o) {
     k,
     vessel: { id: o.vessel_id },
     dep: o.board_day,
+    eta: o.eta_day,
     dest: o.dest,
     legs: (o.legs || []).map((l) => ({ from: l.from, to: l.to, remaining: l.remaining_teu, pressure: l.pressure, bid: l.bid_price })),
     bid: o.bid,
@@ -147,7 +148,7 @@ function mapOpt(k, o) {
   };
 }
 function emptyOpt(k, reason) {
-  return { k, vessel: { id: '—' }, dep: null, dest: '—', legs: [], bid: 0, room: 0, feasible: false, reason };
+  return { k, vessel: { id: '—' }, dep: null, eta: null, dest: '—', legs: [], bid: 0, room: 0, feasible: false, reason };
 }
 function buildOptions(trace) {
   const raw = trace.options || [];
@@ -185,6 +186,7 @@ export function toDecision(trace, network) {
     reqDep: trace.request.req_dep_day,
     flex: trace.request.flex_days,
     market: trace.request.market_rate,
+    customer: !!trace.request.customer,
   } : null;
 
   // Fleet steps carry no voyage options at all (mirrors the option block

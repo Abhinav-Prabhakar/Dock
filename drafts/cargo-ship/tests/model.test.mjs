@@ -107,10 +107,10 @@ test('toDecision shapes every fetched decision correctly', () => {
 
     // the original page's exact shape: a fixed 4-slot options array (booking
     // steps) with the vessel/leg fields drawOptions() reads, a curve-based
-    // quote, "same request, other captains" baselines with the PPO row, and
-    // an 8-long latency array (voyage strip stations).
-    assert.equal(d.latency.length, 8, `decision ${trace.n}: latency has 8 stations`);
-    d.latency.forEach((v) => { if (v != null) assert.ok(Number.isFinite(v) && v >= 0, `decision ${trace.n}: latency values are non-negative numbers or null`); });
+    // quote, "same request, other strategies" baselines with the PPO row, and
+    // the measured stage timings as the backend recorded them (ms).
+    assert.equal(typeof d.timings, 'object', `decision ${trace.n}: timings object`);
+    Object.values(d.timings).forEach((v) => assert.ok(Number.isFinite(v) && v >= 0, `decision ${trace.n}: timings are non-negative numbers`));
 
     if (trace.step === 'booking') {
       assert.equal(d.options.length, 4, `decision ${trace.n}: booking step always has the 4-slot options layout`);
