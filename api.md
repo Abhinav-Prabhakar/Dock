@@ -306,7 +306,7 @@ QUOTED ──accept──> CONFIRMED ──(near sailing)──> LOADING
     "pricing": { "kind": "accept", "discount_pct": 0.0, "list_price": 782.53,
                  "price": 782.53, "bid_price": 1399.61, "market_rate": 539.68,
                  "reason": "competitiveness_guard", "vessel_id": "VES1",
-                 "board_day": 15.03, "eta_day": 75.75,
+                 "dest": "CNSHA", "board_day": 15.03, "eta_day": 75.75,
                  "legs": [ { "leg": 1, "pressure": 0.525, "remaining_teu": 1828.0,
                              "bid_price": 500.92 }, "…" ] }
   } ] }
@@ -325,6 +325,9 @@ action is applied):
   bid-price engine's own objective `P(wtp_seg ≥ p)·(p − bid)` over
   0.4–1.9× market, using the engine's *segment* willingness-to-pay model
   (calibration) — not the customer's hidden draw. Plus `pricing.segment`, `pricing.teu`.
+- `pricing.dest` — the destination actually priced (equals `request.dest`
+  except on an `alt_hub` decision, where it's the partner hub) — needed to
+  match `pricing` back to the one `options[]` entry the policy chose.
 - `options` — every voyage option the request had: `kind`
   (`requested`|`alt_hub`), `vessel_id`, `dest`, `board_day`, `eta_day`,
   `within_flex`, `bid` ($/TEU opportunity cost), `room_teu`,
@@ -335,8 +338,9 @@ action is applied):
   `{key, label, kind, price, margin_usd}` (margin over the bid-price floor ×
   TEU; 0 for a reject).
 - `latency_ms` — measured wall time for this decision: `mask`, `policy`,
-  `bid` (option/pricing context), `act` (env step incl. booking, ledger,
-  settlement). Stages not isolated are absent, never estimated.
+  `bid` (option/pricing context), `counterfactuals` (the 4 baseline pricers
+  above), `act` (env step incl. booking, ledger, settlement). Stages not
+  isolated are absent, never estimated.
 - `outcome.deal` — `{deal_id, kind, tx_hash, contract, terms}` when the
   booking registered an on-chain settlement deal (counter-offers).
 
