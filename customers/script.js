@@ -41,28 +41,11 @@ const S = { origin: 'CNSHA', dest: 'NLRTM', depDay: null,
             flex: 2, segment: 'standard', price: 4820 };
 let filed = false;
 
-/* service network — real ports + servable OD pairs (backend calibration,
-   GET /ports merges live port names over this embedded table at boot) */
-const PORT_G = {
-  CNSHA: { n: 'SHANGHAI',    lat:  31.2243, lon:  121.4869 },
-  SGSIN: { n: 'SINGAPORE',   lat:   1.2644, lon:  103.8200 },
-  KRPUS: { n: 'BUSAN',       lat:  35.0951, lon:  129.0398 },
-  NLRTM: { n: 'ROTTERDAM',   lat:  51.9480, lon:    4.1420 },
-  DEHAM: { n: 'HAMBURG',     lat:  53.5403, lon:    9.9852 },
-  BEANR: { n: 'ANTWERP',     lat:  51.2630, lon:    4.4020 },
-  USLAX: { n: 'LOS ANGELES', lat:  33.7292, lon: -118.1970 },
-  USNYC: { n: 'NEW YORK',    lat:  40.6690, lon:  -74.0100 },
-};
-const PAIRS = {
-  CNSHA: ['NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC', 'SGSIN'],
-  SGSIN: ['NLRTM', 'BEANR', 'CNSHA'],
-  KRPUS: ['USLAX', 'CNSHA'],
-  NLRTM: ['CNSHA', 'SGSIN', 'BEANR'],
-  DEHAM: ['CNSHA'],
-  BEANR: ['SGSIN'],
-  USLAX: ['CNSHA', 'KRPUS'],
-  USNYC: ['CNSHA'],
-};
+/* service network — ports, coordinates and servable OD pairs come from
+   the backend (DockAPI.network()) when the port pair is built; nothing
+   is embedded, so the form only offers lanes the fleet actually serves */
+const PORT_G = {};
+const PAIRS = {};
 const D2R_ = Math.PI / 180;
 const nmOf = (a, b) => {
   const A = PORT_G[a], B = PORT_G[b];
@@ -96,7 +79,8 @@ const MONTH_AB  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','
 /* re-ink the hanging credential — face fields, stats, hub labels,
    barcode + stack re-seed, band state, CONFIRM gate                  */
 function syncCard() {
-  const A = PORT_G[S.origin], B = PORT_G[S.dest];
+  // until the network loads, the badge shows port codes
+  const A = PORT_G[S.origin] || { n: S.origin }, B = PORT_G[S.dest] || { n: S.dest };
   const setT = (id, t) => { const el = $(id); if (!el) return;
     el.textContent = t; if (el.dataset.t !== undefined) el.dataset.t = String(t); };
 
@@ -1113,7 +1097,7 @@ requestAnimationFrame(frame);
    re-lists to only servable OD pairs when the origin changes. The
    ledger readout under the pair follows the route; the request-price
    stepper keeps the exact vertical mechanics from buildType.          */
-(function buildPorts() {
+(async function buildPorts() {
   const selO   = document.getElementById('selOrigin');
   const selD   = document.getElementById('selDest');
   const distEl = document.getElementById('ppDist');
@@ -1121,6 +1105,19 @@ requestAnimationFrame(frame);
   const valEl  = document.getElementById('ppVal');
   const numEl  = document.getElementById('ppNum');
   if (!selO || !selD) return;
+
+  try {
+    const net = await DockAPI.network();
+    net.ports.forEach(p => {
+      PORT_G[p.port_id] = { n: String(p.name).split('/')[0].trim().toUpperCase(),
+                            lat: p.lat, lon: p.lon };
+    });
+    Object.assign(PAIRS, net.servable);
+  } catch (e) {
+    if (distEl) distEl.textContent = `BOOKING SERVICE UNAVAILABLE — ${String(e.message).toUpperCase()}`;
+    document.querySelectorAll('[data-submit]').forEach(b => { b.disabled = true; });
+    return;
+  }
 
   const fill = (sel, codes, cur) => {
     sel.innerHTML = codes.map(c =>

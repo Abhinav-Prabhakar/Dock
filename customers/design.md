@@ -1,6 +1,6 @@
 # customers — MERIDIAN LINE Booking Credential
 
-*The customer-facing page. First visit (no orders in the mock `ml.orders` store) lands here; returning customers are routed to the fleet dashboard. `?new` always forces this screen so customers can file additional requests.*
+*The customer-facing page. First visit (no orders yet) lands here; returning customers are routed to the fleet dashboard. `?new` always forces this screen so customers can file additional requests.*
 
 **One-line concept:** a physically simulated cargo-booking badge — a laminated shipping-line credential hanging from a braided leather cord on a brass wall hook — that you can grab, fling, and swing, next to a two-step "booking details" paper deck that slides in from the right.
 

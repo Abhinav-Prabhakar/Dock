@@ -89,36 +89,16 @@ db   Postgres 16            named volume · healthcheck · api waits for healthy
 | 5 | **Live simulation + customer quotes (backend)**: always-on PPO episode; `POST /orders` → offer menu from the policy's own action space + mask, priced by the bid-price engine, never below the bid-price floor (else `NO OFFER`); PPO recommendation with π, V(s), attributions; accept/decline; order status follows the cargo; migration 0003 | `738127f` | `test_quotes.py` (real PPO episode), smoke |
 | 7 | **Operator endpoints**: `/live`, `/live/events`, `/live/policy` (real network view per decision — matches `model.predict` 400/400), `/live/policy/network` (real weight slice), `/live/vessels/{id}/stowage` | `738127f` | `test_quotes.py`, smoke |
 | 6a | **Customer booking page** on the shared client `customers/shared/api.js` (same-origin, no fallbacks) + the offer slip `customers/shared/offers.js`/`.css` (`DockOffers.review`) | `c35a475` | `node --check`; smoke 23/23 |
+| 6 | **Customer site complete**: dashboard + intake-a…d on `DockAPI` / `DockOffers`; no embedded port or lane tables anywhere (`DockAPI.network()` from `/ports` + `/routes`); invented vessel names, voyage codes, ETAs and booking IDs removed; `QUOTED` orders reopen the slip from the dashboard; the temporary `:8399` host port is gone (API only via nginx `/api`) | this commit | smoke 30/30 (checks every page loads the shared modules); CI guard fails on any `localhost:8399` / `ml.orders` in `customers/` |
 
-Current numbers: 145 backend tests · smoke 23/23 · CI green through `6750f35` (later commits pushed; check
-the Actions tab).
+Current numbers: 145 backend tests · smoke 30/30 · CI green on every pushed commit so far (check the Actions
+tab for the latest).
 
 **Descoped:** step 3 (persisting episodes/events/deals to Postgres). The durable records are Postgres
 orders/offers plus the hash-chained ledger on the `dock_ledger` volume; episodes themselves stay in
 memory. Revisit only if restarts losing the live world becomes a problem.
 
-### In progress — step 6: customer site
-
-Done: booking page (`customers/index.html`, `script.js`). Remaining:
-
-1. **Dashboard** (`customers/dashboard/script.js`): replace `const API = … localhost:8399` with
-   `DockAPI` (add `../shared/api.js` + `offers.js`/`.css` to `dashboard/index.html`); delete the
-   `CACHE_KEY` localStorage fallback around lines 1313–1320 (show an error band instead); add
-   statuses to the `ST` registry (~line 55): `QUOTED`, `NO OFFER`, `DECLINED`, `EXPIRED`; clicking a
-   `QUOTED` order opens `DockOffers.review([{order, offers}])` using `DockAPI.order(id)`.
-   Keep the `ml.view` localStorage key (a UI preference, not data).
-2. **intake-a…d** (`customers/intake-*/script.js`): same swap to `DockAPI`; delete `ORDERS_KEY`
-   caches and intake-a's embedded `FALLBACK` port list (use `DockAPI.ports()`; on failure show an
-   error, not stale ports); on submit call `DockAPI.quote` per cargo kind then
-   `DockOffers.review(results)` then go to `../dashboard/`. Each needs the three `shared/` tags.
-3. Booking page leftover: `PORT_G` in `customers/script.js` is an embedded port/OD table merged with
-   `GET /ports` — build it from `/ports` + `/routes` instead.
-4. Once no page references `localhost:8399`, delete the temporary `8399:8000` port mapping in
-   `docker-compose.yml` (and its header note).
-5. Tests: extend `scripts/smoke.sh` to check each intake page and `dashboard/` load their `shared/`
-   assets; `grep -r "localhost:8399\|localStorage.setItem(.ml.orders" customers/` must be empty.
-
-### Next — step 8: operator console (`drafts/cargo-ship`), one screen at a time
+### Next PR — step 8: operator console (`drafts/cargo-ship`), one screen at a time
 
 Add a small `js/live.js` (poll `/api/live` + `/api/live/events?after_seq=` every ~2 s; no WS
 needed) shared by all screens; show an explicit "live simulation unavailable" state on error.

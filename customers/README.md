@@ -29,10 +29,12 @@ open http://localhost:8080/customers/
 Without Docker, the backend still mounts this directory itself at
 `http://localhost:8399/customers/` (`backend/server/app.py`, StaticFiles).
 
-The site also works from any plain static server (`python -m http.server`
-etc.): every `fetch` targets `http://localhost:8399` unless the page is
-already being served from port 8399, in which case it goes same-origin.
-CORS is pre-allowed for any `localhost`/`127.0.0.1` port.
+All backend calls go through `shared/api.js` (`window.DockAPI`), always
+same-origin: `/api/*` behind nginx, the root when the backend serves the site
+on :8399. There is no offline mode — a plain static server without the API
+shows an explicit "booking service unavailable" state rather than stale or
+invented data. The rate-quotation slip (`shared/offers.js`) is shared by the
+booking page, all four intake variants and the dashboard.
 
 ---
 
@@ -81,101 +83,76 @@ customers/
 
 ---
 
-## The shared order store
+## Orders, quotes and the live simulation
 
-Orders live in **Postgres** (table `orders`, managed by
-`backend/server/orders.py` via SQLAlchemy Core; schema owned by
-`backend/alembic/`, not created by the app). One
-customer "order" = one booking request for **a single cargo type**; a
-multi-type consignment is filed as several orders, one POST per kind.
+Orders live in **Postgres** (`backend/server/orders.py`; schema owned by
+`backend/alembic/`). One order = one booking request for **a single cargo
+type**; a multi-type consignment is filed as several orders, one per kind.
+A fresh database starts empty — there are no seed or sample rows.
 
-Schema:
+Every order is **priced live** against the always-on simulation run by the
+trained PPO policy (`backend/server/quotes.py`):
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | TEXT PK | `BK-####-TC`, continuing the seeded range |
-| `origin` | TEXT | UN/LOCODE port id, must exist in `/ports` |
-| `dest` | TEXT | must form a servable OD pair with origin |
-| `teu` | INTEGER | ≥ 1 |
-| `weight_t` | REAL | total tonnes across all TEU |
-| `cargo_type` | TEXT | `dry` \| `reefer` \| `hazmat` |
-| `segment` | TEXT | `flexible` \| `standard` \| `urgent` |
-| `req_dep_day` | REAL | requested departure, sim-days; ≥ sim_day + 0.5 |
-| `flex_days` | INTEGER | ± departure tolerance, ≥ 0 |
-| `status` | TEXT | display lifecycle (below) |
-| `created` | REAL | unix seconds |
-| `vessel`, `voyage`, `eta`, `progress`, `price_usd` | nullable | filled by ops/sim later; dashboard renders `—`/`AWAITING VESSEL`/`TBC` for nulls |
-
-Seeded once, when the table is first created, with 9 sample orders
-(mixed statuses, all servable OD pairs). `DELETE /orders` wipes the
-table and does **not** reseed — that's the demo reset.
-
-Status lifecycle (display-only until the simulator owns it):
-`PENDING REVIEW → CONFIRMED → LOADING → IN TRANSIT → AT PORT → DELIVERED`.
-
-### API contract (FastAPI, `backend/server/routes.py`)
-
-| Method | Path | Returns |
-|---|---|---|
-| GET | `/ports` | 8 ports: `port_id, name, lat, lon, berths, daily_capacity_teu, base_congestion, tz_offset, mean_dwell_days, base_wait_hours` |
-| GET | `/routes` | 18 servable OD pairs: `origin, dest, base_teu_wk, market_usd_per_teu, lane, direction` |
-| GET | `/orders` | all orders, newest first |
-| GET | `/orders/{id}` | one order (404 otherwise) |
-| POST | `/orders` | `201` + created order, or `422 {"detail": "..."}` |
-| DELETE | `/orders` | `204` — wipes the store (demo reset) |
-
-POST body (validated server-side):
-
-```json
-{ "origin": "SGSIN", "dest": "NLRTM", "teu": 4, "weight_t": 44.0,
-  "cargo_type": "dry", "segment": "urgent",
-  "req_dep_day": 3.0, "flex_days": 0 }
+```
+POST /orders  {origin, dest, teu, weight_t, cargo_type, segment,
+               req_dep_day, flex_days}
+  -> 201 { order, offers[], recommendation }
+POST /orders/{id}/accept  {offer_id}  -> { order, offers }
+POST /orders/{id}/decline             -> { order, offers }
+GET  /orders          all orders, newest first (display fields derived live)
+GET  /orders/{id}     one order + its offers
 ```
 
-Validation rules: `origin`/`dest` are real ports **and** a servable OD
-pair (a vessel loop must cover it — the 18 `ROUTES`); `teu` ≥ 1;
-`weight_t` > 0; `cargo_type`/`segment` enum; `req_dep_day` ≥ current sim
-day + 0.5 (current day = the running episode's day, else 0);
-`flex_days` ≥ 0.
+- `req_dep_day` is **days from now**; `flex_days` is the ± tolerance.
+- Offers are the policy's own booking actions — *as requested*, *flexible
+  sailing* (a later sailing at a discount), *alternate port*, *split* —
+  limited to what physically fits (capacity + stowage solver) and priced by
+  the bid-price engine. Nothing is offered below the cost of the space; if
+  nothing clears it the order is `NO OFFER`. The model's pick is flagged
+  `recommended`.
+- Quotes are valid 15 minutes (or until the live simulation restarts).
+- Validation errors are `422` with a readable `detail`; no live simulation
+  is `503` — nothing is stored or faked.
 
-The eight ports and the 18 pairs come from `backend/data/calibration.py`.
-The site embeds the same table as an offline fallback — keep them in
-sync if the network ever changes.
+Status lifecycle: `QUOTED → CONFIRMED → LOADING → IN TRANSIT → AT PORT →
+DELIVERED`, plus `NO OFFER`, `DECLINED`, `EXPIRED`. Vessel, voyage, price,
+ETA (`D+n`) and progress exist only once an offer is accepted; before that
+the pages show honest placeholders (`— AWAITING VESSEL`, `TBC`).
+
+Ports and servable lanes come from `GET /ports` + `GET /routes`
+(`DockAPI.network()`); no page embeds its own copy.
 
 ---
 
 ## Page behaviour
 
+### Shared modules (`customers/shared/`)
+
+- `api.js` → `window.DockAPI`: every backend call, same-origin.
+- `offers.js` + `offers.css` → `window.DockOffers.review(results)`: the
+  rate-quotation slip (offers, the carrier's pick, accept / decline,
+  stamped outcome). Design-independent, so any intake can host it.
+
 ### Gate (`customers/script.js`, top of file)
 
-On load (unless `?new`): `GET /orders` → non-empty →
-`location.replace('dashboard/')`. If the API is unreachable, falls back
-to the `ml.orders` localStorage cache (written after every successful
-fetch), then to the form. This is the "first visit → form, returning →
-dashboard" rule.
+On load (unless `?new`): `DockAPI.orders()` → non-empty →
+`location.replace('dashboard/')`; otherwise the form.
 
 ### Booking intake submit
 
-The current page posts **one order per `.ctype` container block**
-(cargo chip → `cargo_type` via `{dry,haz→hazmat,reef→reefer}`, unit
-count → `teu`, per-unit kg → `weight_t`), `segment: 'standard'`, and
-derives `req_dep_day`/`flex_days` from the dragged calendar window
-(midpoint → sim-day float, half-span → ± days). Port stamps cycle real
-UN/LOCODE pairs — changing the origin re-inks the destination lane with
-only servable pairs. On API failure it mirrors a legacy-shaped order
-into `ml.orders` and still redirects.
+One order per `.ctype` container block (cargo chip → `cargo_type`, unit
+count → `teu`, per-unit kg → `weight_t`), `segment: 'standard'`,
+`req_dep_day`/`flex_days` from the dragged calendar window. Each is priced
+with `DockAPI.quote`, then `DockOffers.review` shows the offers; the badge
+re-inks with the real outcome. `intake-a…d` follow the same flow.
 
 ### Dashboard data layer (`customers/dashboard/script.js`)
 
-`boot()` fetches `/ports` + `/orders` in parallel; on success it caches
-orders into `ml.orders`, on failure it renders the cache (or nothing, if
-empty). `normalize()` accepts both API rows and the legacy cached shape
-(`from/to`/`types[]`): `cargo_type` fans out into `types[]`,
-`req_dep_day ± flex_days` becomes the `window`/`eta` display strings
-(`D+n` style), `created` converts s → ms, missing `vessel`/`voyage`
-/`price` render as pool names/`—`. Chart geometry (great-circle arc,
-antimeridian-split segments, vessel position/heading) is derived per
-order after normalisation.
+`boot()` loads `/ports` + `/orders` through `DockAPI`; if the API is down a
+banner says so and nothing stale is shown. `normalize()` maps an API row to
+the display shape (`cargo_type` → `types[]`, requested window → `window`,
+`created` s → ms). `QUOTED` orders get a **Review quote** button that
+reopens the rate-quotation slip.
 
 ### The chart
 
@@ -201,8 +178,7 @@ paper sheet (`#ledger` overflow), the wall scrolls as a badge grid.
 ### Actions
 
 - **`+ NEW REQUEST`** → `../index.html?new`
-- **`RESET DEMO`** → `DELETE /orders` + clear `ml.orders` → `../index.html`
-  (lands on the form because the store is now empty)
+- **Review quote** (on `QUOTED` orders) → the rate-quotation slip
 
 ---
 
@@ -228,25 +204,16 @@ reefer. Everything procedural — no image/font/audio assets anywhere.
 
 - **No auth.** One shared order pool by design — every customer sees the
   same register.
-- **`sim_day` for `req_dep_day`** is the running episode's day, else 0.
-  With no episode running, `req_dep_day` is "days from today" and the
-  `≥ 0.5` floor is the only check.
-- **Display fields are mocked.** `vessel`/`voyage`/`eta`/`progress`/
-  `price_usd` are null on POSTed orders until ops (or the simulator)
-  fills them; seeds carry plausible values so the chart isn't empty.
-  The dashboard renders honest placeholders.
-- **`ml.orders` is a cache, not the store.** It's written after every
-  successful `/orders` fetch and read only when the API is unreachable.
-  Editing it by hand does nothing to the real store.
-- **Intake variants** (`intake-a…d`) are parallel design explorations of
-  the same contract — none is wired into the main gate yet; one is meant
-  to be promoted to `index.html` after review.
-- **cargo-ship** (`drafts/cargo-ship/`, the port-operator site) doesn't
-  read `/orders` yet — the shared store is the integration seam for it.
+- **No offline mode.** Every page reads the live API; if it's down the
+  page says so. The only localStorage key left is `ml.view` (which dashboard
+  tab you were on — a UI preference, not data).
+- **Intake variants** (`intake-a…d`) are parallel designs on the same
+  shared modules; any of them can become the front door by pointing
+  nginx's `/customers/` at it.
+- **cargo-ship** (`drafts/cargo-ship/`, the port-operator site) is being
+  wired to the same live API next (see `docs/INTEGRATION_PLAN.md`).
 
 ## Files NOT to confuse this with
 
-- `src/app/(dock)/customers/` — the *operator* live booking desk in the
-  Next.js product UI (different thing, different data source).
-- `drafts/cargo-ship/` — the vessel/port-operator site. Out of scope
-  here; consumes the same `/orders` API when wired.
+- `drafts/cargo-ship/` — the vessel/port-operator site, served at `/` by the
+  same nginx; reads the same live API.

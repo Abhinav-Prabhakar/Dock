@@ -8,8 +8,6 @@
    each slip in sequence and files them — one POST per slip.
    ============================================================ */
 
-const API         = location.port === '8399' ? '' : 'http://localhost:8399';
-const ORDERS_KEY  = 'ml.orders';
 const DASHBOARD   = '../dashboard/';
 const MAX_SLIPS   = 6;
 const T_PER_TEU   = 11;              /* auto-suggest ≈ 11 t per TEU */
@@ -25,30 +23,12 @@ function mulberry(seed) {
 }
 
 /* -------------------------- port reference -------------------------- */
-/* fallback table — GET /ports refreshes it at boot if the API is up   */
-let PORTS = [
-  { port_id: 'CNSHA', name: 'Shanghai',    lat: 31.2243, lon: 121.4869, berths: 30 },
-  { port_id: 'SGSIN', name: 'Singapore',   lat: 1.2644,  lon: 103.8200, berths: 26 },
-  { port_id: 'KRPUS', name: 'Busan',       lat: 35.0951, lon: 129.0398, berths: 20 },
-  { port_id: 'NLRTM', name: 'Rotterdam',   lat: 51.9480, lon: 4.1420,   berths: 24 },
-  { port_id: 'DEHAM', name: 'Hamburg',     lat: 53.5403, lon: 9.9852,   berths: 15 },
-  { port_id: 'BEANR', name: 'Antwerp',     lat: 51.2630, lon: 4.4020,   berths: 18 },
-  { port_id: 'USLAX', name: 'Los Angeles', lat: 33.7292, lon: -118.197, berths: 24 },
-  { port_id: 'USNYC', name: 'New York',    lat: 40.6690, lon: -74.0100, berths: 14 },
-];
+/* filled from the backend (DockAPI.network()) before the desk paints */
+let PORTS = [];
 const port = id => PORTS.find(p => p.port_id === id) || { port_id: id, name: id };
 
 /* servable OD pairs — destination list is filtered by origin */
-const OD = {
-  CNSHA: ['NLRTM', 'DEHAM', 'BEANR', 'USLAX', 'USNYC', 'SGSIN'],
-  SGSIN: ['NLRTM', 'BEANR', 'CNSHA'],
-  KRPUS: ['USLAX', 'CNSHA'],
-  NLRTM: ['CNSHA', 'SGSIN', 'BEANR'],
-  DEHAM: ['CNSHA'],
-  BEANR: ['SGSIN'],
-  USLAX: ['CNSHA', 'KRPUS'],
-  USNYC: ['CNSHA'],
-};
+let OD = {};;
 
 /* ------------------------- shared waybill state ------------------------- */
 const state = {
@@ -498,32 +478,6 @@ function orderBody(s) {
   };
 }
 
-async function postOrder(body) {
-  const r = await fetch(`${API}/orders`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) { const e = new Error(j.detail || `HTTP ${r.status}`); e.detail = j.detail; e.status = r.status; throw e; }
-  return j;
-}
-
-function mirrorOrders(bodies) {
-  try {
-    const cache = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-    const stamped = bodies.map((b, i) => ({
-      id: `BK-${2400 + cache.length + i}-TC`,
-      status: 'PENDING REVIEW',
-      created: Date.now() / 1000,
-      progress: 0,
-      vessel: null, voyage: null, eta: null, price_usd: null,
-      ...b,
-    }));
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(stamped.concat(cache)));
-  } catch (e) { /* cache unavailable — still redirect */ }
-}
-
 async function confirmAll() {
   if (filing) return;
   const problems = validate();
@@ -541,45 +495,41 @@ async function confirmAll() {
 
   const bodies = slips.map(orderBody);
   const results = [];
-  let firstDetail = '';
+  let failure = null;
 
-  /* one POST per slip — the stamp slams slip by slip */
+  /* one live quote per slip — the stamp slams slip by slip */
   for (let i = 0; i < slips.length; i++) {
     const s = slips[i];
     await wait(i === 0 ? 320 : 420);
-    s.el.classList.add('stamped');              /* sage FILED stamp slams on */
+    s.el.classList.add('stamped');
+    const tag = s.el.querySelector('.slip-filed');
     try {
-      const j = await postOrder(bodies[i]);
-      results.push({ ok: true, order: j });
-      s.el.querySelector('.slip-filed').textContent = 'FILED · ' + (j.id || 'OK');
-      try {                                        /* keep the cache fresh */
-        const cache = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-        localStorage.setItem(ORDERS_KEY, JSON.stringify([j].concat(cache)));
-      } catch (e) {}
+      const q = await DockAPI.quote(bodies[i]);
+      results.push(q);
+      tag.textContent = (q.offers.length ? 'QUOTED · ' : 'NO OFFER · ') + q.order.id;
     } catch (e) {
-      results.push({ ok: false, err: e });
-      if (!firstDetail) firstDetail = e.detail || e.message || 'SERVICE UNREACHABLE';
-      s.el.querySelector('.slip-filed').textContent = 'RETURNED';
-      s.el.querySelector('.slip-filed').style.borderColor = 'var(--terra)';
-      s.el.querySelector('.slip-filed').style.color = 'var(--terra)';
+      failure = failure || e;
+      tag.textContent = 'RETURNED';
+      tag.style.borderColor = 'var(--terra)';
+      tag.style.color = 'var(--terra)';
     }
   }
 
-  const failed = results.filter(r => !r.ok);
-  if (!failed.length) {
-    /* file the stack — each slip lifts off the desk in turn */
-    await wait(420);
-    slips.forEach((s, i) => setTimeout(() => s.el.classList.add('away'), i * 110));
-    await wait(650 + slips.length * 110);
-    location.href = DASHBOARD;
+  if (failure) {
+    /* nothing is filed offline: show why, let them fix it and retry */
+    showNote(String(failure.message).toUpperCase(), true);
+    slips.forEach(s => s.el.classList.remove('stamped'));
+    filing = false;
+    confirmBtn.disabled = false;
+    addBtn.disabled = false;
+    slipzone.style.pointerEvents = '';
     return;
   }
 
-  /* API failure — mirror into the local store, surface the detail
-     as a stamped note, then still hand off to the dashboard */
-  mirrorOrders(bodies);
-  showNote((firstDetail || 'SERVICE UNREACHABLE') + '   ·   MIRRORED TO LOCAL MANIFEST — FILING ANYWAY', true);
-  await wait(3200);
+  await DockOffers.review(results);
+  /* file the stack — each slip lifts off the desk in turn */
+  slips.forEach((s, i) => setTimeout(() => s.el.classList.add('away'), i * 110));
+  await wait(650 + slips.length * 110);
   location.href = DASHBOARD;
 }
 confirmBtn.addEventListener('click', confirmAll);
@@ -601,14 +551,21 @@ confirmBtn.addEventListener('click', confirmAll);
   x.fillRect(1, 0, 1, c.height); x.fillRect(c.width - 2, 0, 1, c.height);
 })();
 
-/* refresh the port table from the API — stamps re-ink with real names */
-fetch(`${API}/ports`).then(r => r.ok ? r.json() : Promise.reject())
-  .then(list => { if (Array.isArray(list) && list.length) { PORTS = list; renderStamps(); } })
-  .catch(() => { /* fallback table stays */ });
 
 /* ============================================================
    BOOT — one slip lands on the desk, stamps already inked
    ============================================================ */
-renderStamps();
-addSlip('dry', false);
-setTimeout(() => addSlip('reefer', true), 500);   /* a second slip slides in */
+(async () => {
+  try {
+    const net = await DockAPI.network();
+    PORTS = net.ports;
+    OD = net.servable;
+  } catch (e) {
+    showNote(`BOOKING SERVICE UNAVAILABLE — ${String(e.message).toUpperCase()}`, true);
+    confirmBtn.disabled = true;
+    return;
+  }
+  renderStamps();
+  addSlip('dry', false);
+  setTimeout(() => addSlip('reefer', true), 500);   /* a second slip slides in */
+})();
