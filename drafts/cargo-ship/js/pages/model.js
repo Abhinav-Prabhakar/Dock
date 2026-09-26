@@ -1,11 +1,21 @@
-// Model — "Inside the helm". A live (mocked) replay of the decision engine, one decision at a time,
+// Model — "Inside the helm". A live replay of the real decision engine, one decision at a time,
 // sailed through eight ports of call: request → forecast → bid price → observe → policy → mask → act → settle.
 // Inputs are drawn as the instruments a navigator would read (manifest, voyage legs, harbour buoys, the
 // fleet, a swell forecast, a calendar dial), the network as ocean currents flowing through the trunk, and
 // the output as a ship's wheel whose 44 spokes are the action space — masked spokes are anchored, and the
-// wheel turns until the chosen action sits under the lubber line.
-import { Page, fit, clamp, lerp, ease, easeOut, nf, roundRect, drawShip, mulberry32 } from './page.js';
-import { MockEngine, ACTIONS, OBS_BLOCKS, STAGES, PORTS, REPO_PAIRS, VESSELS, pAccept } from './engine.js';
+// wheel turns until the chosen action sits under the lubber line. Every number drawn here comes from
+// js/api.js's /live/policy, /live/policy/network and /vessels — no mock, no fallback.
+import { Page, fit, clamp, lerp, ease, easeOut, nf, roundRect, drawShip } from './page.js';
+import { LiveEngine, actionsFromNetwork, curveAt, OBS_BLOCKS, STAGES, PORTS } from './liveDecision.js';
+import { API } from '../api.js';
+
+// Populated once from the real network's action_labels (see boot()) — mutated
+// in place so every reference below (ACTIONS[i], ACTIONS.map(...), etc.) sees
+// the real 44 actions once loaded.
+let ACTIONS = [];
+// Populated once from /vessels (see boot()) — real capacity, reefer plugs and
+// fuel coefficients, in VES1..VES4 order.
+let VESSELS = [];
 
 const INK = 'rgba(236,243,248,0.92)', MUTED = 'rgba(230,238,245,0.55)', FAINT = 'rgba(230,238,245,0.14)', GHOST = 'rgba(230,238,245,0.06)';
 const OK = '#5fe39a', WARN = '#ffc35a', CRIT = '#ff6b6b', ACCENT = '#7cc4ff', TEAL = '#4fd1c5', VIOLET = '#c99bff';
@@ -30,7 +40,7 @@ const ICON = {
 export class ModelPage extends Page {
   constructor(root) {
     super(root);
-    this.engine = new MockEngine();
+    this.engine = new LiveEngine();
     this.playing = true;
     this.speedIdx = 1;
     this.phase = 0;
@@ -38,13 +48,64 @@ export class ModelPage extends Page {
     this.wake = [];
     this.rot = 0; this.rotFrom = 0; this.rotTo = 0;
     this.hover = {};
+    this.waiting = false;
     this.build();
-    this.nextDecision();
+    this.showStatus('Connecting to the live policy…');
+    this.boot();
     window.addEventListener('keydown', (e) => {
       if (!this.active || e.target.tagName === 'INPUT') return;
       if (e.key === ' ') { e.preventDefault(); this.togglePlay(); }
       else if (e.key === 'ArrowRight') this.stepStage();
     });
+  }
+
+  /* ---------------------------------------------------------------- boot */
+  showStatus(html) {
+    if (!this.statusEl) {
+      this.statusEl = document.createElement('div');
+      this.statusEl.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;'
+        + 'text-align:center;padding:40px;font:600 14px Inter,sans-serif;color:rgba(230,238,245,0.85);'
+        + 'background:rgba(6,10,16,0.92);z-index:80;';
+      this.root.appendChild(this.statusEl);
+    }
+    this.statusEl.innerHTML = html;
+    this.statusEl.style.display = 'flex';
+  }
+
+  hideStatus() { if (this.statusEl) this.statusEl.style.display = 'none'; }
+
+  async boot() {
+    try {
+      const [network, vessels] = await Promise.all([
+        (async () => { await this.engine.init(); return this.engine.network; })(),
+        API.vessels(),
+      ]);
+      ACTIONS = actionsFromNetwork(network);
+      VESSELS = vessels.map((v) => ({ id: v.vessel_id, name: v.name, cap: v.capacity_teu, reefer: v.reefer_plugs, fuelA: v.fuel_a_tpd, fuelB: v.fuel_b_tpd }));
+    } catch (e) {
+      this.showStatus(`<div><b>Live policy unavailable</b><div style="margin-top:8px;opacity:.75;font-weight:500">${(e && e.message) || String(e)}</div></div>`);
+      return;
+    }
+    this.awaitFirst();
+  }
+
+  awaitFirst() {
+    const tryNext = () => {
+      if (this._stopped) return;
+      const d = this.engine.next();
+      if (d) {
+        this.cur = d;
+        this.phase = 0;
+        this.stage = -1;
+        this.rotFrom = this.rot;
+        this.rotTo = this.rotFor(d.action);
+        this.prepNet(d);
+        this.hideStatus();
+        return;
+      }
+      this._awaitTimer = setTimeout(tryNext, 300);
+    };
+    tryNext();
   }
 
   /* ---------------------------------------------------------------- DOM */
@@ -61,7 +122,7 @@ export class ModelPage extends Page {
         <header class="pg-head">
           <div class="pg-title">
             <div class="brand"><span class="dot"></span>DOCK <em>Decision engine</em></div>
-            <h1>Inside the helm <small>MaskablePPO · ppo_c5 · mocked replay</small></h1>
+            <h1>Inside the helm <small>MaskablePPO · live policy · /live/policy</small></h1>
             <div class="sub">Every booking and fleet order, sailed through the model: 112-d observation → 2 × 256 trunk → π over 44 masked actions ⊕ V(s)</div>
             <div class="telemetry" data-k="tele"></div>
           </div>
@@ -71,7 +132,7 @@ export class ModelPage extends Page {
               <button data-a="step" title="Next stage (→)">${ICON.step}</button>
               <div class="seg" data-k="speeds">${SPEEDS.map((s, i) => `<button data-i="${i}">${s}×</button>`).join('')}</div>
             </div>
-            <div class="br-scen"><span class="dot"></span><span data-k="scen">Volatile shocks · holdout · deterministic eval</span></div>
+            <div class="br-scen"><span class="dot"></span><span data-k="scen">Live world · deterministic policy (argmax)</span></div>
           </div>
         </header>
 
@@ -122,11 +183,11 @@ export class ModelPage extends Page {
 
         <section class="panel br-wakebar">
           <div class="br-wake-l">
-            <div class="card-head"><span>Wake · recent decisions</span><em>height = expected margin · dashed = customer walked</em></div>
+            <div class="card-head"><span>Wake · recent decisions</span><em>height = margin over bid floor · dashed = customer walked</em></div>
             <canvas class="cv" data-c="wake" style="height:92px"></canvas>
           </div>
           <div class="br-wake-r" data-stage="7">
-            <div class="card-head"><span>Same request, other captains</span><em>expected margin · counterfactual</em></div>
+            <div class="card-head"><span>Same request, other captains</span><em>margin over bid floor · counterfactual</em></div>
             <div class="br-cf" data-k="cf"></div>
           </div>
         </section>
@@ -194,6 +255,15 @@ export class ModelPage extends Page {
   }
 
   nextDecision() {
+    const nxt = this.engine.next();
+    if (!nxt) {
+      // Nothing new from the live world yet — hold on the current decision
+      // rather than advancing into nothing.
+      this.waiting = true;
+      this.phase = this.bounds().total + HOLD;
+      return;
+    }
+    this.waiting = false;
     if (this.cur) {
       const d = this.cur, a = ACTIONS[d.action];
       this.wake.unshift({
@@ -204,7 +274,7 @@ export class ModelPage extends Page {
       this.wake.length = Math.min(this.wake.length, 40);
       this.wakeT = this.time;
     }
-    this.cur = this.engine.next();
+    this.cur = nxt;
     this.phase = 0;
     this.stage = -1;
     this.rotFrom = this.rot;
@@ -238,21 +308,28 @@ export class ModelPage extends Page {
     if (a.kind === 'accept') return d.options[0].reason || 'option 0 infeasible';
     if (a.kind === 'flex_window') return d.options[1].reason || 'discount too small for an urgent shipper';
     if (a.kind === 'alt_hub') return d.options[2].reason || 'alt hub infeasible';
-    if (a.kind === 'split') return d.req.teu < 20 ? 'consignment too small to split' : 'second sailing cannot take the remainder';
-    if (a.kind === 'speed') return a.vessel === d.inPort ? `${VESSELS[a.vessel].id} alongside` : 'outside the vessel\'s speed table';
-    if (a.kind === 'reposition') return `not enough empties at ${REPO_PAIRS[a.pair][0]}${d.shock && REPO_PAIRS[a.pair][0] === 'NLRTM' ? ' (port closed)' : ''}`;
+    if (a.kind === 'split') return (d.req && d.req.teu < 20) ? 'consignment too small to split' : 'second sailing cannot take the remainder';
+    if (a.kind === 'speed') return a.vessel === d.inPort ? `${VESSELS[a.vessel]?.id ?? `VES${a.vessel + 1}`} alongside` : 'outside the vessel\'s speed table';
+    if (a.kind === 'reposition') {
+      const pair = d.repoPairs && d.repoPairs[a.pair];
+      return pair ? `not enough empties at ${pair[0]}${d.shock && pair[0] === 'NLRTM' ? ' (port closed)' : ''}` : 'not enough empties on this pair';
+    }
     return 'infeasible';
   }
 
   syncDOM() {
     const d = this.cur, s = this.stage, a = ACTIONS[d.action];
     this.staged.forEach((el) => el.classList.toggle('pending', +el.dataset.stage > s));
-    this.k.voyageNote.textContent = `step ${nf(d.step)} · ${d.type === 'booking' ? 'booking step' : 'fleet step'} · ${STAGES[s].label.toLowerCase()} — ${STAGES[s].sub}`;
+    this.k.voyageNote.textContent = this.waiting
+      ? `step ${nf(d.step)} · holding — waiting for the next live decision…`
+      : `step ${nf(d.step)} · ${d.type === 'booking' ? 'booking step' : 'fleet step'} · ${STAGES[s].label.toLowerCase()} — ${STAGES[s].sub}`;
     if (this.filledFor !== d) {
       this.filledFor = d;
       this.k.top.innerHTML = ''; this.k.why.innerHTML = ''; this.k.out.innerHTML = ''; this.k.cf.innerHTML = '';
       this.k.tele.innerHTML = [
-        ['Step', nf(d.step), ''], ['Day', nf(d.day, 1), d.shock ? 'shock' : ''], ['V(s)', kusd(d.value), 'to horizon'],
+        // V(s) is a discounted *shaped-reward* estimate, not dollars — shown
+        // as the raw number, never ×10,000 or formatted as $.
+        ['Step', nf(d.step), ''], ['Day', nf(d.day, 1), d.shock ? 'shock' : ''], ['V(s)', d.value.toFixed(1), 'value est.'],
         ['Entropy', d.entropy.toFixed(2), 'nats'], ['Masked', `${d.masked}`, '/ 44'],
       ].map(([l, v, u]) => `<div><label>${l}</label><span>${v}</span><small>${u}</small></div>`).join('');
       if (d.req) {
@@ -319,7 +396,7 @@ export class ModelPage extends Page {
       g.fillStyle = i <= this.stage ? INK : MUTED; g.font = '700 10.5px Inter, sans-serif';
       g.fillText(s.label, x, y + 30);
       g.fillStyle = MUTED; g.font = '500 9.5px Inter, sans-serif';
-      g.fillText(done ? `${s.sub} · ${d.latency[i]} ms` : s.sub, x, y + 43);
+      g.fillText(done && d.latency[i] != null ? `${s.sub} · ${d.latency[i]} ms` : s.sub, x, y + 43);
     });
     // the decision itself, sailing between stations
     const sy = Y(shipX) - 6, len = 34;
@@ -364,7 +441,7 @@ export class ModelPage extends Page {
     const d = this.cur, p2 = this.sp(2), t = this.time;
     if (!d.options.length) {
       g.fillStyle = MUTED; g.font = '600 11px Inter, sans-serif'; g.textAlign = 'center';
-      g.fillText('Fleet step — option block zeroed (obs[12:44] = 0)', w / 2, h / 2);
+      g.fillText('Fleet step — option block zeroed (obs[14:34] = 0)', w / 2, h / 2);
       return;
     }
     const rowH = h / 4, sx0 = 104, sx1 = w - 72;
@@ -375,8 +452,8 @@ export class ModelPage extends Page {
       g.textAlign = 'left'; g.fillStyle = INK; g.font = '700 10px Inter, sans-serif';
       g.fillText(`OPT ${k} · ${o.vessel.id}`, 8, cy - 4);
       g.fillStyle = MUTED; g.font = '500 9px Inter, sans-serif';
-      g.fillText(k === 2 ? `alt hub ${o.dest}` : `dep day ${nf(o.dep, 1)}`, 8, cy + 9);
-      if (!o.legs.length) { g.fillStyle = MUTED; g.fillText('— no partner hub on this lane', sx0, cy + 3); return; }
+      g.fillText(k === 2 ? `alt hub ${o.dest}` : (o.dep != null ? `dep day ${nf(o.dep, 1)}` : 'no sailing'), 8, cy + 9);
+      if (!o.legs.length) { g.fillStyle = MUTED; g.fillText(o.reason ? `— ${o.reason}` : '— no partner hub on this lane', sx0, cy + 3); return; }
       const n = o.legs.length, lw = (sx1 - sx0) / n;
       o.legs.forEach((l, j) => {
         const x0 = sx0 + j * lw, x1 = x0 + lw - 3, fillP = clamp(p2 * 1.6 - j * 0.25);
@@ -491,20 +568,21 @@ export class ModelPage extends Page {
 
   /* ---------------------------------------------------------------- the network as currents */
   prepNet(d) {
-    const e = this.engine;
+    const net = this.engine.network;
     const top = (arr, k) => arr.sort((a, b) => Math.abs(b.c) - Math.abs(a.c)).slice(0, k);
     this.e1 = []; this.e2 = []; this.e3 = [];
-    e.W1.forEach((w, j) => this.e1.push(...top(w.map((wi, i) => ({ i, j, c: wi * d.obs[i] })), 3)));
-    e.W2.forEach((w, j) => this.e2.push(...top(w.map((wi, i) => ({ i, j, c: wi * d.h1[i] })), 3)));
-    e.W3.forEach((w, a) => { if (d.mask[a]) this.e3.push(...top(w.map((wi, j) => ({ j, a, c: wi * d.h2[j] })), 2)); });
+    net.w1.forEach((w, j) => this.e1.push(...top(w.map((wi, i) => ({ i, j, c: wi * d.obs[i] })), 3)));
+    net.w2.forEach((w, j) => this.e2.push(...top(w.map((wi, i) => ({ i, j, c: wi * d.h1[i] })), 3)));
+    net.w3.forEach((w, a) => { if (d.mask[a]) this.e3.push(...top(w.map((wi, j) => ({ j, a, c: wi * d.h2[j] })), 2)); });
     const norm = (arr) => { const m = Math.max(1e-6, ...arr.map((q) => Math.abs(q.c))); arr.forEach((q, k) => { q.n = Math.abs(q.c) / m; q.seed = (k * 0.618) % 1; }); };
     norm(this.e1); norm(this.e2); norm(this.e3);
-    const R = mulberry32(d.step);
-    this.ghost = ACTIONS.map(() => 0.03 + R() * 0.14);
+    // Masked actions get a uniform stub (not a score) until the mask stage
+    // removes them — the API nulls masked logits/probs, so nothing is implied.
+    this.ghost = ACTIONS.map(() => 0.08);
     // attribution streams: obs cell → strongest h1 unit for that input → path h2 → action
     this.streams = d.attr.map((f, k) => {
       let bj = 0, bw = 0;
-      e.W1.forEach((w, j) => { if (Math.abs(w[f.idx]) > bw) { bw = Math.abs(w[f.idx]); bj = j; } });
+      net.w1.forEach((w, j) => { if (Math.abs(w[f.idx]) > bw) { bw = Math.abs(w[f.idx]); bj = j; } });
       return { ...f, h1: bj, h2: d.path.h2[k % d.path.h2.length], k };
     });
   }
@@ -599,7 +677,8 @@ export class ModelPage extends Page {
       if (!on && pMask > 0) { g.globalAlpha = pMask; g.strokeStyle = 'rgba(230,238,245,0.3)'; g.lineWidth = 1; g.beginPath(); g.moveTo(outX + 1, y + rowH * 0.3); g.lineTo(outX + 11, y - rowH * 0.3); g.stroke(); g.globalAlpha = 1; }
       if (rowH > 9) {
         g.fillStyle = chosen ? INK : on ? MUTED : 'rgba(230,238,245,0.25)'; g.font = `${chosen ? 800 : 600} ${Math.min(8.5, rowH * 0.62)}px Inter, sans-serif`; g.textAlign = 'right';
-        const lbl = act.group === 'speed' ? `${VESSELS[act.vessel].id} ${act.kt}kn` : act.group === 'repo' ? `${REPO_PAIRS[act.pair][0].slice(0, 2)}→${REPO_PAIRS[act.pair][1].slice(0, 2)} ${act.teu}` : act.short;
+        const pair = d.repoPairs && d.repoPairs[act.pair];
+        const lbl = act.group === 'speed' ? `${VESSELS[act.vessel]?.id ?? `VES${act.vessel + 1}`} ${act.kt}kn` : act.group === 'repo' ? (pair ? `${pair[0].slice(0, 2)}→${pair[1].slice(0, 2)} ${act.teu}` : `#${act.pair + 1} ${act.teu}`) : act.short;
         g.fillText(lbl, w - 4, y + 3);
       }
       if (chosen) { g.strokeStyle = '#fff'; g.lineWidth = 1; g.strokeRect(outX - 1.5, y - rowH * 0.5, w - outX - 2, rowH); }
@@ -743,15 +822,13 @@ export class ModelPage extends Page {
     const ww = w - pad.l - pad.r, hh = h - pad.t - pad.b;
     const a = ACTIONS[d.action];
     if (d.quote) {
-      const q = d.quote, mu = q.mu;
-      const p0 = Math.min(q.bid * 0.7, mu * 0.4), p1 = mu * 1.9;
-      const X = (v) => pad.l + ((v - p0) / (p1 - p0)) * ww;
-      const marg = (v) => pAccept(v, mu) * (v - q.bid);
-      let best = { v: q.bid, m: 0 };
-      for (let v = p0; v <= p1; v += (p1 - p0) / 200) { const m = marg(v); if (m > best.m) best = { v, m }; }
-      const mMax = Math.max(1, best.m);
+      const q = d.quote, curve = q.curve;
+      const p0 = curve[0][0], p1 = curve[curve.length - 1][0];
+      const X = (v) => pad.l + ((v - p0) / Math.max(1e-9, p1 - p0)) * ww;
+      const marg = (v) => curveAt(curve, v).margin;
+      const mMax = Math.max(1, ...curve.map((row) => row[2]));
       g.save(); g.beginPath(); g.rect(0, 0, pad.l + ww * p, h); g.clip();
-      // expected-margin swell
+      // margin swell (the bid-price engine's own P(accept)·(price−bid) objective)
       const gr = g.createLinearGradient(0, pad.t, 0, pad.t + hh);
       gr.addColorStop(0, rgba(ACCENT, 0.55)); gr.addColorStop(1, rgba(ACCENT, 0.03));
       g.fillStyle = gr; g.beginPath(); g.moveTo(X(p0), pad.t + hh);
@@ -759,7 +836,7 @@ export class ModelPage extends Page {
       g.lineTo(X(p1), pad.t + hh); g.closePath(); g.fill();
       // P(accept)
       g.strokeStyle = MUTED; g.setLineDash([3, 3]); g.lineWidth = 1;
-      g.beginPath(); for (let v = p0; v <= p1; v += (p1 - p0) / 120) g.lineTo(X(v), pad.t + hh - pAccept(v, mu) * hh); g.stroke(); g.setLineDash([]);
+      g.beginPath(); for (let v = p0; v <= p1; v += (p1 - p0) / 120) g.lineTo(X(v), pad.t + hh - curveAt(curve, v).pAccept * hh); g.stroke(); g.setLineDash([]);
       g.restore();
       const vline = (v, col, lbl, row, dash) => {
         const x = X(v); if (x < pad.l || x > w - pad.r) return;
@@ -770,7 +847,7 @@ export class ModelPage extends Page {
       };
       vline(q.bid, CRIT, `bid $${nf(q.bid)}`, 0);
       vline(q.market, MUTED, `mkt $${nf(q.market)}`, 1, true);
-      vline(q.guard, WARN, 'guard', 0, true);
+      if (q.guard != null && Math.abs(q.guard - q.price) > 0.5) vline(q.guard, WARN, 'list', 0, true);
       // buoy at the bid floor
       const bx = X(q.bid), by = pad.t + hh - 4 + Math.sin(t * 2) * 1.2;
       g.fillStyle = CRIT; g.beginPath(); g.moveTo(bx - 4, by); g.lineTo(bx + 4, by); g.lineTo(bx + 2, by - 8); g.lineTo(bx - 2, by - 8); g.closePath(); g.fill();
@@ -779,7 +856,7 @@ export class ModelPage extends Page {
         g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y); g.lineTo(x, pad.t + hh); g.stroke();
         g.save(); g.translate(x, y + Math.sin(t * 2) * 1); drawShip(g, -14, 1, 28, { hull: '#fff', colors: BOXES, house: '#9fb0c0', ink: 'rgba(8,16,24,0.7)', fill: 0.8, seed: 7 }); g.restore();
         g.fillStyle = INK; g.font = '800 10px Inter, sans-serif'; g.textAlign = x > w - 90 ? 'right' : 'left';
-        g.fillText(`quote $${nf(q.offer)}${q.disc ? ` (−${q.disc * 100}%)` : ''} · P ${nf(pAccept(q.offer, mu) * 100)}%`, x + (x > w - 90 ? -8 : 8), Math.max(pad.t + 8, y - 12));
+        g.fillText(`quote $${nf(q.offer)}${q.disc ? ` (−${Math.round(q.disc * 100)}%)` : ''} · P ${nf(curveAt(curve, q.offer).pAccept * 100)}%`, x + (x > w - 90 ? -8 : 8), Math.max(pad.t + 8, y - 12));
       }
       g.fillStyle = MUTED; g.font = '600 8px Inter, sans-serif'; g.textAlign = 'left';
       g.fillText('– – P(accept)', pad.l, pad.t - 3);
@@ -788,7 +865,7 @@ export class ModelPage extends Page {
     }
     if (a.kind === 'speed') {
       const v = VESSELS[a.vessel];
-      const burn = (kt) => 0.15 + 0.85 * Math.pow(kt / 16, 3);
+      const burn = (kt) => v.fuelA + v.fuelB * Math.pow(kt, 3);
       const X = (kt) => pad.l + ((kt - 11) / 8) * ww, Y = (b) => pad.t + hh - (b / burn(19)) * hh;
       g.save(); g.beginPath(); g.rect(0, 0, pad.l + ww * p, h); g.clip();
       const gr = g.createLinearGradient(0, pad.t, 0, pad.t + hh); gr.addColorStop(0, rgba(TEAL, 0.5)); gr.addColorStop(1, rgba(TEAL, 0.03));
@@ -803,15 +880,17 @@ export class ModelPage extends Page {
         g.beginPath(); g.arc(x, y, sel ? 5 : 3.5, 0, Math.PI * 2); g.fill();
         g.fillStyle = sel ? INK : MUTED; g.font = `${sel ? 800 : 600} 9px Inter, sans-serif`; g.textAlign = 'center';
         g.fillText(`${kt} kn`, x, pad.t + hh + 14);
-        if (sel) g.fillText(`${nf(burn(kt) * 118 * v.cap / 8000)} t/d`, x, y - 10);
+        if (sel) g.fillText(`${nf(burn(kt))} t/d`, x, y - 10);
       });
-      g.fillStyle = MUTED; g.font = '600 8px Inter, sans-serif'; g.textAlign = 'left'; g.fillText(`${v.name} · fuel t/day = a + b·v³`, pad.l, pad.t - 3);
+      g.fillStyle = MUTED; g.font = '600 8px Inter, sans-serif'; g.textAlign = 'left'; g.fillText(`${v ? v.name : `VES${a.vessel + 1}`} · fuel t/day = a + b·v³`, pad.l, pad.t - 3);
       return;
     }
-    // reposition: empties before / after at the two ports
-    const [o, dst] = REPO_PAIRS[a.pair];
+    // reposition: empties before / after at the two ports (real pair for this decision)
+    const pair = d.repoPairs && d.repoPairs[a.pair];
+    const [o, dst] = pair || ['—', '—'];
     const io = PORTS.indexOf(o), id = PORTS.indexOf(dst);
-    const after = [d.ports[io].empties - a.teu, d.ports[id].empties + a.teu], before = [d.ports[io].empties, d.ports[id].empties];
+    const before = [io >= 0 ? d.ports[io].empties : 0, id >= 0 ? d.ports[id].empties : 0];
+    const after = [before[0] - a.teu, before[1] + a.teu];
     const maxE = Math.max(...before, ...after, 1);
     [[o, 0], [dst, 1]].forEach(([code, k]) => {
       const x = pad.l + 30 + k * (ww / 2), bw = 26;

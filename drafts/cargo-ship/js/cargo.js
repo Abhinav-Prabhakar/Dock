@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { SHIP, HYDRO, CONTAINER_TYPES, CONTAINER_WIDTH, CONTAINER_PALETTE, PORTS } from './config.js';
 import { Y_CARGO, Y_HOLD, patchDeckLights } from './ship.js';
-import { makeContainerAtlas, ATLAS_ROWS, ATLAS_REGIONS, rng } from './textures.js';
+import { makeContainerAtlas, ATLAS_ROWS, ATLAS_REGIONS } from './textures.js';
 import { boxColor } from './colors.js';
 
 const STACK_GAP = 0.03; // twistlock / stacking cone clearance
@@ -55,7 +55,6 @@ function containerMaterial(atlas, key) {
   return m;
 }
 
-const gauss = (R) => { let u = 0; for (let i = 0; i < 4; i++) u += R(); return (u - 2) / 0.577; };
 
 export class Cargo {
   constructor(ship) {
@@ -146,7 +145,7 @@ export class Cargo {
       if (type === '20' && below[half] && below[half].type !== '20') return this.fail('A 20\' cannot be stowed on top of a 40\'');
     }
     const category = spec.category || 'dry';
-    const weight = Math.min(def.maxGross, Math.max(def.tare, spec.weight ?? (category === 'empty' ? def.tare : def.tare + 6 + Math.random() * 14)));
+    const weight = Math.min(def.maxGross, Math.max(def.tare, spec.weight ?? def.tare));
     const box = {
       id: spec.id || `C${String(this.nextId++).padStart(5, '0')}`,
       bayIndex: bay.index, half, row: spec.row, tier: spec.tier, type,
@@ -201,21 +200,6 @@ export class Cargo {
     return top;
   }
 
-  // Put a container on top of a deck stack.
-  stack(bayNo, row, spec = {}) {
-    const { bay, half } = this.resolve(bayNo);
-    const type = spec.type || (half === 'both' ? '40HC' : '20');
-    const top = this.topTier(bayNo, row);
-    const tier = top ? top + 2 : 82;
-    if (tier > 80 + bay.tiers * 2) return this.fail(`Stack ${fmt(bay.bay)}${fmt(row)} is at its tier limit`);
-    return this.place({ pod: PORTS[(Math.random() * PORTS.length) | 0].code, ...spec, bay: bayNo, row, tier, type });
-  }
-
-  unstack(bayNo, row) {
-    const top = this.topTier(bayNo, row);
-    return top ? this.remove({ bay: bayNo, row, tier: top }, { cascade: true }) : [];
-  }
-
   clearBay(bayNo, { hold = false } = {}) {
     const { bay } = this.resolve(bayNo);
     for (const box of [...this.boxes.values()]) {
@@ -233,73 +217,6 @@ export class Cargo {
       this.occ = this.bays.map(() => new Map());
       this.touch();
     } else this.bays.forEach((b) => this.clearBay(b.bay));
-  }
-
-  // Fill a bay with a realistic stow: heavier boxes low, lighter up top, carrier colour blocks,
-  // discharge ports grouped by bay, a sprinkling of reefers, IMDG and empties.
-  fillBay(bayNo, { seed = Math.random() * 1e9, fill = 0.94, maxTiers, hold = true, deck = true } = {}) {
-    const { bay } = this.resolve(bayNo);
-    const R = rng(seed | 0);
-    const blockColor = new Map();
-    const colorFor = (row, tier) => {
-      const k = `${Math.floor((row + 1) / 4)}:${Math.floor(tier / 6)}`;
-      if (!blockColor.has(k)) blockColor.set(k, this.randomColor(R));
-      return R() < 0.58 ? blockColor.get(k) : this.randomColor(R);
-    };
-    const bayPod = PORTS[(bay.index * 7 + 3) % PORTS.length].code;
-    const podFor = (onDeck, tierIdx) => {
-      if (onDeck && tierIdx > 5 && R() < 0.35) return PORTS[0].code; // first port on top
-      return R() < 0.72 ? bayPod : PORTS[(R() * PORTS.length) | 0].code;
-    };
-    const makeSpec = (type, onDeck, tierIdx) => {
-      const def = CONTAINER_TYPES[type];
-      const x = R();
-      const category = x < 0.08 ? 'empty' : x < 0.11 ? 'imdg' : (type === '40HC' && x < 0.2) ? 'reefer' : 'dry';
-      const mean = (type === '20' ? 19 : type === '40' ? 17 : 15) + (onDeck ? -0.9 * tierIdx : 3.5 - 0.35 * tierIdx);
-      const weight = category === 'empty' ? def.tare : def.tare + Math.max(1.5, mean - def.tare + gauss(R) * 4.8);
-      return { type, category, weight, pod: podFor(onDeck, tierIdx) };
-    };
-    const variantFor = () => (R() < 0.3 ? 0 : Math.floor(R() * ATLAS_ROWS));
-    const emit = (tier, row, onDeck, i) => {
-      const pick = R();
-      if (i < 3 && pick < 0.22) {
-        const col = colorFor(row, tier), v = variantFor();
-        const a = makeSpec('20', onDeck, i), b = makeSpec('20', onDeck, i);
-        this.place({ ...a, bay: bay.foreBay20, row, tier, color: col, variant: v, requireSupport: false });
-        this.place({ ...b, bay: bay.aftBay20, row, tier, color: R() < 0.7 ? col : this.randomColor(R), variant: (v + 1) % ATLAS_ROWS, requireSupport: false });
-      } else {
-        const s = makeSpec(pick < 0.4 ? '40' : '40HC', onDeck, i);
-        this.place({ ...s, bay: bay.bay, row, tier, color: colorFor(row, tier), variant: variantFor(), requireSupport: false });
-      }
-    };
-    const occupied = (row, tier) => { const c = this.cell(bay.index, row, tier); return c && (c.fore || c.aft); };
-    for (const r of bay.rows) {
-      if (hold) {
-        for (let i = 0; i < SHIP.holdTiers; i++) {
-          const tier = 2 + i * 2;
-          if (!bay.holdRows[i].has(r.row)) { if (i === 0) continue; else break; }
-          if (!occupied(r.row, tier) && R() < 0.985) emit(tier, r.row, false, i); else break;
-        }
-      }
-      if (!deck) continue;
-      const lim = Math.min(maxTiers ?? bay.tiers, bay.tiers);
-      const outboard = Math.abs(r.z) / (bay.rowCount * SHIP.rowPitch / 2);
-      let h = lim;
-      const x = R();
-      if (x > 0.55) h -= 1;
-      if (x > 0.85) h -= 1;
-      if (outboard > 0.85 && R() < 0.35) h -= 1;
-      if (R() > fill) h = Math.floor(h * R());
-      for (let i = 0; i < h; i++) {
-        const tier = 82 + i * 2;
-        if (!occupied(r.row, tier)) emit(tier, r.row, true, i);
-      }
-    }
-  }
-
-  fillAll(opts = {}) {
-    const seed = opts.seed ?? 12345;
-    this.bays.forEach((b, i) => this.fillBay(b.bay, { ...opts, seed: seed + i * 101 }));
   }
 
   randomColor(R) {

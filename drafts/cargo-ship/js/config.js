@@ -48,13 +48,16 @@ export const CATEGORIES = {
   empty:  { label: 'Empty',  color: '#d8d0bf' },
 };
 
-// Ports of discharge on the rotation.
+// Ports of discharge on the rotation (backend `/api/ports`).
 export const PORTS = [
-  { code: 'NLRTM', name: 'Rotterdam',  color: '#4f9fe6' },
-  { code: 'DEHAM', name: 'Hamburg',    color: '#f0913a' },
-  { code: 'BEANR', name: 'Antwerp',    color: '#d0506a' },
-  { code: 'GBFXT', name: 'Felixstowe', color: '#63c28a' },
-  { code: 'FRLEH', name: 'Le Havre',   color: '#a98ee6' },
+  { code: 'CNSHA', name: 'Shanghai',    color: '#4f9fe6' },
+  { code: 'SGSIN', name: 'Singapore',   color: '#f0913a' },
+  { code: 'KRPUS', name: 'Busan',       color: '#d0506a' },
+  { code: 'NLRTM', name: 'Rotterdam',   color: '#63c28a' },
+  { code: 'DEHAM', name: 'Hamburg',     color: '#a98ee6' },
+  { code: 'BEANR', name: 'Antwerp',     color: '#c9a42a' },
+  { code: 'USLAX', name: 'Los Angeles', color: '#2c8a8e' },
+  { code: 'USNYC', name: 'New York',    color: '#b52d34' },
 ];
 
 // Hydrostatic / structural constants (estimates for a ~366 m, 51 m beam ULCV).

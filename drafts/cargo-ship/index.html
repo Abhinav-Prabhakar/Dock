@@ -39,10 +39,21 @@
     </div>
   </header>
 
+  <aside class="hud panel bookings-panel" id="bookings-panel">
+    <div class="panel-head">
+      <span>Live bookings</span>
+      <button class="icon-btn" id="collapse-bookings" title="Collapse">–</button>
+    </div>
+    <div class="panel-body">
+      <p class="hint unavailable" id="bookings-unavailable" hidden></p>
+      <ul class="booking-list" id="booking-list"></ul>
+    </div>
+  </aside>
+
   <aside class="hud panel profit-panel" id="profit-panel">
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span id="p-profit">1,284,500</span>
-    <span class="delta" id="p-profit-delta" title="vs greedy baseline">▲ +12.4%</span>
+    <span id="p-profit">—</span>
+    <span class="delta" id="p-profit-delta" title="vs static rate card · holdout evaluation">—</span>
   </aside>
 
   <aside class="hud panel cargo-panel" id="cargo-panel">
@@ -56,20 +67,22 @@
         <div><span id="s-teu">0</span><label>TEU on deck</label></div>
         <div><span id="s-util">0%</span><label>Deck util.</label></div>
       </div>
+      <label class="field-label" for="vessel-select">Vessel</label>
+      <select id="vessel-select"></select>
       <label class="field-label" for="bay-select">Bay</label>
-      <select id="bay-select"></select>
+      <select id="bay-select" disabled title="Stowage is set by the live simulation"></select>
       <div class="btn-grid">
-        <button id="btn-load-bay">Load bay</button>
-        <button id="btn-discharge-bay">Discharge bay</button>
-        <button id="btn-restow">Restow all</button>
-        <button id="btn-clear">Clear deck</button>
+        <button id="btn-load-bay" disabled title="Stowage is set by the live simulation">Load bay</button>
+        <button id="btn-discharge-bay" disabled title="Stowage is set by the live simulation">Discharge bay</button>
+        <button id="btn-restow" disabled title="Stowage is set by the live simulation">Restow all</button>
+        <button id="btn-clear" disabled title="Stowage is set by the live simulation">Clear deck</button>
       </div>
       <label class="field-label">Colour boxes by</label>
       <div class="seg" id="color-mode"></div>
       <div class="legend" id="color-legend"></div>
       <label class="field-label" for="livery-select">Livery</label>
       <select id="livery-select"></select>
-      <p class="hint"><kbd>Shift</kbd>+click a box to discharge it (and anything stowed on top) · <kbd>Alt</kbd>+click to stack one on top.</p>
+      <p class="hint" id="cargo-note"></p>
     </div>
   </aside>
 
