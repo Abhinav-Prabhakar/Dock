@@ -96,6 +96,16 @@
     'Do I have any quotes waiting on me?',
   ];
 
+  /* receipts for what the desk actually did: a short stamp label + the
+     details at reading size (own class: the register's .stamp is an SVG) */
+  const RECEIPT = { quote: 'QUOTED', booked: 'BOOKED', declined: 'DECLINED' };
+  const receipts = acts => acts.length
+    ? `<div class="desk-receipts">${acts.map(a => {
+        const label = RECEIPT[a.kind] || String(a.kind || '').toUpperCase();
+        const detail = String(a.text || '').replace(/^(Quoted|Booked|Declined)\s+/i, '');
+        return `<div class="desk-receipt ${esc(a.kind)}"><span class="dr-label">${esc(label)}</span><span class="dr-text">${esc(detail)}</span></div>`;
+      }).join('')}</div>` : '';
+
   function paint() {
     if (!log.length) {
       logEl.innerHTML = `<div class="desk-hello">
@@ -104,15 +114,13 @@
         </div>`;
     } else {
       logEl.innerHTML = log.map(m => {
-        const stamps = (m.actions || []).length
-          ? `<div class="stamps">${m.actions.map(a => `<span class="stamp ${esc(a.kind)}">${esc(a.text)}</span>`).join('')}</div>` : '';
+        const stamps = receipts(m.actions || []);
         const who = m.role === 'user' ? 'YOU' : m.err ? 'DESK · NOTICE' : 'DESK';
         return `<div class="msg ${m.role === 'user' ? 'me' : 'bot'}${m.err ? ' err' : ''}"><span class="who">${who}</span>${m.role === 'user' ? `<p>${esc(m.content).replace(/\n/g, '<br>')}</p>` : render(m.content)}${stamps}</div>`;
       }).join('');
     }
     if (busy && live) {
-      const stamps = live.actions.length
-        ? `<div class="stamps">${live.actions.map(a => `<span class="stamp ${esc(a.kind)}">${esc(a.text)}</span>`).join('')}</div>` : '';
+      const stamps = receipts(live.actions);
       const body = live.content
         ? render(live.content)
         : `<span class="desk-typing" aria-label="Typing"><i></i><i></i><i></i></span>${live.status ? `<span class="desk-status">${esc(live.status.toUpperCase())}…</span>` : ''}`;
