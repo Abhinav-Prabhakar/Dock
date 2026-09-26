@@ -49,8 +49,11 @@ def create_app() -> FastAPI:
     app.state.episodes = EpisodeManager()
     app.include_router(rest_router)
     app.include_router(ws_router)
-    # customer-facing site, served same-origin at /customers
-    cust = REPO_ROOT / "customers"
+    # customer-facing site, served same-origin at /customers. It's now a
+    # Next.js static export (customers/, output: 'export') — the servable
+    # files are its build output, customers/out/, not the project source;
+    # skip the mount until that's been built (`npm run build` in customers/).
+    cust = REPO_ROOT / "customers" / "out"
     if cust.is_dir():
         app.mount("/customers", StaticFiles(directory=cust, html=True),
                   name="customers")

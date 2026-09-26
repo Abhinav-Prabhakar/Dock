@@ -13,8 +13,12 @@ This folder used to live at `drafts/customers/` (before that,
 
 ## Quick start
 
+This is a Next.js project (App Router, **static export** — no Node server
+in production; nginx and the backend both serve the built `out/` files).
+
 ```bash
-# from the repo root — db + api + nginx (serves this site at /customers/)
+# from the repo root — db + api + nginx (builds this project and serves
+# the export at /customers/)
 docker compose up --build
 open http://localhost:8080/customers/
 ```
@@ -26,15 +30,33 @@ open http://localhost:8080/customers/
 | `http://localhost:8080/customers/dashboard/` | Fleet dashboard |
 | `http://localhost:8080/customers/intake-{a,b,c,d}/` | Exploratory intake UI variants |
 
-Without Docker, the backend still mounts this directory itself at
-`http://localhost:8399/customers/` (`backend/server/app.py`, StaticFiles).
+Without Docker, the backend still mounts this project's build output at
+`http://localhost:8399/customers/` (`backend/server/app.py`, StaticFiles
+over `customers/out/` — run `npm run build` here first).
+
+### Working on this project directly
+
+```bash
+cd customers
+npm ci
+npm run dev      # http://localhost:3000/customers/ — /api/* is rewritten
+                  # to http://localhost:8080/api (override with
+                  # DOCK_API_ORIGIN=http://localhost:8399 if you're running
+                  # the backend standalone instead of through nginx)
+npm run build    # DOCK_EXPORT=1 next build -> customers/out/ (static export;
+                  # rewrites aren't allowed with output:'export', so the
+                  # dev-only /api rewrite in next.config.mjs only applies
+                  # when DOCK_EXPORT isn't set)
+npm test         # vitest — the orders store + Booking Desk live-update logic
+```
 
 All backend calls go through `shared/api.js` (`window.DockAPI`), always
-same-origin: `/api/*` behind nginx, the root when the backend serves the site
-on :8399. There is no offline mode — a plain static server without the API
-shows an explicit "booking service unavailable" state rather than stale or
-invented data. The rate-quotation slip (`shared/offers.js`) is shared by the
-booking page, all four intake variants and the dashboard.
+same-origin: `/api/*` behind nginx (or the dev rewrite above), the root when
+the backend serves the site on :8399. There is no offline mode — a plain
+static server without the API shows an explicit "booking service
+unavailable" state rather than stale or invented data. The rate-quotation
+slip (`shared/offers.js`) is shared by the booking page, all four intake
+variants and the dashboard.
 
 ---
 
@@ -61,26 +83,49 @@ orders exist ◄── ?new forces form ◄──┴──►  /dashboard/ ◄�
 
 ## File map
 
+Every page keeps its original hand-built HTML/CSS/JS — physics, canvas,
+maplibre, drag-select calendars — completely unchanged, per the porting
+plan: only the *mounting* moved to Next.js. Concretely: each page's
+`<body>` markup was extracted verbatim into `app/markup/*.js` (a plain JS
+module exporting that HTML as a string), and every `style.css`/`script.js`
+etc. moved as-is into `public/` at the same relative paths they always had
+(`public/dashboard/script.js`, `public/shared/api.js`, …) — so the exported
+site's URLs and directory layout are byte-identical to the old static
+files. A thin client component per route (`app/**/*Client.js`) renders the
+markup via `dangerouslySetInnerHTML` and then loads the same stylesheets
+and scripts, in the same order, that the original `<head>`/`<body>` did.
+The only page with genuinely new code is the dashboard — see "Live updates"
+below.
+
 ```
 customers/
-  index.html            booking intake — scene markup (badge, deck, wall)
-  style.css             intake styles (design tokens in :root)
-  script.js             badge physics, deck choreography, calendar,
-                        port-pair stamps, submit → POST /orders
-  design.md             THE design contract — read before styling anything
-  dashboard/
-    index.html          dashboard markup (top bar, views, chart, overlay)
-    style.css           dashboard styles
-    script.js           data layer (API fetch + normalize), register,
-                        credential wall, manifest overlay, maplibre chart,
-                        SVG fallback chart, selection sync
-    world.geo.json      Natural Earth 110m land (inline chart style)
-    desk.js / desk.css  the Booking Desk — LLM assistant (see below)
-  intake-a/  intake-b/  intake-c/  intake-d/
-                        exploratory booking-intake UI variants (same API
-                        contract, four different interaction concepts)
-  README.md             this file
+  app/
+    layout.js            root <html>/<body> shell + shared favicon metadata
+    page.js, RootIntakeClient.js        "/" — booking intake
+    dashboard/page.js, DashboardClient.js   "/dashboard/" — fleet dashboard
+    intake-a/ … intake-d/  page.js + IntakeClient.js per variant
+    markup/               root.js, dashboard.js, intakeA.js … intakeD.js —
+                          the original <body> markup, extracted verbatim
+  components/
+    LegacyPage.js         mounts a markup string + loads its css/js, in order
+  lib/
+    ordersStore.js        the live orders store (see "Live updates")
+    chatEvents.js         Booking Desk stream → "should I refetch?" logic
+  public/                 unchanged CSS/JS, at their original relative paths
+    style.css, script.js  booking intake
+    shared/                api.js, offers.js, offers.css
+    dashboard/             style.css, script.js, desk.js, desk.css,
+                          world.geo.json
+    intake-a/ … intake-d/  script.js, style.css
+  tests/                  vitest — ordersStore, chatEvents, register CSS
+  design.md               THE design contract for the intake page — read
+                          before styling anything
+  README.md               this file
 ```
+
+`customers/out/` (git-ignored) is the static export `npm run build`
+produces — that's what nginx and the backend's `/customers` mount actually
+serve; `node_modules/`, `.next/` are also git-ignored.
 
 ---
 
@@ -147,13 +192,45 @@ count → `teu`, per-unit kg → `weight_t`), `segment: 'standard'`,
 with `DockAPI.quote`, then `DockOffers.review` shows the offers; the badge
 re-inks with the real outcome. `intake-a…d` follow the same flow.
 
-### Dashboard data layer (`customers/dashboard/script.js`)
+### Dashboard data layer (`public/dashboard/script.js`)
 
-`boot()` loads `/ports` + `/orders` through `DockAPI`; if the API is down a
-banner says so and nothing stale is shown. `normalize()` maps an API row to
-the display shape (`cargo_type` → `types[]`, requested window → `window`,
-`created` s → ms). `QUOTED` orders get a **Review quote** button that
-reopens the rate-quotation slip.
+`boot()` loads `/ports` through `DockAPI` once (ports don't change) and
+orders through the shared store (see "Live updates" below); if the API is
+down a banner says so and nothing stale is shown. `normalize()` maps an API
+row to the display shape (`cargo_type` → `types[]`, requested window →
+`window`, `created` s → ms). `QUOTED` orders get a **Review quote** button
+that reopens the rate-quotation slip.
+
+### Live updates
+
+The whole reason for the Next.js port: a booking made in the Booking Desk
+chat updates the register, wall, totals, chart and detail card **without a
+reload**. `lib/ordersStore.js` is a tiny framework-agnostic store
+(`subscribe`/`getState`/`refetch`/`startPolling`) that owns the `/api/orders`
+list; `app/dashboard/DashboardClient.js` wires it onto
+`window.DockOrdersStore` before `dashboard/script.js` loads, and starts its
+15s visibility-aware poll (paused while the tab is hidden) so a booking made
+on the intake page or in another tab shows up here too.
+
+`dashboard/script.js`'s `boot()` does its first orders fetch through
+`window.DockOrdersStore.refetch()` and then `subscribe()`s to it; every push
+(the poll, a Booking Desk action, `reviewQuote()`'s own refetch) re-enters
+`applyOrders()` — the same function `boot()` used for the first paint — which
+re-derives each order's chart geometry and repaints the register, wall,
+totals and chart in place, preserves the current selection if it still
+exists, and selects/flashes a newly-appeared order otherwise. The physics,
+canvas and maplibre code itself is untouched; only its single "here are the
+orders" entry point was made re-entrant.
+
+`dashboard/desk.js` (the Booking Desk) no longer calls `location.reload()`:
+a mid-stream `action` SSE event or a `done` payload with `orders_changed:
+true` calls `window.DockOrdersStore.refetch()` instead, and an order-id link
+in a reply focuses that order on the dashboard directly (`window.
+DockDashboard.focus`), refetching first if the order isn't loaded yet. The
+old "REFRESH THE REGISTER →" button is gone — there's nothing left to
+refresh by hand. See `lib/chatEvents.js` + `tests/chatEvents.test.js` for the
+refetch decision as a pure, unit-tested function, and
+`tests/ordersStore.test.js` for the store itself.
 
 ### Booking Desk (`dashboard/desk.js`, `desk.css`)
 
@@ -174,9 +251,10 @@ server runs the LLM with tools over the same order functions this page
 uses — list/get orders, price a request, accept or decline an offer, fleet
 positions. The key stays on the server. A booking can never happen in the
 same turn it was quoted (enforced in code), so nothing books without the
-customer's reply. The conversation lives in `sessionStorage['ml.desk']`
-so it survives the reload that refreshes the register after a booking.
-`GET /api/chat/status` → `enabled: false` shows the desk as offline.
+customer's reply. The conversation lives in `sessionStorage['ml.desk']`,
+which now just persists across the tab's lifetime — a booking no longer
+reloads the page (see "Live updates" above). `GET /api/chat/status` →
+`enabled: false` shows the desk as offline.
 
 ### The chart
 
@@ -208,6 +286,22 @@ paper sheet (`#ledger` overflow), the wall scrolls as a badge grid.
 
 - **`+ NEW REQUEST`** → `../index.html?new`
 - **Review quote** (on `QUOTED` orders) → the rate-quotation slip
+
+### Top bar + register fixes (this port)
+
+The `MERIDIAN LINE · CUSTOMER FLEET` eyebrow in the top bar is gone (the
+`.org` wordmark stays); the rest of the bar is unchanged. The waybill
+register's `BOOKING`, `ROUTE` and `CONSIGNMENT` cells, plus the `WINDOW /
+ETA` column header, now truncate with an ellipsis instead of wrapping onto a
+second/third line and colliding with the next column — `white-space: nowrap`
++ `text-overflow: ellipsis` on the cells that were missing it
+(`public/dashboard/style.css`, `.c-id`, `.c-cons .teu`, `.c-route`, `.lhead
+span`), plus the same treatment on the pinned detail card's and the
+quote-review sheet's value rows (`.d-rows .r b`, `.lrows .r b`) for
+consistency. The grid column widths themselves are untouched — the register
+already let its cells shrink below their content width
+(`.lrow > span { min-width: 0 }`); the missing piece was simply telling the
+text not to wrap. See `tests/registerOverflow.test.js`.
 
 ---
 

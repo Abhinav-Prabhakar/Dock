@@ -106,9 +106,8 @@
       logEl.innerHTML = log.map(m => {
         const stamps = (m.actions || []).length
           ? `<div class="stamps">${m.actions.map(a => `<span class="stamp ${esc(a.kind)}">${esc(a.text)}</span>`).join('')}</div>` : '';
-        const refresh = m.changed ? '<button type="button" class="desk-refresh">REFRESH THE REGISTER →</button>' : '';
         const who = m.role === 'user' ? 'YOU' : m.err ? 'DESK · NOTICE' : 'DESK';
-        return `<div class="msg ${m.role === 'user' ? 'me' : 'bot'}${m.err ? ' err' : ''}"><span class="who">${who}</span>${m.role === 'user' ? `<p>${esc(m.content).replace(/\n/g, '<br>')}</p>` : render(m.content)}${stamps}</div>${refresh}`;
+        return `<div class="msg ${m.role === 'user' ? 'me' : 'bot'}${m.err ? ' err' : ''}"><span class="who">${who}</span>${m.role === 'user' ? `<p>${esc(m.content).replace(/\n/g, '<br>')}</p>` : render(m.content)}${stamps}</div>`;
       }).join('');
     }
     if (busy && live) {
@@ -145,15 +144,22 @@
     // repaint at most once per frame while text streams in
     let queued = false;
     const soon = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(); }); } };
+    let sawAction = false;
     try {
       const r = await DockAPI.chatStream('customer', { messages: history.slice(-16) }, (ev, d) => {
         if (ev === 'delta') live.content += d.text;
         else if (ev === 'reset') live.content = '';
         else if (ev === 'status') live.status = d.text;
-        else if (ev === 'action') live.actions.push(d);
+        else if (ev === 'action') { live.actions.push(d); sawAction = true; }
         soon();
       });
       log.push({ role: 'assistant', content: r.reply, actions: r.actions || [], changed: !!r.orders_changed });
+      /* a quote/booking/decline happened (mid-stream action, or the model
+         says orders changed) — refetch immediately so the register, wall,
+         totals, chart and detail card update live, with no page reload */
+      if ((sawAction || r.orders_changed) && window.DockOrdersStore) {
+        window.DockOrdersStore.refetch();
+      }
     } catch (e) {
       log.push({ role: 'assistant', err: true, content: e.status === 503 ? e.message : `The desk couldn't answer just now — ${e.message}` });
     }
@@ -177,13 +183,20 @@
   logEl.addEventListener('click', e => {
     const s = e.target.closest('[data-s]');
     if (s) { ask(s.dataset.s); return; }
-    if (e.target.closest('.desk-refresh')) { save(); location.reload(); return; }
     const o = e.target.closest('.oid');
     if (o) {
-      // focus the order on the chart/register if this page already has it,
-      // otherwise it's new — reload so the register picks it up
+      // focus the order on the chart/register if this page already has it;
+      // otherwise it's new — refetch (no reload) so the register picks it
+      // up, then focus it once the store push lands
       const shown = window.DockDashboard && window.DockDashboard.focus(o.dataset.oid);
-      if (!shown) { save(); location.reload(); }
+      if (!shown && window.DockOrdersStore) {
+        const unsub = window.DockOrdersStore.subscribe(s2 => {
+          if (s2.loading) return;
+          unsub();
+          if (window.DockDashboard) window.DockDashboard.focus(o.dataset.oid);
+        });
+        window.DockOrdersStore.refetch();
+      }
     }
   });
 
