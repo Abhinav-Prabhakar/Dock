@@ -65,11 +65,18 @@ def _request(sim, order: dict) -> BookingRequest:
         req_dep_day=float(sim.day) + float(order["req_dep_day"]),
         flex_days=int(order["flex_days"]),
     )
-    req.options = sim._options_for(req, req.dest)
+    # customers pick any departure day; the next call at their origin may be
+    # a full loop away. Search the whole remaining schedule (simulated demand
+    # keeps the +14d cap inside _options_for) so a missed window becomes a
+    # flex-window counter-offer on the next real sailing, not a flat no-offer.
+    sched_end = max((c.planned_etd for v in sim.vessels.values()
+                     for c in v.calls), default=req.req_dep_day)
+    extra = max(14.0, sched_end - req.req_dep_day + 1.0)
+    req.options = sim._options_for(req, req.dest, day_hi_extra=extra)
     alt = C.ALT_HUB.get(req.dest)
     if alt:
         req.alt_dest = alt
-        req.alt_options = sim._options_for(req, alt)
+        req.alt_options = sim._options_for(req, alt, day_hi_extra=extra)
     req.customer_order = order["id"]
     sim.metrics.n_requests += 1
     sim.metrics.by_segment[req.segment.value]["requests"] += 1
@@ -114,10 +121,14 @@ def _price(sim, req, dec, action: int, prob, days_from: float) -> dict:
                    f"inside your window — arrives in ~{rel(first['eta_day'])} days.")
     elif k == "flex_window":
         summary = (f"{pct}% off to sail in {rel(first['board_day'])} days on "
-                   f"{first['vessel']}, just outside your window.")
+                   f"{first['vessel']}, just outside your window." if pct else
+                   f"Nothing sails inside your window — {first['vessel']} is "
+                   f"the next departure, in {rel(first['board_day'])} days.")
     elif k == "alt_hub":
         summary = (f"{pct}% off to discharge at {port} instead of {req.dest} "
-                   f"(sails in {rel(first['board_day'])} days).")
+                   f"(sails in {rel(first['board_day'])} days)." if pct else
+                   f"Discharge at {port} instead of {req.dest} — "
+                   f"{first['vessel']} sails in {rel(first['board_day'])} days.")
     else:
         a, b = legs
         summary = (f"Split: {a['teu']} TEU on {a['vessel']} in {rel(a['board_day'])} days, "
@@ -158,19 +169,38 @@ def quote(ep, order: dict) -> dict:
         view = _policy_view(ep, req, mask)
         probs = view["probs"] if view else None
         offers = []
+        n_legal = n_withheld = 0
         for kind, acts in KIND_ACTIONS.items():
             legal = [a for a in acts if mask[a]]
             if not legal:
                 continue
-            # within a kind, the tier the policy rates highest (else mildest)
-            a = max(legal, key=lambda i: probs[i]) if probs else legal[0]
-            off = _price(sim, req, decode_booking(a, req), a,
-                         probs[a] if probs else None, sim.day)
-            # never sell below opportunity cost: a counter-offer discounted
-            # under the bid-price floor is withheld, not offered
-            if off["pricing"] and off["price_per_teu"] < off["pricing"]["bid_price"]:
-                continue
-            offers.append(off)
+            n_legal += len(legal)
+            # prefer the tier the policy rates highest (else mildest); if it
+            # would price under the bid-price floor, step down the tiers —
+            # never sell below opportunity cost, but offer what we can
+            if probs:
+                legal.sort(key=lambda i: probs[i], reverse=True)
+            for a in legal:
+                off = _price(sim, req, decode_booking(a, req), a,
+                             probs[a] if probs else None, sim.day)
+                if not off["pricing"] or \
+                        off["price_per_teu"] >= off["pricing"]["bid_price"]:
+                    offers.append(off)
+                    break
+            else:
+                n_withheld += len(legal)
+                # the discount itself sinks the offer under cost — but a
+                # missed window needs no concession to be a counter-offer:
+                # "the next sailing we CAN do" at the undiscounted quote
+                if kind in ("flex_window", "alt_hub"):
+                    a = legal[0]
+                    dec = decode_booking(a, req)
+                    dec.discount_pct = 0.0
+                    off = _price(sim, req, dec, a,
+                                 probs[a] if probs else None, sim.day)
+                    if not off["pricing"] or \
+                            off["price_per_teu"] >= off["pricing"]["bid_price"]:
+                        offers.append(off)
         if view is not None:
             best = view["action"]              # 0 = the policy would reject
         else:
@@ -206,16 +236,19 @@ def quote(ep, order: dict) -> dict:
         with ep.sim_lock:
             ep.sim.metrics.n_rejected += 1
             ep.sim.metrics.outcomes["rejected:no_viable_offer"] += 1
+            reason = ("below_floor_or_full" if n_legal else
+                      "infeasible" if req.options else "no_voyage_option")
             ep.sim.emit("booking.decision", request_id=req.request_id,
                         decision="reject", kind=None, outcome="rejected",
-                        reason="no_viable_offer", price=None, quoted=None,
+                        reason=reason, price=None, quoted=None,
                         teu=req.teu, weight_t=round(req.weight_t, 1),
                         origin=req.origin, dest=req.dest,
                         segment=req.segment.value,
                         cargo_type=req.cargo_type.value,
                         market_rate=round(req.market_rate, 2),
                         req_dep_day=req.req_dep_day, flex_days=req.flex_days,
-                        n_options=len(req.options), vessel_id="",
+                        n_options=len(req.options), n_legal=n_legal,
+                        n_withheld=n_withheld, vessel_id="",
                         source="customer", order_id=order["id"])
             ep.quotes.pop(order["id"], None)
     ep.emit("order.quoted", order_id=order["id"], request_id=req.request_id,
