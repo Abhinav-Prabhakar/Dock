@@ -33,7 +33,7 @@ async def _lifespan(app: FastAPI):
             scenario=os.environ.get("DOCK_LIVE_SCENARIO", "baseline"),
             speed_days_per_sec=float(os.environ.get("DOCK_LIVE_SPEED", 1 / 60)))
     yield
-    mgr.stop_live()
+    mgr.shutdown()
 
 
 def create_app() -> FastAPI:
