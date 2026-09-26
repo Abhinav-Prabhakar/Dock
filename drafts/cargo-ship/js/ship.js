@@ -1,8 +1,8 @@
 // Procedural container vessel: faired hull with bulbous bow and transom stern,
 // accommodation block with bridge, engine casing + funnel, lashing bridges, hatch covers,
 // deck machinery, railings and a full night lighting rig. Every dimension derives from the
-// active vessel's SHIP config; the fitting positions below were authored on the 366 m VES1
-// hull and scale with the kL / kB / kD / kT ratios (all exactly 1 for VES1).
+// active vessel's SHIP config; the fitting positions below were authored on a 366 × 51 × 30.2 m
+// reference hull (T 14.5 m) and scale to each vessel with the kL / kB / kD / kT ratios.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SHIP, HYDRO } from './config.js';

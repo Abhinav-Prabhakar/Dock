@@ -7,7 +7,7 @@ import { HALF_OFFSET, fmt } from '../cargo.js';
 
 const { L, T } = SHIP;
 const SS = SHIP.super;
-const kF = SS.funnelR / 7.2;  // funnel drawing authored on VES1's 7.2 m funnel
+const kF = SS.funnelR / 7.2;  // funnel drawing authored on the reference hull's 7.2 m funnel
 export const INK = '43,36,25';
 const ink = (a) => `rgba(${INK},${a})`;
 

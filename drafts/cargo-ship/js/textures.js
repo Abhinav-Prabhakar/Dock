@@ -230,7 +230,7 @@ export function makeContainerAtlas(lengthM) {
 // Two stacked side paintings: top half = starboard (bow on the right), bottom half = port (bow on the left).
 export function makeHullTexture(livery) {
   const { L, D, T } = SHIP;
-  const kL = L / 366, kD = D / 30.2; // marking positions authored on the 366 m VES1 hull
+  const kL = L / 366, kD = D / 30.2; // marking positions authored on the original 366 × 51 m reference hull
   const W = 4096, HH = 512;
   const c = canvas(W, HH * 2);
   const g = c.getContext('2d');
