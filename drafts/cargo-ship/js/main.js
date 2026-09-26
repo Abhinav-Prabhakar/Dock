@@ -18,7 +18,7 @@ import { StowageView } from './stowage/view.js';
 import { StatsPage } from './pages/stats.js';
 import { ModelPage } from './pages/model.js';
 import { API } from './api.js';
-import { live, describeEvent } from './live.js';
+import { live, describeEvent, trackCustomer } from './live.js';
 import { layoutFromStowage } from './stowage/fromLive.js';
 
 const $ = (id) => document.getElementById(id);
@@ -162,10 +162,17 @@ async function refreshCompare() {
 function wireLive() {
   live.onSnapshot((snap) => { syncVesselOptions(snap); updateProfitPanel(snap); });
   live.onEvents((events) => {
-    events.forEach((ev) => bookingItems.unshift(describeEvent(ev)));
+    const items = [];
+    events.forEach((ev) => {
+      trackCustomer(ev, live.customerReqs);
+      const it = describeEvent(ev, live.customerReqs);
+      if (it) items.push(it);
+    });
+    if (!items.length) return;
+    items.forEach((it) => bookingItems.unshift(it));
     bookingItems = bookingItems.slice(0, MAX_BOOKINGS);
     renderBookings();
-    if (events.some((ev) => ev.source === 'customer' || ev.type.startsWith('order.'))) flashBookings();
+    if (items.some((it) => it.customer)) flashBookings();
   });
   live.onStatus((s) => {
     const el = $('bookings-unavailable');

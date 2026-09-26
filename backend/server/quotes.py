@@ -275,6 +275,8 @@ def accept(ep, order_id: str, offer_id: str) -> dict:
             m.n_countered += 1
             m.n_counter_won += 1
         m.outcomes[f"booked:{dec.kind.value}"] += 1
+        # before _book: it emits settlement.deal_registered synchronously
+        ep.customer_reqs[req.request_id] = order_id
         for o, t, w in parts:
             sim._book(req, o, price, t, w, dec.kind.value)
         sim.emit("booking.decision", request_id=req.request_id,
@@ -289,7 +291,6 @@ def accept(ep, order_id: str, offer_id: str) -> dict:
                  vessel_id=parts[0][0].vessel_id,
                  source="customer", order_id=order_id)
         ep.quotes.pop(order_id, None)
-        ep.customer_reqs[req.request_id] = order_id
     first = off["legs"][0]
     store.update_order(order_id, status="CONFIRMED", offer_id=offer_id,
                        price_usd=off["total_usd"], vessel=first["vessel"],

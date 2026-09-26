@@ -4,7 +4,11 @@
 // api.js), so `describeEvent` can be unit-tested in isolation.
 import { API } from './api.js';
 
-const CUSTOMER_EVENT_TYPES = 'booking.decision,order.quoted,order.accepted,order.declined';
+export const CUSTOMER_EVENT_TYPES = [
+  'booking.decision', 'order.quoted', 'order.accepted', 'order.declined',
+  'settlement.deal_registered', 'settlement.departure_recorded',
+  'settlement.delivery_recorded', 'settlement.settled',
+].join(',');
 const SNAPSHOT_INTERVAL_MS = 3000;
 const EVENTS_INTERVAL_MS = 2000;
 
@@ -23,9 +27,18 @@ class Live {
     this._eventListeners = new Set();
     this._statusListeners = new Set();
     this._started = false;
+    // request_id -> order_id for customer bookings; settlement events carry only request_id.
+    this.customerReqs = new Map();
+    this._seededFor = null;
   }
 
   get snapshot() { return this._snapshot; }
+
+  _resetEpisode() {
+    this._afterSeq = 0;
+    this.customerReqs.clear();
+    this._seededFor = null;
+  }
 
   onSnapshot(fn) {
     this._snapshotListeners.add(fn);
@@ -56,7 +69,7 @@ class Live {
   async _pollSnapshot() {
     try {
       const snap = await API.live();
-      if (this._episodeId && snap.id !== this._episodeId) this._afterSeq = 0;
+      if (this._episodeId && snap.id !== this._episodeId) this._resetEpisode();
       this._episodeId = snap.id;
       this._snapshot = snap;
       this._snapshotListeners.forEach((fn) => fn(snap));
@@ -68,12 +81,16 @@ class Live {
 
   async _pollEvents() {
     try {
-      const res = await API.liveEvents(this._afterSeq, CUSTOMER_EVENT_TYPES, 200);
-      if (this._episodeId && res.episode_id && res.episode_id !== this._episodeId) {
-        this._afterSeq = 0;
-      } else {
-        this._afterSeq = res.next_seq ?? this._afterSeq;
+      // /live/events returns only the latest `limit` matches, so an order quoted
+      // before this page opened is learned from /orders, not from the feed.
+      const res = await API.liveEvents(this._afterSeq, CUSTOMER_EVENT_TYPES, 1000);
+      const restarted = this._episodeId && res.episode_id && res.episode_id !== this._episodeId;
+      if (restarted) this._resetEpisode();
+      if (res.episode_id && this._seededFor !== res.episode_id) {
+        seedCustomers(await API.orders(), res.episode_id, this.customerReqs);
+        this._seededFor = res.episode_id;
       }
+      if (!restarted) this._afterSeq = res.next_seq ?? this._afterSeq;
       if (res.events && res.events.length) this._eventListeners.forEach((fn) => fn(res.events));
       this._setStatus({ ok: true });
     } catch (e) {
@@ -94,9 +111,46 @@ export const live = new Live();
 
 const money = (v) => (v == null ? null : `$${Math.round(v).toLocaleString()}/TEU`);
 
+// Pure: remember which sim request ids are customer orders, so settlement.*
+// events (request_id only) can be matched to them. order.quoted comes first;
+// a counter-offer's settlement.deal_registered lands before the customer's
+// booking.decision, so booking.decision alone would miss it.
+export function seedCustomers(orders, episodeId, reqs) {
+  for (const o of orders || []) {
+    if (o.episode_id === episodeId && o.request_id != null) reqs.set(String(o.request_id), o.id);
+  }
+}
+
+export function trackCustomer(ev, reqs) {
+  const customer = ev.type === 'order.quoted'
+    || (ev.type === 'booking.decision' && ev.source === 'customer');
+  if (customer && ev.request_id != null && ev.order_id) {
+    reqs.set(String(ev.request_id), ev.order_id);
+  }
+}
+
+const SETTLEMENT_STEP = {
+  'settlement.deal_registered': 'deal registered',
+  'settlement.departure_recorded': 'departed',
+  'settlement.delivery_recorded': 'delivered',
+  'settlement.settled': 'settled',
+};
+
 // Pure: turn one /live/events entry into what the bookings panel shows.
 // { day, text, customer, tone } — tone is 'booked'|'rejected'|'declined'|'order'.
-export function describeEvent(ev) {
+// Settlement events for requests not in `reqs` (simulated cargo) return null.
+export function describeEvent(ev, reqs = new Map()) {
+  if (ev.type in SETTLEMENT_STEP) {
+    const orderId = ev.request_id != null ? reqs.get(String(ev.request_id)) : undefined;
+    if (!orderId) return null;
+    const bits = [`${orderId} ${SETTLEMENT_STEP[ev.type]}`];
+    if (ev.type === 'settlement.deal_registered' && ev.kind) bits.push(ev.kind);
+    if (ev.type === 'settlement.settled') {
+      if (ev.outcome) bits.push(ev.outcome);
+      if (ev.amount_usd != null) bits.push(`$${Math.round(ev.amount_usd).toLocaleString()}`);
+    }
+    return { day: Math.floor(ev.day ?? 0), text: bits.join(' · '), customer: true, tone: 'order' };
+  }
   const day = Math.floor(ev.day ?? 0);
   if (ev.type === 'booking.decision') {
     const customer = ev.source === 'customer';
