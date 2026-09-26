@@ -229,8 +229,8 @@ export function drawPlan(g, v, o) {
   };
   const hc = (house.fore + house.aft) / 2;
   g.fillStyle = ink(0.12); g.fillRect(X(house.aft + 2), Z(-(B + 3.2) / 2 + 6), (house.fore - house.aft) * ppm, (B + 3.2) * ppm);
-  block(house.aft + 0.25, house.fore - 0.25, 22, livery.super);
-  block(hc - 7.5, hc + 7.5, 15, shade(livery.super, -0.06));
+  block(house.aft + 0.25, house.fore - 0.25, SHIP.super.baseW / 2, livery.super);
+  block(hc - 7.5, hc + 7.5, SHIP.super.towerW / 2, shade(livery.super, -0.06));
   block(house.fore - 9, house.fore, (B + 3.2) / 2, livery.super);
   g.fillStyle = 'rgba(40,60,75,0.8)'; g.fillRect(X(house.fore - 0.9), Z(-(B + 3.2) / 2 + 0.6), 0.6 * ppm, (B + 2) * ppm);
   g.fillStyle = ink(0.7); g.beginPath(); g.arc(X(hc - 1), Z(0), Math.max(1.2, 0.6 * ppm), 0, Math.PI * 2); g.fill();
@@ -238,11 +238,34 @@ export function drawPlan(g, v, o) {
   g.beginPath(); g.moveTo(X(hc - 1), Z(-4.5)); g.lineTo(X(hc - 1), Z(4.5)); g.stroke();
   block(casing.aft + 0.3, casing.fore - 0.3, B / 2 - 6, livery.super);
   const fx = (casing.fore + casing.aft) / 2 - 0.5;
-  g.fillStyle = livery.funnel; g.beginPath(); g.ellipse(X(fx), Z(0), 5.4 * ppm, 7.2 * ppm, 0, 0, Math.PI * 2); g.fill();
-  g.strokeStyle = ink(0.6); g.lineWidth = 0.9; g.stroke();
-  g.fillStyle = livery.funnelTop; g.beginPath(); g.ellipse(X(fx), Z(0), 4.4 * ppm, 6 * ppm, 0, 0, Math.PI * 2); g.fill();
+  const kF = SHIP.super.funnelR / 7.2;
+  const fn = SHIP.super.funnel, fr = SHIP.super.funnelR;
+  if (fn === 'twin') {
+    for (const s of [1, -1]) {
+      g.fillStyle = livery.funnel; g.beginPath(); g.arc(X(fx), Z(s * fr * 0.62), fr * 0.48 * ppm, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = ink(0.6); g.lineWidth = 0.9; g.stroke();
+    }
+  } else if (fn === 'raked' || fn === 'square') {
+    const w = fr * 1.5, d = fr * 1.55, rk = fn === 'raked' ? SHIP.super.funnelH * 0.32 : 0;
+    g.fillStyle = livery.funnel; g.fillRect(X(fx - w / 2 - rk), Z(-d / 2), (w + rk) * ppm, d * ppm);
+    g.strokeStyle = ink(0.6); g.lineWidth = 0.9; g.strokeRect(X(fx - w / 2 - rk), Z(-d / 2), (w + rk) * ppm, d * ppm);
+    g.fillStyle = livery.funnelTop; g.fillRect(X(fx - w / 2 - rk + 0.4), Z(-d / 2 + 0.4), (w - 0.8) * ppm, (d - 0.8) * ppm);
+  } else {
+    g.fillStyle = livery.funnel; g.beginPath(); g.ellipse(X(fx), Z(0), 5.4 * kF * ppm, 7.2 * kF * ppm, 0, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = ink(0.6); g.lineWidth = 0.9; g.stroke();
+    g.fillStyle = livery.funnelTop; g.beginPath(); g.ellipse(X(fx), Z(0), 4.4 * kF * ppm, 6 * kF * ppm, 0, 0, Math.PI * 2); g.fill();
+  }
+  // pedestal deck cranes (geared vessels): pedestal + jib in plan
+  for (const c of ship.cranes) {
+    g.strokeStyle = ink(0.7); g.lineWidth = Math.max(1, 0.9 * ppm);
+    g.beginPath(); g.moveTo(X(c.x + 1.5), Z(c.z + 1)); g.lineTo(X(c.tipX), Z(c.z + 1)); g.stroke();
+    g.fillStyle = '#d8b21e'; g.beginPath(); g.arc(X(c.x), Z(c.z), 1.8 * ppm, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = ink(0.6); g.lineWidth = 0.9; g.stroke();
+  }
   g.fillStyle = ink(0.85);
-  for (const dz of [-2.2, 2.2]) { g.beginPath(); g.arc(X(fx), Z(dz), 1.3 * ppm, 0, Math.PI * 2); g.fill(); }
+  const pipes = fn === 'twin' ? [[0, -fr * 0.62], [0, fr * 0.62]] : fn === 'round' ? [[0, -2.2], [0, 2.2]]
+    : [[-(fn === 'raked' ? SHIP.super.funnelH * 0.32 : 0), -1.3], [-(fn === 'raked' ? SHIP.super.funnelH * 0.32 : 0), 1.3]];
+  for (const [dx, dz] of pipes) { g.beginPath(); g.arc(X(fx + dx), Z(dz), 0.8 * ppm, 0, Math.PI * 2); g.fill(); }
   g.save(); g.translate(X(casing.aft - 3.2), Z(B / 2 - 5));
   g.fillStyle = '#ff6a13'; g.beginPath(); g.ellipse(0, 0, 5 * ppm, 1.4 * ppm, 0, 0, Math.PI * 2); g.fill();
   g.strokeStyle = ink(0.6); g.lineWidth = 0.8; g.stroke(); g.restore();

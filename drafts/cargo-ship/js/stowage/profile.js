@@ -6,6 +6,8 @@ import { boxColor } from '../colors.js';
 import { HALF_OFFSET, fmt } from '../cargo.js';
 
 const { L, T } = SHIP;
+const SS = SHIP.super;
+const kF = SS.funnelR / 7.2;  // funnel drawing authored on VES1's 7.2 m funnel
 export const INK = '43,36,25';
 const ink = (a) => `rgba(${INK},${a})`;
 
@@ -231,16 +233,27 @@ export function drawProfile(g, v, o) {
   g.lineWidth = Math.max(1, 0.3 * ppm);
   g.beginPath(); g.moveTo(X(mx - 2.7), Y(tt + 14.5)); g.lineTo(X(mx + 2.7), Y(tt + 14.5)); g.moveTo(X(mx - 2), Y(tt + 17.6)); g.lineTo(X(mx + 2), Y(tt + 17.6)); g.stroke();
   // casing + funnel
-  sup(casing.aft + 0.3, Y_DECK, casing.fore - 0.3, Y_DECK + 20);
+  const cTop = Y_DECK + SS.casingH, fTop = cTop + SS.funnelH;
+  sup(casing.aft + 0.3, Y_DECK, casing.fore - 0.3, cTop);
   const fx = (casing.fore + casing.aft) / 2 - 0.5;
   g.beginPath();
-  g.moveTo(X(fx - 5.4), Y(Y_DECK + 20)); g.lineTo(X(fx + 5.4), Y(Y_DECK + 20));
-  g.lineTo(X(fx + 4.9), Y(Y_DECK + 33)); g.lineTo(X(fx - 4.9), Y(Y_DECK + 33)); g.closePath();
+  const rake = SS.funnel === 'raked' ? SS.funnelH * 0.32 : 0;   // top shifted aft, as in 3D
+  const fw = SS.funnel === 'raked' || SS.funnel === 'square' ? 5.2 * kF : 5.4 * kF, tw = fw - (rake || SS.funnel === 'square' ? 0 : 0.5 * kF);
+  g.moveTo(X(fx - fw), Y(cTop)); g.lineTo(X(fx + fw), Y(cTop));
+  g.lineTo(X(fx + tw - rake), Y(fTop)); g.lineTo(X(fx - tw - rake), Y(fTop)); g.closePath();
   g.globalAlpha = 0.85; g.fillStyle = livery.funnel; g.fill(); g.globalAlpha = 1;
   g.strokeStyle = ink(0.6); g.stroke();
-  g.fillStyle = livery.funnelTop; g.fillRect(X(fx - 4.95), Y(Y_DECK + 33), 9.9 * ppm, 1.8 * ppm);
+  g.fillStyle = livery.funnelTop; g.fillRect(X(fx - tw - rake), Y(fTop), 2 * tw * ppm, 1.8 * ppm);
   g.fillStyle = ink(0.8);
-  for (const px of [-2, 0.6]) g.fillRect(X(fx + px - 0.85), Y(Y_DECK + 36.3), 1.7 * ppm, 3.3 * ppm);
+  for (const px of [-2, 0.6]) g.fillRect(X(fx - rake + px - 0.85), Y(fTop + 3.3), 1.7 * ppm, 3.3 * ppm);
+  // pedestal deck cranes (geared vessels)
+  for (const c of ship.cranes) {
+    sup(c.x - 1.6, Y_DECK, c.x + 1.6, c.top, '#d8b21e');
+    sup(c.x - 2.5, c.top, c.x + 2.5, c.top + 4, '#d8b21e');
+    g.strokeStyle = ink(0.75); g.lineWidth = Math.max(1, 0.9 * ppm);
+    g.beginPath(); g.moveTo(X(c.x + 1.5), Y(c.top + 1)); g.lineTo(X(c.tipX), Y(c.tipY)); g.stroke();
+    g.lineWidth = 1; g.beginPath(); g.moveTo(X(c.tipX), Y(c.tipY)); g.lineTo(X(c.tipX), Y(c.top + 2)); g.stroke();
+  }
   // freefall lifeboat
   g.save(); g.translate(X(casing.aft - 3.2), Y(Y_DECK + 7.5)); g.rotate(0.55);
   g.fillStyle = '#ff6a13'; g.beginPath(); g.ellipse(0, 0, 5 * ppm, 1.5 * ppm, 0, 0, Math.PI * 2); g.fill();
@@ -252,7 +265,7 @@ export function drawProfile(g, v, o) {
   g.beginPath(); g.moveTo(X(ship.foremastTop.x), Y(Y_DECK)); g.lineTo(X(ship.foremastTop.x), Y(ship.foremastTop.y)); g.stroke();
   g.beginPath(); g.moveTo(X(-L / 2 + 1.5), Y(Y_DECK)); g.lineTo(X(-L / 2 + 1.5), Y(Y_DECK + 5)); g.stroke();
   // bow bulwark rising to the stem
-  g.beginPath(); g.moveTo(X(L / 2 - 52), Y(Y_DECK)); g.quadraticCurveTo(X(L / 2 - 30), Y(Y_DECK + 2.6), X(stemX(SHIP.D) + 0.3), Y(Y_DECK + 2.6)); g.stroke();
+  g.beginPath(); g.moveTo(X(L / 2 - 52 * SHIP.L / 366), Y(Y_DECK)); g.quadraticCurveTo(X(L / 2 - 30 * SHIP.L / 366), Y(Y_DECK + 2.6), X(stemX(SHIP.D) + 0.3), Y(Y_DECK + 2.6)); g.stroke();
 
   // --- labels: bay numbers + tiers
   if (ppm > 1.4) {

@@ -230,6 +230,7 @@ export function makeContainerAtlas(lengthM) {
 // Two stacked side paintings: top half = starboard (bow on the right), bottom half = port (bow on the left).
 export function makeHullTexture(livery) {
   const { L, D, T } = SHIP;
+  const kL = L / 366, kD = D / 30.2; // marking positions authored on the 366 m VES1 hull
   const W = 4096, HH = 512;
   const c = canvas(W, HH * 2);
   const g = c.getContext('2d');
@@ -271,30 +272,30 @@ export function makeHullTexture(livery) {
     g.fillStyle = wg; g.fillRect(0, Y(wl + 1.8), W, 1.8 * pzm);
 
     // anchor pocket + hawse streak
-    const ax = L / 2 - 14;
+    const ax = L / 2 - 14 * kL;
     g.fillStyle = 'rgba(10,10,12,0.85)';
-    g.beginPath(); g.ellipse(X(ax), Y(D - 5.5), 2.4 * pxm, 2.0 * pzm, 0, 0, Math.PI * 2); g.fill();
-    const hg = g.createLinearGradient(0, Y(D - 7), 0, Y(D - 18));
+    g.beginPath(); g.ellipse(X(ax), Y(D - 5.5 * kD), 2.4 * pxm, 2.0 * pzm, 0, 0, Math.PI * 2); g.fill();
+    const hg = g.createLinearGradient(0, Y(D - 7 * kD), 0, Y(D - 18 * kD));
     hg.addColorStop(0, 'rgba(100,50,25,0.55)'); hg.addColorStop(1, 'rgba(100,50,25,0)');
-    g.fillStyle = hg; g.fillRect(X(ax) - 1.1 * pxm, Y(D - 7), 2.2 * pxm, 11 * pzm);
+    g.fillStyle = hg; g.fillRect(X(ax) - 1.1 * pxm, Y(D - 7 * kD), 2.2 * pxm, 11 * kD * pzm);
 
     // brand lettering
     g.save();
     g.fillStyle = livery.brandColor;
-    g.font = `900 ${Math.round(9.5 * pzm)}px "Arial Black", "Helvetica Neue", Arial, sans-serif`;
+    g.font = `900 ${Math.round(9.5 * kD * pzm)}px "Arial Black", "Helvetica Neue", Arial, sans-serif`;
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.translate(X(-8), Y(21.5));
+    g.translate(X(-8 * kL), Y(21.5 * kD));
     g.scale(1.18, 1);
-    if ('letterSpacing' in g) g.letterSpacing = `${Math.round(2.5 * pxm)}px`;
+    if ('letterSpacing' in g) g.letterSpacing = `${Math.round(2.5 * kD * pxm)}px`;
     g.fillText(livery.brand, 0, 0);
     g.restore();
     // ship name near the bow
     g.fillStyle = livery.nameColor;
     g.font = `700 ${Math.round(1.7 * pzm)}px "Helvetica Neue", Arial, sans-serif`;
     g.textAlign = bowRight ? 'right' : 'left'; g.textBaseline = 'middle';
-    g.fillText(SHIP.name, X(L / 2 - 22), Y(D - 3.2));
+    g.fillText(SHIP.name, X(L / 2 - 22 * kL), Y(D - 3.2));
     // bow thruster mark
-    const bt = X(L / 2 - 26), btz = Y(T + 3.4);
+    const bt = X(L / 2 - 26 * kL), btz = Y(T + 3.4);
     g.strokeStyle = '#ffffff'; g.lineWidth = 3;
     g.beginPath(); g.arc(bt, btz, 1.2 * pzm, 0, Math.PI * 2); g.stroke();
     g.beginPath(); g.moveTo(bt - 0.8 * pzm, btz - 0.8 * pzm); g.lineTo(bt + 0.8 * pzm, btz + 0.8 * pzm);
@@ -302,21 +303,21 @@ export function makeHullTexture(livery) {
     // tug push marks
     g.lineWidth = 2;
     g.font = `700 ${Math.round(0.9 * pzm)}px Arial`; g.textAlign = 'center'; g.fillStyle = '#fff';
-    for (const tx of [-L / 2 + 40, -60, 60, L / 2 - 60]) {
+    for (const tx of [-L / 2 + 40 * kL, -60 * kL, 60 * kL, L / 2 - 60 * kL]) {
       g.strokeRect(X(tx) - 1.5 * pxm, Y(T + 5), 3 * pxm, 3 * pzm);
       g.fillText('TUG', X(tx), Y(T + 3.5));
     }
     // draught marks at stem, midship, stern
     g.font = `700 ${Math.round(0.55 * pzm)}px Arial`;
     for (const dx of [L / 2 - 8, 0, -L / 2 + 3]) {
-      for (let z = 2; z <= 18; z += 1) {
+      for (let z = 2; z <= Math.min(18, D - 4); z += 1) {
         const lbl = z % 2 === 0 ? `${z}M` : '';
         if (lbl) g.fillText(lbl, X(dx), Y(z));
         else g.fillRect(X(dx) - 3, Y(z) - 1, 6, 2);
       }
     }
     // load line (Plimsoll) mark
-    const px = X(-4), pz = Y(T + 0.2);
+    const px = X(-4 * kL), pz = Y(T + 0.2);
     g.strokeStyle = '#fff'; g.lineWidth = 2;
     g.beginPath(); g.arc(px, pz, 0.9 * pzm, 0, Math.PI * 2); g.stroke();
     g.fillRect(px - 1.3 * pzm, pz - 1, 2.6 * pzm, 2);

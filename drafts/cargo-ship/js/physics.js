@@ -1,5 +1,6 @@
 // Seakeeping model: the hull's waterplane samples the same Gerstner field that is rendered, and
-// heave / pitch / roll respond as damped oscillators with realistic natural periods for a ~366 m ULCV.
+// heave / pitch / roll respond as damped oscillators with realistic natural periods for the active hull
+// (tuned on the 366 m VES1; heave/pitch periods scale with √L like any wave-following hull, roll comes from GM).
 // Long hulls average out short waves, so motions stay small and slow — as they do in reality.
 import { SHIP } from './config.js';
 import { halfBreadth } from './ship.js';
@@ -19,8 +20,9 @@ class Oscillator {
 export class ShipMotion {
   constructor(waves) {
     this.waves = waves;
-    this.heave = new Oscillator(9.5, 0.28);
-    this.pitch = new Oscillator(8.5, 0.3);
+    const kP = Math.sqrt(SHIP.L / 366);
+    this.heave = new Oscillator(9.5 * kP, 0.28);
+    this.pitch = new Oscillator(8.5 * kP, 0.3);
     this.roll = new Oscillator(23, 0.06);
     this.yaw = new Oscillator(60, 0.5);
     this.speed = 0;               // m/s through the water

@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { SHIP, LIVERIES, ENV } from './config.js';
+import { SHIP, LIVERIES, ENV, VESSELS, VESSEL_ID } from './config.js';
 import { WaveField } from './waves.js';
 import { SkySystem } from './sky.js';
 import { Ocean } from './ocean.js';
@@ -20,6 +20,7 @@ import { ModelPage } from './pages/model.js';
 import { API } from './api.js';
 import { live, describeEvent, trackCustomer } from './live.js';
 import { layoutFromStowage } from './stowage/fromLive.js';
+import { StrategyDialog } from './strategies.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -38,8 +39,9 @@ $('viewport').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.5, 60000);
-const DEFAULT_TARGET = new THREE.Vector3(18, 20, 0);
-const DEFAULT_CAM = new THREE.Vector3(395, 78, -395); // front-left (port bow) quarter
+// framed for the 366 m VES1 and scaled to the active hull's length
+const DEFAULT_TARGET = new THREE.Vector3(18, 20, 0).multiplyScalar(SHIP.L / 366);
+const DEFAULT_CAM = new THREE.Vector3(395, 78, -395).multiplyScalar(SHIP.L / 366); // front-left (port bow) quarter
 camera.position.copy(DEFAULT_CAM);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -66,18 +68,68 @@ let metricsTimer = 0;
 
 /* ------------------------------------------------------------------ live data */
 
-let currentVessel = 'VES1';
+const currentVessel = VESSEL_ID;  // fixed per page load — see the vessel-select handler
 let stowageKey = null;
 let vesselOptionsBuilt = false;
-const MAX_BOOKINGS = 14;
+const MAX_BOOKINGS = 14;          // simulated-demand rows under the divider
+const MAX_CUSTOMER_ROWS = 6;      // customer rows pinned on top — the whole
+                                  // point of the panel, so they never get
+                                  // flushed out by the sim's own churn
 let bookingItems = [];
+// running tally of the live sim's booking decisions since page load (or the
+// last episode reset) — the stat trio at the top of the bookings panel
+let bookingTally = { booked: 0, decided: 0, teu: 0, revenue: 0 };
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// keep the feed bounded per class: newest MAX_CUSTOMER_ROWS customer items +
+// newest MAX_BOOKINGS simulated ones (customer items already carry their own
+// newest-first order from the unshift below)
+function trimBookings() {
+  let c = 0, s = 0;
+  bookingItems = bookingItems.filter((it) =>
+    it.customer ? ++c <= MAX_CUSTOMER_ROWS : ++s <= MAX_BOOKINGS);
+}
+
+function tallyBooking(ev) {
+  if (ev.type !== 'booking.decision') return;
+  bookingTally.decided++;
+  if (ev.outcome !== 'booked') return;
+  bookingTally.booked++;
+  if (ev.teu != null && ev.price != null) { bookingTally.teu += ev.teu; bookingTally.revenue += ev.teu * ev.price; }
+}
+
+function renderBookingStats() {
+  const t = bookingTally;
+  $('b-booked').textContent = t.booked.toLocaleString();
+  $('b-winrate').textContent = t.decided ? `${Math.round((t.booked / t.decided) * 100)}%` : '—';
+  $('b-rate').textContent = t.teu ? `$${Math.round(t.revenue / t.teu).toLocaleString()}` : '—';
+}
+
+function bookingRow(it) {
+  const c = it.card || { title: it.text, route: null, meta: '', status: '', price: null };
+  const title = c.route
+    ? `${escapeHtml(c.route[0])}<i class="arr">→</i>${escapeHtml(c.route[1])}`
+    : escapeHtml(c.title || '');
+  const ref = c.route && c.title ? `<span class="bk-ref">${escapeHtml(c.title)}</span>` : '';
+  const meta = [ref, c.meta ? escapeHtml(c.meta) : ''].filter(Boolean).join(' ');
+  const price = c.price ? `<span class="bk-price">${escapeHtml(c.price)}${c.unit ? `<small>${c.unit}</small>` : ''}</span>` : '';
+  return `<li class="bk tone-${it.tone}${it.customer ? ' customer' : ''}">
+    <span class="bk-day">D${it.day}</span>
+    <div class="bk-main"><div class="bk-title">${title}</div>${meta ? `<div class="bk-meta">${meta}</div>` : ''}</div>
+    <div class="bk-side">${price}${c.status ? `<span class="bk-chip">${escapeHtml(c.status)}</span>` : ''}</div>
+  </li>`;
+}
+
 function renderBookings() {
+  const cust = bookingItems.filter((it) => it.customer);
+  const rest = bookingItems.filter((it) => !it.customer);
+  const head = (label) => `<li class="booking-sep">${label}</li>`;
   $('booking-list').innerHTML = bookingItems.length
-    ? bookingItems.map((it) => `<li class="tone-${it.tone}${it.customer ? ' customer' : ''}"><span class="day">D${it.day}</span>${escapeHtml(it.text)}</li>`).join('')
-    : '<li class="mut">No booking activity yet.</li>';
+    ? (cust.length ? head('Your customers') + cust.map(bookingRow).join('') : '')
+      + (rest.length ? head('Simulated demand') + rest.map(bookingRow).join('') : '')
+    : '<li class="booking-empty">No booking activity yet.</li>';
+  renderBookingStats();
 }
 
 function flashBookings() {
@@ -148,16 +200,15 @@ async function refreshStowage({ applySpeed = false, force = false } = {}) {
   cargo.clear({ hold: true });
   for (const spec of specs) cargo.place(spec);
   const pct = Math.round(summary.fill * 100);
-  const shipName = SHIP.name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
   const note = $('cargo-note');
   note.classList.remove('unavailable');
-  note.textContent = `Live stowage of ${stow.name} — each bay mirrors its real fill, discharge mix, weights and cargo types (${shipName} hull at ${pct}% fill).`;
+  note.textContent = `Live stowage of ${stow.name} — each bay mirrors its real fill, discharge mix, weights and cargo types (${pct}% of the hull's cells filled).`;
 }
 
 function syncVesselOptions(snap) {
   if (vesselOptionsBuilt || !Array.isArray(snap.vessels)) return;
   const sel = $('vessel-select');
-  sel.innerHTML = snap.vessels.map((v) => `<option value="${v.vessel_id}">${v.vessel_id}</option>`).join('');
+  sel.innerHTML = snap.vessels.map((v) => `<option value="${v.vessel_id}"${v.vessel_id in VESSELS ? '' : ' disabled'}>${v.vessel_id}</option>`).join('');
   sel.value = currentVessel;
   vesselOptionsBuilt = true;
 }
@@ -171,7 +222,9 @@ async function refreshCompare() {
   try {
     const cmp = await API.compare('summary');
     const pct = cmp?.lift_vs_static?.ppo?.profit_usd_pct;
-    $('p-profit-delta').textContent = pct != null ? `${pct >= 0 ? '▲ +' : '▼ '}${pct.toFixed(1)}%` : '—';
+    $('p-profit-delta').innerHTML = pct != null
+      ? `<b class="${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲ +' : '▼ '}${pct.toFixed(1)}%</b> vs static`
+      : '—';
   } catch (e) {
     $('p-profit-delta').textContent = '—';
   }
@@ -182,13 +235,14 @@ function wireLive() {
   live.onEvents((events) => {
     const items = [];
     events.forEach((ev) => {
+      tallyBooking(ev);
       trackCustomer(ev, live.customerReqs);
       const it = describeEvent(ev, live.customerReqs);
       if (it) items.push(it);
     });
-    if (!items.length) return;
+    if (!items.length) { renderBookingStats(); return; }
     items.forEach((it) => bookingItems.unshift(it));
-    bookingItems = bookingItems.slice(0, MAX_BOOKINGS);
+    trimBookings();
     renderBookings();
     if (items.some((it) => it.customer)) flashBookings();
   });
@@ -199,7 +253,7 @@ function wireLive() {
   });
   // A new live episode: drop items from the old one rather than mixing the
   // two (its request ids and event seq numbers restart from scratch).
-  live.onReset(() => { bookingItems = []; renderBookings(); });
+  live.onReset(() => { bookingItems = []; bookingTally = { booked: 0, decided: 0, teu: 0, revenue: 0 }; renderBookings(); });
 }
 
 function recomputeMetrics() {
@@ -210,7 +264,7 @@ function recomputeMetrics() {
 
 async function build() {
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
-  ship = new Ship(params.get('livery') in LIVERIES ? params.get('livery') : 'magenta', LIVERIES);
+  ship = new Ship(params.get('livery') in LIVERIES ? params.get('livery') : SHIP.livery, LIVERIES);
   scene.add(ship.group);
   cargo = new Cargo(ship);
   // Cargo starts empty — it's populated from the live stowage endpoint below
@@ -323,11 +377,19 @@ function setupUI() {
   $('btn-cam').onclick = resetCamera;
   $('collapse-cargo').onclick = () => $('cargo-panel').classList.toggle('collapsed');
   $('collapse-bookings').onclick = () => $('bookings-panel').classList.toggle('collapsed');
+  const strategies = new StrategyDialog($('strategy-dialog'));
+  $('p-profit-delta').onclick = () => strategies.open();
 
   $('vessel-select').innerHTML = `<option value="${currentVessel}">${currentVessel}</option>`;
+  // Each vessel has its own hull, so a switch reloads the console with the
+  // new id: the hull, bay layout, hydrostatics and drawings are all computed
+  // once at module load from the active SHIP (config.js). The livery override
+  // is dropped so the new vessel shows its own colours.
   $('vessel-select').onchange = (e) => {
-    currentVessel = e.target.value;
-    refreshStowage({ applySpeed: true, force: true });
+    const next = new URLSearchParams(location.search);
+    next.set('vessel', e.target.value);
+    next.delete('livery');
+    location.search = next.toString();
   };
 
   const bs = $('bay-select');

@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dock — Vessel View</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2316202a'/%3E%3Crect x='12' y='34' width='18' height='12' rx='2' fill='%234f9dde'/%3E%3Crect x='34' y='34' width='18' height='12' rx='2' fill='%23e35fb0'/%3E%3Crect x='23' y='20' width='18' height='12' rx='2' fill='%235fe39a'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="style.css" />
 <script type="importmap">
 {
@@ -16,6 +17,7 @@
 </head>
 <body>
 <div id="viewport"></div>
+<div id="strategy-dialog" class="sd-overlay" hidden></div>
 
 <div id="loader">
   <div class="loader-inner">
@@ -28,8 +30,8 @@
 <div id="ui">
   <header class="hud hud-tl">
     <div class="brand"><span class="dot"></span>DOCK <em>Vessel View</em></div>
-    <h1 id="vessel-name">DOCK PIONEER</h1>
-    <div class="sub" id="vessel-sub">Container ship · 366 × 51 m · Flag Monrovia</div>
+    <h1 id="vessel-name">—</h1>
+    <div class="sub" id="vessel-sub">Loading vessel…</div>
     <div class="telemetry">
       <div><label>SOG</label><span id="t-sog">0.0</span><small>kn</small></div>
       <div><label>HDG</label><span id="t-hdg">090</span><small>°</small></div>
@@ -41,10 +43,15 @@
 
   <aside class="hud panel bookings-panel" id="bookings-panel">
     <div class="panel-head">
-      <span>Live bookings</span>
+      <span class="live-title"><i class="live-dot"></i>Live bookings</span>
       <button class="icon-btn" id="collapse-bookings" title="Collapse">–</button>
     </div>
     <div class="panel-body">
+      <div class="stats">
+        <div><span id="b-booked">0</span><label>Booked</label></div>
+        <div><span id="b-winrate">—</span><label>Win rate</label></div>
+        <div><span id="b-rate">—</span><label>Avg $/TEU</label></div>
+      </div>
       <p class="hint unavailable" id="bookings-unavailable" hidden></p>
       <ul class="booking-list" id="booking-list"></ul>
     </div>
@@ -53,7 +60,7 @@
   <aside class="hud panel profit-panel" id="profit-panel">
     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span id="p-profit">—</span>
-    <span class="delta" id="p-profit-delta" title="vs static rate card · holdout evaluation">—</span>
+    <button class="delta" id="p-profit-delta" title="RL profit lift vs the static rate card (holdout evaluation) — click to compare all strategies">—</button>
   </aside>
 
   <aside class="hud panel cargo-panel" id="cargo-panel">

@@ -171,7 +171,11 @@ const SETTLEMENT_STEP = {
 };
 
 // Pure: turn one /live/events entry into what the bookings panel shows.
-// { day, text, customer, tone } — tone is 'booked'|'rejected'|'declined'|'order'.
+// { day, text, customer, tone, card } — tone is 'booked'|'rejected'|'declined'|'order';
+// text is the one-line summary, card the same facts split out for the panel's
+// row layout: { title, route: [origin, dest] | null, meta, status, price }.
+const perTeu = (v) => (v == null ? null : `$${Math.round(v).toLocaleString()}`);
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 // Settlement events for requests not in `reqs` (simulated cargo) return null.
 export function describeEvent(ev, reqs = new Map()) {
   if (ev.type in SETTLEMENT_STEP) {
@@ -183,7 +187,15 @@ export function describeEvent(ev, reqs = new Map()) {
       if (ev.outcome) bits.push(ev.outcome);
       if (ev.amount_usd != null) bits.push(`$${Math.round(ev.amount_usd).toLocaleString()}`);
     }
-    return { day: Math.floor(ev.day ?? 0), text: bits.join(' · '), customer: true, tone: 'order' };
+    const settled = ev.type === 'settlement.settled';
+    return {
+      day: Math.floor(ev.day ?? 0), text: bits.join(' · '), customer: true, tone: 'order',
+      card: {
+        title: orderId, route: null, status: cap(SETTLEMENT_STEP[ev.type]),
+        meta: settled ? (ev.outcome || '').replace(/_/g, ' ') : (ev.kind || '').replace(/_/g, ' '),
+        price: settled && ev.amount_usd != null ? `$${Math.round(ev.amount_usd).toLocaleString()}` : null, unit: null,
+      },
+    };
   }
   const day = Math.floor(ev.day ?? 0);
   if (ev.type === 'booking.decision') {
@@ -198,21 +210,40 @@ export function describeEvent(ev, reqs = new Map()) {
     bits.push(tone === 'booked' ? `booked${ev.kind ? ` · ${ev.kind}` : ''}` : tone === 'declined' ? 'declined' : 'rejected');
     const price = money(ev.price != null ? ev.price : ev.quoted);
     if (price) bits.push(price);
-    return { day, text: bits.join(' · '), customer, tone };
+    const rowPrice = ev.price != null ? ev.price : ev.quoted;
+    const meta = [ev.teu != null ? `${ev.teu} TEU` : null, ev.segment, tone === 'booked' && ev.kind && ev.kind !== 'accept' ? ev.kind.replace(/_/g, ' ') : null].filter(Boolean).join(' · ');
+    return {
+      day, text: bits.join(' · '), customer, tone,
+      card: {
+        title: customer && ev.order_id ? ev.order_id : null,
+        route: ev.origin && ev.dest ? [ev.origin, ev.dest] : null,
+        // a rejected request carries price 0 — no rate was offered, so show none
+        meta, status: cap(tone), price: rowPrice > 0 ? perTeu(rowPrice) : null, unit: '/TEU',
+      },
+    };
   }
   if (ev.type === 'order.quoted') {
     const n = Array.isArray(ev.offers) ? ev.offers.length : 0;
-    return { day, text: `${ev.order_id} quoted · ${n} offer${n === 1 ? '' : 's'}`, customer: true, tone: 'order' };
+    return {
+      day, text: `${ev.order_id} quoted · ${n} offer${n === 1 ? '' : 's'}`, customer: true, tone: 'order',
+      card: { title: ev.order_id, route: null, meta: `${n} offer${n === 1 ? '' : 's'}`, status: 'Quoted', price: null, unit: null },
+    };
   }
   if (ev.type === 'order.accepted') {
     const bits = [`${ev.order_id} accepted`];
     if (ev.kind) bits.push(ev.kind);
     const price = money(ev.price_per_teu);
     if (price) bits.push(price);
-    return { day, text: bits.join(' · '), customer: true, tone: 'order' };
+    return {
+      day, text: bits.join(' · '), customer: true, tone: 'order',
+      card: { title: ev.order_id, route: null, meta: (ev.kind || '').replace(/_/g, ' '), status: 'Accepted', price: perTeu(ev.price_per_teu), unit: '/TEU' },
+    };
   }
   if (ev.type === 'order.declined') {
-    return { day, text: `${ev.order_id} declined`, customer: true, tone: 'order' };
+    return {
+      day, text: `${ev.order_id} declined`, customer: true, tone: 'order',
+      card: { title: ev.order_id, route: null, meta: '', status: 'Declined', price: null, unit: null },
+    };
   }
-  return { day, text: ev.type, customer: false, tone: 'order' };
+  return { day, text: ev.type, customer: false, tone: 'order', card: { title: ev.type, route: null, meta: '', status: '', price: null, unit: null } };
 }
