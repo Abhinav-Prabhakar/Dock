@@ -52,3 +52,6 @@ backend/eval_results.json
 .env
 .env.*
 !.env.example
+
+# agent worktrees (Claude Code)
+.claude/worktrees/
