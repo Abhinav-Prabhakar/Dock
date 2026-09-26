@@ -36,6 +36,10 @@ const MABR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV',
 let PORTS = {};
 const portOf = c => PORTS[c] || { city: c || '—', lon: 0, lat: 0 };
 
+/* port flag prefix — 'CNSHA' → '🇨🇳 CNSHA' */
+const flag = c => (window.DockAPI && DockAPI.portFlag ? DockAPI.portFlag(c) : '');
+const flagged = (c, name = c) => (flag(c) ? `${flag(c)} ${name}` : name);
+
 /* status registry — stage drives milestones, ink drives stamps/routes */
 const ST = {
   'PENDING REVIEW': { short: 'REVIEW',    stage: 0, ink: 'terra' },
@@ -388,7 +392,7 @@ function buildOrder(o, idx) {
     `<button class="lrow" type="button" aria-expanded="false" aria-controls="sheet-${idx}"
        aria-label="${esc(o.id)} — ${esc(portOf(o.from).city)} to ${esc(portOf(o.to).city)}, ${st.toLowerCase()}">
       <span class="c-id"><b class="g" data-t="${esc(o.id)}">${esc(o.id)}</b><i>FILED ${fmtDate(o.created)}</i></span>
-      <span class="c-route">${esc(o.from)}${routeGlyph()}${esc(o.to)}</span>
+      <span class="c-route">${esc(flagged(o.from))}${routeGlyph()}${esc(flagged(o.to))}</span>
       <span class="c-cons"><b class="teu g" data-t="${teu}">${teu}</b><span class="tu">TEU</span>
         <span class="chips">${types.slice(0, 3).map(t => `<i class="cg" data-cargo="${esc(t.cargo)}" aria-hidden="true">${CARGO_IC[t.cargo] || CARGO_IC.dry}</i>`).join('')}</span></span>
       <span class="c-vessel"><b>${esc(o.vessel || '— AWAITING VESSEL')}</b><i>${esc(o.voyage || '—')} · ${esc(o.ocean || portOf(o.from).city.slice(0, 3))}</i></span>
@@ -569,8 +573,8 @@ function badgeHTML(o, isNew) {
         </span>
         <span class="rule"></span>
         <span class="bid g" data-t="${esc(o.id)}">${esc(o.id)}</span>
-        <span class="ports">${esc(o.from)}${arrow}<span class="pto">${esc(o.to)}</span></span>
-        <span class="pcity">${esc(from.city)} → ${esc(to.city)}</span>
+        <span class="ports">${esc(flagged(o.from))}${arrow}<span class="pto">${esc(flagged(o.to))}</span></span>
+        <span class="pcity">${esc(flagged(o.from, from.city))} → ${esc(flagged(o.to, to.city))}</span>
         <span class="brows">
           <span class="r"><span>VOYAGE</span><b>${esc(o.voyage || '—')}</b></span>
           <span class="r"><span>WINDOW</span><b>${esc(o.window || '—')}</b></span>
@@ -699,8 +703,8 @@ function openManifest(o) {
     <div class="msh-rule"></div>
     <div class="msh-title">
       <span class="msh-id g" data-t="${esc(o.id)}">${esc(o.id)}</span>
-      <span class="msh-ports">${esc(o.from)} — ${esc(o.to)}</span>
-      <span class="msh-route-note">${esc(from.city)} → ${esc(to.city)} · FCL · ${esc(o.voyage || '')}</span>
+      <span class="msh-ports">${esc(flagged(o.from))} — ${esc(flagged(o.to))}</span>
+      <span class="msh-route-note">${esc(flagged(o.from, from.city))} → ${esc(flagged(o.to, to.city))} · FCL · ${esc(o.voyage || '')}</span>
     </div>
     ${mRouteSVG(o)}
     ${timelineHTML(o)}
@@ -711,7 +715,7 @@ function openManifest(o) {
       <div class="mrow"><span class="lk">GROSS WEIGHT</span><span class="lv serif">${(grossKg(o) / 1000).toFixed(1)}<i>T</i></span></div>
       <div class="mrow"><span class="lk">SEGMENT</span><span class="lv">${esc((o.segment || '—').toUpperCase())}</span></div>
       <div class="mrow"><span class="lk">REQUEST PRICE</span><span class="lv serif"><span class="g" data-t="${o.price != null ? fmtUSD(o.price) : '—'}">${o.price != null ? fmtUSD(o.price) : '—'}</span></span></div>
-      <div class="mrow"><span class="lk">ETA ${esc(o.to)}</span><span class="lv serif"><span class="g" data-t="${esc(o.eta || '—')}">${esc(o.eta || '—')}</span></span></div>
+      <div class="mrow"><span class="lk">ETA ${esc(flagged(o.to))}</span><span class="lv serif"><span class="g" data-t="${esc(o.eta || '—')}">${esc(o.eta || '—')}</span></span></div>
     </div>
     ${cargoHTML(o)}
     <div class="msh-micro">MERIDIAN LINE · BOOKING ${esc(o.id)} · VERIFY AT OPS.MERIDIANLINE.COM · DOCUMENT-ONLY MANIFEST · MERIDIAN LINE · BOOKING ${esc(o.id)}</div>`;
@@ -1254,10 +1258,10 @@ function fillDetail(o) {
   const st = stOf(o);
   const dId = document.getElementById('dId');
   dId.textContent = dId.dataset.t = o.id;
-  document.getElementById('dFrom').textContent = o.from;
-  document.getElementById('dTo').textContent = o.to;
+  document.getElementById('dFrom').textContent = flagged(o.from);
+  document.getElementById('dTo').textContent = flagged(o.to);
   document.getElementById('dCities').textContent =
-    `${portOf(o.from).city} — ${portOf(o.to).city}`;
+    `${flagged(o.from, portOf(o.from).city)} — ${flagged(o.to, portOf(o.to).city)}`;
   document.getElementById('dStamp').innerHTML = dstampSVG(o);
 
   document.getElementById('dMiles').innerHTML = MILESTONES.map((m, i) => {
@@ -1484,6 +1488,15 @@ function applyOrders(raw, opts = {}) {
   renderLedger();
   renderWall(first ? new Set(newestId ? [newestId] : []) : newIds);
   renderChart(first);
+
+  /* Repaints rebuild rows/badges with the .rvl reveal class (opacity 0 until
+     .on), but the staggered .on pass only runs on first paint — without this,
+     every store push (15s poll, a booking, another tab) leaves the whole
+     register invisible until reload. */
+  if (!first) {
+    document.querySelectorAll('#ledger .rvl, #wall .rvl')
+      .forEach(el => el.classList.add('on'));
+  }
 
   if (prevSelId && orders.some(o => o.id === prevSelId)) {
     select(prevSelId);

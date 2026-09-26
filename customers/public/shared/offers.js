@@ -18,6 +18,8 @@
    recommendation }. Resolves with the final order records.
    ============================================================ */
 (function () {
+  const flag = c => (window.DockAPI && DockAPI.portFlag ? DockAPI.portFlag(c) : '');
+  const flagged = c => (flag(c) ? `${flag(c)} ${c}` : c);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const usd = v => '$' + Math.round(v).toLocaleString('en-US');
@@ -57,7 +59,7 @@
     const head = `
       <div class="dq-ohead">
         <b class="dq-oid">${esc(o.id)}</b>
-        <span class="dq-route">${esc(o.origin)} → ${esc(o.dest)}</span>
+        <span class="dq-route">${esc(flagged(o.origin))} → ${esc(flagged(o.dest))}</span>
         <span class="dq-cargo">${esc(o.teu)} TEU · ${esc((o.cargo_type || '').toUpperCase())}</span>
         <span class="dq-stamp" hidden></span>
       </div>`;
