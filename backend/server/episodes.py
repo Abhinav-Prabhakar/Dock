@@ -789,6 +789,43 @@ class EpisodeManager:
                     "speed_kt": round(v.speed_kt, 2),
                 })
             empties = {p: round(t, 1) for p, t in sim.empties.items()}
+            ports_out = {}
+            if getattr(sim, "port_wait", None) is not None:
+                day = float(sim.day)
+                berthed = {}
+                next_call = {}
+                for v in sim.vessels.values():
+                    if v.mode != SEA and v.port:
+                        berthed.setdefault(v.port, []).append(
+                            vessel_name(v.spec.vessel_id))
+                    for c in v.calls:
+                        if c.planned_etd < day:
+                            continue
+                        eta = max(day, c.planned_etd
+                                  - v.port_dwell.get(c.port, 1.5))
+                        cur = next_call.get(c.port)
+                        if cur is None or eta < cur["eta_day"]:
+                            next_call[c.port] = {
+                                "vessel": vessel_name(v.spec.vessel_id),
+                                "eta_day": round(eta, 2),
+                            }
+                for p in sim.port_ids:
+                    arr = sim.port_wait[p]
+                    di = min(max(int(day), 0), len(arr) - 1)
+                    wait = float(arr[di])
+                    ports_out[p] = {
+                        "wait_h": round(wait, 1),
+                        "congestion": round(
+                            wait / max(sim.base_wait[p], 0.1), 2),
+                        "closed": bool(sim.port_closed[p][di]),
+                        "strike": bool(sim.port_strike[p][di]),
+                        "at_berth": berthed.get(p, []),
+                        "next_call": next_call.get(p),
+                        "empties_teu": round(float(sim.empties.get(p, 0)), 1),
+                        "wait_10d": [round(float(
+                            arr[min(di + k, len(arr) - 1)]), 1)
+                            for k in range(10)],
+                    }
         return {
             "id": ep.id,
             "policy": ep.policy,
@@ -799,6 +836,7 @@ class EpisodeManager:
             "metrics": metrics,
             "vessels": vessels,
             "empties": empties,
+            "ports": ports_out,
         }
 
     # ------------------------------------------------------------------

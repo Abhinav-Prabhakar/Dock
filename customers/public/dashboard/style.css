@@ -1101,6 +1101,43 @@ body::before {
   margin-top: 1px;
   text-shadow: 0 0 3px rgba(244,240,228,.95);
 }
+/* port report card — hover a port node on the chart.
+   Printed-card treatment: cream paper, letterpress hairlines, mono
+   microtext, serif numerals, one rubber-stamp status word. */
+#portcard {
+  position: absolute; z-index: 20; pointer-events: none;
+  width: 228px; padding: 11px 13px 10px;
+  background: linear-gradient(172deg, #fffcf3 0%, #f7f1de 100%);
+  border: 1px solid rgba(60, 46, 25, .18); border-radius: 8px;
+  box-shadow: 0 14px 30px rgba(80, 60, 30, .18), 0 2px 5px rgba(80, 60, 30, .1);
+  transform: rotate(-0.9deg) translateY(5px); opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+}
+#portcard.on { opacity: 1; transform: rotate(-0.9deg); }
+.pc-head { display: flex; align-items: baseline; gap: 7px; }
+.pc-head b { font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 700; letter-spacing: .03em; color: var(--ink); }
+.pc-head i { font-style: normal; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 7.5px; font-weight: 600; letter-spacing: .16em; color: var(--faint); }
+.pc-stamp { margin-left: auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 8px; font-weight: 800; letter-spacing: .13em; padding: 2px 6px; border: 1.5px solid currentColor; border-radius: 4px; transform: rotate(-4deg); }
+.pc-stamp.ok { color: var(--accent); } .pc-stamp.mid { color: #a3852f; }
+.pc-stamp.warn { color: var(--terra); } .pc-stamp.bad { color: #b94b3a; }
+.pc-stamp.mut { color: var(--faint); }
+.pc-rule { height: 1px; background: var(--hair); box-shadow: 0 1px 0 rgba(255,255,255,.85); margin: 7px 0; }
+.pc-row { display: flex; gap: 13px; margin: 5px 0; }
+.pc-cell { display: inline-flex; align-items: center; gap: 5px; min-width: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 7.5px; font-weight: 600; letter-spacing: .1em; color: var(--ink2); }
+.pc-cell svg { width: 11px; height: 11px; color: var(--faint); flex: none; }
+.pc-cell .num { font-family: Georgia, "Times New Roman", serif; font-size: 12.5px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pc-cell i { font-style: normal; color: var(--faint); }
+.pc-gauge { display: inline-flex; gap: 1.5px; }
+.pc-gauge i { width: 6px; height: 7px; border-radius: 1px; background: rgba(60, 46, 25, .13); }
+.pc-ships { flex: 1; }
+.pc-ships .pc-ship svg { width: 16px; height: 10px; color: var(--accent); }
+.pc-none { color: var(--hair); font-size: 12px; }
+.pc-spark { display: flex; align-items: flex-end; gap: 2px; height: 16px; margin: 7px 0 1px; }
+.pc-spark i { width: 8px; border-radius: 1px 1px 0 0; background: var(--accent); opacity: .5; }
+.pc-spark i:nth-child(n+6) { opacity: .32; }
+.pc-climate { display: flex; align-items: center; gap: 8px; }
+.pc-temp { flex: 1; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #4a7f9e 0%, #a3852f 55%, #b96f4b 100%); opacity: .55; }
+.pc-climate .num { font-family: Georgia, "Times New Roman", serif; font-size: 12.5px; font-weight: 700; color: var(--ink); }
 /* seeded depth soundings — faint chart numerals on the ocean */
 .snd {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;

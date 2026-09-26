@@ -174,6 +174,16 @@ const IC = {
         '<path d="M1.6 4.9h8.8M4.1 1.4v2M7.9 1.4v2" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/></svg>',
   gauge:'<svg viewBox="0 0 12 12"><path d="M1.7 9.7a5 5 0 0 1 8.6 0" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>' +
         '<path d="M6 9.5 8.4 5.6" stroke="currentColor" stroke-width="1" stroke-linecap="round"/><circle cx="6" cy="9.5" r=".95" fill="currentColor"/></svg>',
+  sun:  '<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="2.4" fill="none" stroke="currentColor" stroke-width="1.1"/>' +
+        '<path d="M6 1v1.4M6 9.6V11M1 6h1.4M9.6 6H11M2.5 2.5l1 1M8.5 8.5l1 1M9.5 2.5l-1 1M3.5 8.5l-1 1" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
+  rain: '<svg viewBox="0 0 12 12"><path d="M2.2 7.2a2.6 2.6 0 0 1 .5-5.1 3 3 0 0 1 5.8-.3 2.4 2.4 0 0 1 1.3 4.4z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>' +
+        '<path d="M3.4 8.8l-.6 1.6M6 8.8l-.6 1.6M8.6 8.8l-.6 1.6" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
+  cloud:'<svg viewBox="0 0 12 12"><path d="M2.6 8.6a2.4 2.4 0 0 1 .5-4.7 2.8 2.8 0 0 1 5.4-.3 2.2 2.2 0 0 1 1.2 4.1z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>',
+  snow: '<svg viewBox="0 0 12 12"><path d="M2.2 7.2a2.6 2.6 0 0 1 .5-5.1 3 3 0 0 1 5.8-.3 2.4 2.4 0 0 1 1.3 4.4z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>' +
+        '<path d="M3.2 9.5h.01M5.6 8.8h.01M8 9.5h.01M4.4 10.6h.01M6.8 10.6h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  clock:'<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" stroke-width="1"/>' +
+        '<path d="M6 3.2V6l2 1.2" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
+  berth:'<svg viewBox="0 0 12 12"><path d="M1.5 8.5h9M2.5 8.5v-3M5.5 8.5v-4.5M8.5 8.5V4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>',
 };
 const CARGO_IC = {
   dry: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="3" width="9" height="6" rx=".5" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M3.9 3v6M6 3v6M8.1 3v6" stroke="currentColor" stroke-width=".7" fill="none"/></svg>',
@@ -937,6 +947,8 @@ function chartStyle(land) {
         } },
       { id: 'routes-hit', type: 'line', source: 'routes',
         paint: { 'line-color': '#000', 'line-width': 15, 'line-opacity': 0 } },
+      { id: 'ports-hit', type: 'circle', source: 'ports',
+        paint: { 'circle-radius': 13, 'circle-color': 'rgba(0,0,0,0)' } },
       { id: 'ports-ring', type: 'circle', source: 'ports',
         paint: { 'circle-radius': 6.4, 'circle-color': 'rgba(244,240,228,0)',
                  'circle-stroke-color': 'rgba(58,90,68,.5)', 'circle-stroke-width': 0.9 } },
@@ -985,6 +997,144 @@ const PLAB_OFF = {
   NLRTM: [38, -14], DEHAM: [38, -14], BEANR: [-38, 14],
   USLAX: [-38, 18], USNYC: [-38, -16],
 };
+
+/* ==================== PORT HOVER CARD ====================
+   A printed "port report card" pinned to the chart while hovering a port
+   node: live berth state from /api/live (congestion, closures, vessels at
+   berth, next call, empties) plus the port's static sheet (berths, daily
+   capacity, dwell, timezone clock) and a static climate strip. Icon-led;
+   the only words are codes, numerals and one status stamp. */
+
+const PORT_CLIMATE = {
+  CNSHA: { zone: 'SUBTROPICAL', ic: 'rain',  lo: 4,  hi: 32 },
+  SGSIN: { zone: 'EQUATORIAL',  ic: 'rain',  lo: 25, hi: 31 },
+  KRPUS: { zone: 'CONTINENTAL', ic: 'snow',  lo: -2, hi: 29 },
+  NLRTM: { zone: 'MARITIME',    ic: 'rain',  lo: 3,  hi: 22 },
+  DEHAM: { zone: 'MARITIME',    ic: 'cloud', lo: 1,  hi: 23 },
+  BEANR: { zone: 'MARITIME',    ic: 'cloud', lo: 2,  hi: 23 },
+  USLAX: { zone: 'ARID',        ic: 'sun',   lo: 12, hi: 28 },
+  USNYC: { zone: 'CONTINENTAL', ic: 'snow',  lo: -1, hi: 28 },
+};
+
+let LIVE_PORTS = {};            // port_id -> live snapshot row (or {})
+let LIVE_DAY = 0;
+let portCardEl = null;
+let portCardCode = null;
+
+async function pollPorts() {
+  if (!document.hidden) try {
+    const d = await DockAPI.live();
+    LIVE_PORTS = d.ports || {};
+    LIVE_DAY = d.day || 0;
+    if (portCardCode) renderPortCard(portCardCode);
+  } catch (e) { /* stale snapshot stays; card marks live rows absent */ }
+  setTimeout(pollPorts, 20000);
+}
+
+function portCard() {
+  if (!portCardEl) {
+    portCardEl = document.createElement('div');
+    portCardEl.id = 'portcard';
+    portCardEl.setAttribute('role', 'tooltip');
+    document.getElementById('map').appendChild(portCardEl);
+  }
+  return portCardEl;
+}
+
+function pcLocalTime(tz) {
+  if (tz == null) return '—';
+  const t = new Date(Date.now() + tz * 3600e3);
+  return `${String(t.getUTCHours()).padStart(2, '0')}:${String(t.getUTCMinutes()).padStart(2, '0')}`;
+}
+
+/* 5-block letterpress gauge — filled blocks step sage→amber→terracotta */
+function pcGauge(level) {
+  const n = Math.max(0, Math.min(5, Math.round(level * 2.2)));
+  const cols = ['#3a5a44', '#3a5a44', '#a3852f', '#b96f4b', '#b94b3a'];
+  return `<span class="pc-gauge">${Array.from({ length: 5 }, (_, i) =>
+    `<i${i < n ? ` style="background:${cols[i]}"` : ''}></i>`).join('')}</span>`;
+}
+
+function renderPortCard(code) {
+  const p = PORTS[code] || {};
+  const lv = LIVE_PORTS[code];
+  const cl = PORT_CLIMATE[code] || {};
+  const el = portCard();
+
+  /* status stamp — one word, worst wins */
+  let stamp = 'OPEN', stClass = 'ok';
+  if (lv) {
+    if (lv.closed) { stamp = 'CLOSED'; stClass = 'bad'; }
+    else if (lv.strike) { stamp = 'STRIKE'; stClass = 'warn'; }
+    else if (lv.congestion > 1.8) { stamp = 'CONGESTED'; stClass = 'warn'; }
+    else if (lv.congestion > 1.25) { stamp = 'BUSY'; stClass = 'mid'; }
+  } else { stamp = 'LIVE OFF'; stClass = 'mut'; }
+
+  const berthed = (lv && lv.at_berth) || [];
+  const nx = lv && lv.next_call;
+  const spark = lv && lv.wait_10d && lv.wait_10d.length
+    ? `<div class="pc-spark" title="Berth wait, next 10 days">${lv.wait_10d.map(h =>
+        `<i style="height:${Math.max(2, Math.min(15, h * 1.1))}px"></i>`).join('')}</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="pc-head">
+      <b>${flag(code)} ${esc(code)}</b><i>${esc(p.city || '')}</i>
+      <span class="pc-stamp ${stClass}">${stamp}</span>
+    </div>
+    <div class="pc-rule"></div>
+    <div class="pc-row">
+      <span class="pc-cell">${IC.gauge}${pcGauge(lv ? lv.congestion : 0)}
+        <b class="num">${lv ? lv.wait_h.toFixed(1) + 'h' : '—'}</b></span>
+      <span class="pc-cell">${IC.clock}<b class="num">${pcLocalTime(p.tz)}</b></span>
+    </div>
+    <div class="pc-row">
+      <span class="pc-cell">${IC.berth}<b class="num">${p.berths ?? '—'}</b><i>berths</i></span>
+      <span class="pc-cell">${IC.dry}<b class="num">${p.cap ? (p.cap / 1000) + 'k' : '—'}</b><i>teu/d</i></span>
+      <span class="pc-cell">${IC.cal}<b class="num">${p.dwell ?? '—'}d</b><i>dwell</i></span>
+    </div>
+    ${lv ? `<div class="pc-row pc-live">
+      <span class="pc-cell pc-ships">${berthed.length
+        ? berthed.slice(0, 4).map(() => `<i class="pc-ship">${IC.ship}</i>`).join('')
+        : '<i class="pc-none">·</i>'}
+        ${nx ? `${IC.anchor}<b class="num">+${Math.max(0, nx.eta_day - LIVE_DAY).toFixed(0)}d</b><i>${esc(nx.vessel || '')}</i>` : ''}
+      </span>
+      <span class="pc-cell">${IC.dry}<b class="num">${lv.empties_teu >= 1000 ? (lv.empties_teu / 1000).toFixed(1) + 'k' : Math.round(lv.empties_teu)}</b><i>empty</i></span>
+    </div>${spark}` : ''}
+    <div class="pc-rule"></div>
+    <div class="pc-climate">
+      <span class="pc-cell">${IC[cl.ic] || IC.cloud}<i>${esc(cl.zone || '—')}</i></span>
+      <span class="pc-temp"></span>
+      <b class="num">${cl.lo ?? '—'}°·${cl.hi ?? '—'}°</b>
+    </div>`;
+}
+
+function showPortCard(code, x, y) {
+  portCardCode = code;
+  renderPortCard(code);
+  const el = portCard(), map = document.getElementById('map');
+  const w = el.offsetWidth || 210, h = el.offsetHeight || 150;
+  el.style.left = Math.max(6, Math.min(x - w / 2, map.clientWidth - w - 6)) + 'px';
+  el.style.top = Math.max(6, Math.min(y - h - 16, map.clientHeight - h - 6)) + 'px';
+  el.classList.add('on');
+}
+function hidePortCard() {
+  portCardCode = null;
+  if (portCardEl) portCardEl.classList.remove('on');
+}
+
+function bindPortHoverGL() {
+  map.on('mousemove', 'ports-hit', e => {
+    if (!e.features || !e.features.length) return;
+    showPortCard(e.features[0].properties.code, e.point.x, e.point.y);
+    map.getCanvas().style.cursor = 'pointer';
+  });
+  map.on('mouseleave', 'ports-hit', () => {
+    hidePortCard();
+    map.getCanvas().style.cursor = '';
+  });
+  map.on('movestart', hidePortCard);
+}
 
 function initGL(land) {
   map = new maplibregl.Map({
@@ -1052,6 +1202,7 @@ function initGL(land) {
     });
 
     refreshRoutes();
+    bindPortHoverGL();
     map.on('click', 'routes-hit', e => {
       const id = e.features && e.features.length && pickOnLane(e.features[0].properties.lane);
       if (id) select(id, true);
@@ -1143,12 +1294,15 @@ function drawFB(host, land) {
 
   Object.entries(PORTS).forEach(([code, p]) => {
     const x = fbX(p.lon), y = fbY(p.lat);
-    s += `<circle cx="${x}" cy="${y}" r="6.4" fill="none" stroke="rgba(58,90,68,.5)" stroke-width="1"/>` +
+    s += `<g class="fbp" data-port="${esc(code)}">` +
+         `<circle cx="${x}" cy="${y}" r="13" fill="rgba(0,0,0,0)"/>` +
+         `<circle cx="${x}" cy="${y}" r="6.4" fill="none" stroke="rgba(58,90,68,.5)" stroke-width="1"/>` +
          `<circle cx="${x}" cy="${y}" r="3.2" fill="#f6f1e0" stroke="#3a5a44" stroke-width="1.2"/>` +
          `<text x="${x + 10}" y="${y - 6}" font-family="ui-monospace,SF Mono,Menlo,monospace"
             font-size="8" font-weight="700" letter-spacing="1.6" fill="#1d1a14">${code}</text>` +
          `<text x="${x + 10}" y="${y + 2.5}" font-family="ui-monospace,SF Mono,Menlo,monospace"
-            font-size="4.6" font-weight="600" letter-spacing="1" fill="#908d81">${p.city}</text>`;
+            font-size="4.6" font-weight="600" letter-spacing="1" fill="#908d81">${p.city}</text>` +
+         `</g>`;
   });
 
   SOUNDINGS.forEach(sd => {
@@ -1178,6 +1332,13 @@ function drawFB(host, land) {
     el.addEventListener('click', () => select(el.dataset.oid, true)));
   host.querySelectorAll('.fbh[data-lane]').forEach(el =>
     el.addEventListener('click', () => { const id = pickOnLane(el.dataset.lane); if (id) select(id, true); }));
+  host.querySelectorAll('.fbp[data-port]').forEach(el => {
+    el.addEventListener('mousemove', e => {
+      const r = host.getBoundingClientRect();
+      showPortCard(el.dataset.port, e.clientX - r.left, e.clientY - r.top);
+    });
+    el.addEventListener('mouseleave', hidePortCard);
+  });
 }
 
 function paintFB() {
@@ -1529,8 +1690,11 @@ function applyOrders(raw, opts = {}) {
   }
   pRecs.forEach(p => {
     const id = p.port_id || p.id;
-    PORTS[id] = { city: String(p.name || id).toUpperCase(), lon: p.lon, lat: p.lat };
+    PORTS[id] = { city: String(p.name || id).toUpperCase(), lon: p.lon, lat: p.lat,
+                  berths: p.berths, cap: p.daily_capacity_teu,
+                  dwell: p.mean_dwell_days, tz: p.tz_offset };
   });
+  pollPorts();
 
   /* 2 · orders — via the shared store when the page wired one up (it
      always does; the direct-fetch branch is just a safety net), so every
