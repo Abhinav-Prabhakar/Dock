@@ -595,6 +595,21 @@ class EpisodeManager:
             ep._stop.set()
             ep._pause.set()
 
+    def shutdown(self, timeout: float = 20.0) -> None:
+        """Stop the live loop and every episode, then wait for their threads.
+        Signalling alone left daemon threads mid-step (inside torch) at
+        interpreter exit, which aborts the process ("terminate called
+        without an active exception")."""
+        self.stop_live()
+        for ep in list(self._episodes.values()):
+            ep._stop.set()
+            ep._pause.set()                 # a paused episode must wake to see _stop
+        deadline = time.monotonic() + timeout
+        threads = [self._live_thread] + [ep.thread for ep in list(self._episodes.values())]
+        for t in threads:
+            if t is not None and t.is_alive() and t is not threading.current_thread():
+                t.join(max(0.0, deadline - time.monotonic()))
+
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
