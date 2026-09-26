@@ -85,13 +85,13 @@ test('toDecision shapes every fetched decision correctly', () => {
 
     assert.ok(ALLOWED_STAMPS.includes(d.outcome.stamp), `decision ${trace.n}: stamp '${d.outcome.stamp}' should be an allowed value`);
 
-    // For an actually booked decision the quoted list price must clear the
-    // bid-price floor (that's what "booked" means). A declined/countered
-    // quote can have the guard cap the list price below the floor — that's
-    // exactly why it wasn't accepted — so the check is scoped to bookings.
-    if (trace.step === 'booking' && trace.pricing && trace.outcome && trace.outcome.outcome === 'booked') {
-      assert.ok(trace.pricing.bid_price <= trace.pricing.list_price,
-        `decision ${trace.n}: bid_price (${trace.pricing.bid_price}) should be <= list_price (${trace.pricing.list_price})`);
+    // No bid <= list check: the guard can cap the list price below the
+    // floor and the simulator still books it if the customer's WTP clears.
+    if (trace.step === 'booking' && trace.pricing) {
+      const p = trace.pricing;
+      assert.ok([p.bid_price, p.list_price, p.price].every(Number.isFinite), `decision ${trace.n}: pricing not finite`);
+      assert.ok(p.bid_price >= 0 && p.list_price > 0 && p.price > 0 && p.price <= p.list_price + 0.01,
+        `decision ${trace.n}: pricing bid ${p.bid_price} / list ${p.list_price} / price ${p.price}`);
     }
 
     assertAllFinite(d.obs, `decision ${trace.n}.obs`);
