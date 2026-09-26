@@ -263,6 +263,11 @@ def accept(ep, order_id: str, offer_id: str) -> dict:
     parts, port = _parts(req, dec)
     price = off["price_per_teu"]
     with ep.sim_lock:
+        # ctx was read before the lock; re-check it's still the open quote
+        # so two concurrent accepts (or an accept racing a decline) can't
+        # both pass _open_quote and book/decline the same request twice.
+        if ep.quotes.get(order_id) is not ctx:
+            raise QuoteError(409, "order is no longer open for a decision")
         sim = ep.sim
         if sim.day > off["board_day"] - 0.25:
             raise QuoteError(409, "that sailing has already left — please request a new quote")
@@ -309,6 +314,8 @@ def decline(ep, order_id: str) -> dict:
     ctx = _open_quote(ep, order_id)
     req = ctx["req"]
     with ep.sim_lock:
+        if ep.quotes.get(order_id) is not ctx:
+            raise QuoteError(409, "order is no longer open for a decision")
         sim = ep.sim
         sim.metrics.n_rejected += 1
         sim.metrics.outcomes["declined:customer"] += 1

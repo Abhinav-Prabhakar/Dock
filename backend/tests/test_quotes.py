@@ -100,6 +100,47 @@ def test_accept_books_on_the_live_world(live):
     assert again.status_code == 409                   # decided orders are closed
 
 
+def test_concurrent_accept_books_only_once(live):
+    """Two accepts racing the same open quote (double-click, two tabs): both
+    read the quote before either takes sim_lock, so without the re-check
+    inside the lock, the second would book the same request a second time."""
+    import concurrent.futures
+
+    c, _ = live
+    body = _quote_with_offers(c)
+    oid, offer = body["order"]["id"], body["offers"][0]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        futs = [pool.submit(c.post, f"/orders/{oid}/accept",
+                            json={"offer_id": offer["id"]}) for _ in range(2)]
+        results = [f.result() for f in futs]
+    assert sorted(r.status_code for r in results) == [200, 409]
+    evs = c.get("/live/events", params={"types": "booking.decision"}).json()["events"]
+    booked = [e for e in evs if e.get("order_id") == oid and e.get("outcome") == "booked"]
+    assert len(booked) == 1
+    assert c.get(f"/orders/{oid}").json()["status"] in ("CONFIRMED", "LOADING")
+
+
+def test_concurrent_accept_and_decline_do_not_diverge(live):
+    """An accept racing a decline on the same open quote must not leave the
+    order DECLINED while the cargo is booked (or vice versa)."""
+    import concurrent.futures
+
+    c, _ = live
+    body = _quote_with_offers(c)
+    oid, offer = body["order"]["id"], body["offers"][0]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        f_accept = pool.submit(c.post, f"/orders/{oid}/accept",
+                               json={"offer_id": offer["id"]})
+        f_decline = pool.submit(c.post, f"/orders/{oid}/decline")
+        r_accept, r_decline = f_accept.result(), f_decline.result()
+    assert sorted([r_accept.status_code, r_decline.status_code]) == [200, 409]
+    order = c.get(f"/orders/{oid}").json()
+    if r_accept.status_code == 200:
+        assert order["status"] in ("CONFIRMED", "LOADING")
+    else:
+        assert order["status"] == "DECLINED"
+
+
 def test_accepted_counter_offer_registers_a_deal_on_the_order(live):
     """Counter-offers become settlement contracts. _book emits
     settlement.deal_registered synchronously, so the order must already be
@@ -137,6 +178,17 @@ def test_decline(live):
     assert all(o["status"] == "declined" for o in r.json()["offers"])
 
 
+def test_decline_after_accept_conflicts_and_db_stays_confirmed(live):
+    c, _ = live
+    body = _quote_with_offers(c)
+    oid, offer = body["order"]["id"], body["offers"][0]
+    r = c.post(f"/orders/{oid}/accept", json={"offer_id": offer["id"]})
+    assert r.status_code == 200, r.text
+    again = c.post(f"/orders/{oid}/decline")
+    assert again.status_code == 409
+    assert c.get(f"/orders/{oid}").json()["status"] in ("CONFIRMED", "LOADING")
+
+
 def test_quote_expires(live, monkeypatch):
     c, _ = live
     body = _quote_with_offers(c)
@@ -160,7 +212,7 @@ def test_live_snapshot_policy_and_stowage(live):
     assert len(d["obs"]) == 112 and len(d["probs"]) == 44 and len(d["mask"]) == 44
     assert d["mask"][d["action"]]                       # chosen action was legal
     assert len(d["h1"]) == len(d["h2"]) == 28
-    assert set(d["latency_ms"]) == {"mask", "policy", "bid", "act"}
+    assert set(d["latency_ms"]) == {"mask", "policy", "bid", "counterfactuals", "act"}
     bookings = [x for x in pol["decisions"] if x["step"] == "booking"]
     for x in bookings:                       # context the original panels draw
         for o in x["options"]:
@@ -175,6 +227,7 @@ def test_live_snapshot_policy_and_stowage(live):
     if priced:                                    # booking steps with an offer
         pr = priced[-1]["pricing"]
         assert pr["bid_price"] >= 0 and pr["price"] > 0 and pr["reason"]
+        assert pr["dest"]                          # matched against options[].dest
         curve = pr["curve"]
         assert len(curve) == 64 and all(0 <= pa <= 1 for _, pa, _ in curve)
         assert [pa for _, pa, _ in curve] == sorted((pa for _, pa, _ in curve), reverse=True)
