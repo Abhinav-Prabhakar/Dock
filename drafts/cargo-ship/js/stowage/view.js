@@ -173,6 +173,7 @@ export class StowageView {
 
     window.addEventListener('keydown', (e) => {
       if (!this.active || this.anim.running) return;
+      if (e.target.closest?.('input, textarea, select, [contenteditable]')) return;   // typing in the copilot
       const k = e.key;
       if (k === ' ') { e.preventDefault(); this.action('play'); }
       else if (k === 'ArrowLeft') this.action('prev');

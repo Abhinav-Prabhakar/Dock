@@ -30,6 +30,10 @@ services:
       DOCK_PPO_MODEL: ${DOCK_PPO_MODEL:-}
       DOCK_LIVE_SPEED: ${DOCK_LIVE_SPEED:-0.0166667}   # sim-days per second; must stay numeric
       DOCK_LEDGER_DIR: /data/ledger
+      # LLM chat assistants (server/assistant.py); values come from .env
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.voidai.app/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-5.6-luna}
     volumes:
       - dock_ledger:/data/ledger     # hash-chained event ledgers survive rebuilds
     depends_on:

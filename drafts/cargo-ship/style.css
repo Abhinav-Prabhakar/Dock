@@ -573,3 +573,60 @@ body.mode-model .screen-switch { background: rgba(10, 16, 24, 0.62); }
   .br-center { grid-column: span 2; order: 3; }
   .br-wakebar { grid-template-columns: 1fr; }
 }
+
+/* ---------- operations copilot (stowage screen, light theme) — js/copilot.js */
+.copilot { --dock-h: 150px; position: absolute; right: 22px; bottom: calc(20px + var(--dock-h) + 12px); display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
+.copilot > * { pointer-events: auto; }
+.cp-pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px 7px 11px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; color: #2a241b; border-radius: 999px; cursor: pointer; transition: opacity 0.2s, transform 0.2s cubic-bezier(.2,.8,.2,1), background 0.2s; }
+.stowage .cp-pill { background: rgba(255, 252, 244, 0.72); border: 1px solid rgba(60, 46, 25, 0.13); }
+.stowage .cp-pill:hover { background: rgba(255, 252, 244, 0.92); transform: translateY(-1px); }
+.cp-pill svg { color: #1566b5; }
+.cp-pill.off svg { color: rgba(42,36,27,0.35); }
+.cp-pill kbd { font-size: 9.5px; color: rgba(42,36,27,0.55); border-color: rgba(60,46,25,0.16); background: rgba(60,46,25,0.05); }
+.copilot.open .cp-pill { opacity: 0; transform: translateY(6px); pointer-events: none; }
+
+.cp-panel { position: absolute; right: 0; bottom: 0; width: 344px; height: min(460px, calc(100vh - var(--dock-h) - 150px)); min-height: 260px; display: flex; flex-direction: column; overflow: hidden; opacity: 0; transform: translateY(10px) scale(0.98); transform-origin: 100% 100%; transition: opacity 0.22s ease, transform 0.3s cubic-bezier(.2,.8,.2,1); }
+.cp-panel.in { opacity: 1; transform: none; }
+.cp-panel[hidden] { display: none; }
+.cp-head { display: flex; align-items: center; gap: 10px; padding: 11px 10px 10px 14px; border-bottom: 1px solid rgba(60,46,25,0.1); }
+.cp-title { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #2a241b; }
+.cp-title svg { color: #1566b5; }
+.cp-ctx { font-size: 10.5px; color: rgba(42,36,27,0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.stowage .cp-x { margin-left: auto; width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border-radius: 8px; background: transparent; border-color: transparent; color: rgba(42,36,27,0.6); }
+.stowage .cp-x:hover { background: rgba(60,46,25,0.08); color: #2a241b; }
+
+.cp-log { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: rgba(60,46,25,0.2) transparent; }
+.cp-msg { font-size: 12.5px; line-height: 1.5; color: #2a241b; max-width: 94%; }
+.cp-msg p { margin: 0; }
+.cp-msg p + p, .cp-msg p + ul, .cp-msg ul + p { margin-top: 6px; }
+.cp-msg ul { margin: 2px 0 0; padding-left: 16px; }
+.cp-msg li { margin: 2px 0; }
+.cp-msg li::marker { color: rgba(42,36,27,0.4); }
+.cp-msg b { font-weight: 700; }
+.cp-msg code { font-size: 11px; font-variant-numeric: tabular-nums; padding: 1px 4px; border-radius: 4px; background: rgba(60,46,25,0.07); }
+.cp-msg.bot { align-self: flex-start; padding: 8px 11px; border-radius: 11px 11px 11px 4px; background: rgba(60,46,25,0.05); border: 1px solid rgba(60,46,25,0.08); font-variant-numeric: tabular-nums; }
+.cp-msg.me { align-self: flex-end; padding: 7px 11px; border-radius: 11px 11px 4px 11px; background: #2a241b; color: #fff8ec; }
+.cp-msg.err { background: rgba(226,120,32,0.1); border-color: rgba(226,120,32,0.25); color: #8a4510; }
+.cp-hello { font-size: 12px; line-height: 1.5; color: rgba(42,36,27,0.65); }
+.cp-hello p { margin: 0; }
+.cp-sugg { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 10px; }
+.stowage .cp-sugg button { font-size: 11.5px; font-weight: 500; padding: 6px 10px; border-radius: 9px; text-align: left; color: #1566b5; background: rgba(29,127,224,0.08); border-color: rgba(29,127,224,0.2); }
+.stowage .cp-sugg button:hover { background: rgba(29,127,224,0.14); border-color: rgba(29,127,224,0.3); }
+.cp-typing { display: inline-flex; gap: 4px; padding: 3px 0; }
+.cp-typing i { width: 5px; height: 5px; border-radius: 50%; background: rgba(42,36,27,0.5); opacity: 0.3; animation: cpDot 1.1s ease-in-out infinite; }
+.cp-typing i:nth-child(2) { animation-delay: 0.15s; }
+.cp-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes cpDot { 40% { opacity: 1; transform: translateY(-2px); } }
+.cp-status { margin-left: 8px; font-size: 11px; color: rgba(42,36,27,0.55); }
+
+.cp-form { display: flex; align-items: flex-end; gap: 8px; margin: 0 10px; padding: 6px 6px 6px 12px; border-radius: 12px; background: rgba(255,255,255,0.6); border: 1px solid rgba(60,46,25,0.13); transition: border-color 0.2s, box-shadow 0.2s; }
+.cp-form:focus-within { border-color: rgba(29,127,224,0.45); box-shadow: 0 0 0 3px rgba(29,127,224,0.1); }
+.cp-form textarea { flex: 1; min-height: 22px; max-height: 96px; resize: none; border: 0; outline: none; background: transparent; font: inherit; font-size: 12.5px; line-height: 1.45; color: #2a241b; padding: 4px 0; }
+.cp-form textarea::placeholder { color: rgba(42,36,27,0.4); }
+.stowage .cp-send { flex: none; width: 32px; height: 30px; padding: 0; display: grid; place-items: center; border-radius: 9px; background: #2a241b; color: #fff8ec; border-color: #2a241b; }
+.stowage .cp-send:hover { background: #3d3427; }
+.stowage .cp-send:disabled { opacity: 0.35; cursor: default; background: #2a241b; }
+.cp-foot { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px 9px; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(42,36,27,0.45); }
+.stowage .cp-foot button { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; padding: 2px 4px; background: none; border: 0; }
+.stowage .cp-foot button:hover { color: #2a241b; background: none; }
+@media (prefers-reduced-motion: reduce) { .cp-panel, .cp-pill { transition: opacity 0.15s; } .cp-typing i { animation: none; opacity: 0.6; } }

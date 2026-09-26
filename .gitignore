@@ -47,3 +47,8 @@ backend/data/generated/
 __pycache__/
 *.pyc
 backend/eval_results.json
+
+# local secrets (LLM API key etc.) — never commit
+.env
+.env.*
+!.env.example

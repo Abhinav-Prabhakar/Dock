@@ -189,6 +189,24 @@ with a playhead and hover seek label · transport buttons · 1–32× speed
 segments · Follow + Sound toggles) + **row picker panel** — a midship
 cross-section where each row is a proportional weight bar; click to select.
 
+### 4.11 Operations copilot (stowage screen, `js/copilot.js`)
+A side feature, never prominent: a single cream-glass `.lpanel` pill
+(`✳ Copilot  /`) parked bottom-right just above the stowage dock; `/` or a
+click expands it into a 344 px `.lpanel` chat (same surface, border and
+blur as every light panel). Header: uppercase micro-label with the blue
+(`#1566b5`) spark glyph + muted context (`Meridian Star · row 03`). The
+operator's messages are solid-ink bubbles (`#2a241b` / cream text — the
+primary-action treatment); replies sit on a faint ink tile with tabular
+numerals; errors use the discharge orange tint. Composer is a rounded
+cream field with a blue focus ring and a solid-ink send button. Opens with
+the house motion (8–10 px rise, `cubic-bezier(.2,.8,.2,1)`); `Esc` closes
+it (not the screen) and stowage shortcuts are ignored while typing.
+Replies stream in (`/api/chat/operator/stream`, SSE) with a muted status
+line while tools run ("Reading the stowage…").
+Answers come from `POST /api/chat/operator` — a read-only agent over the
+live stowage, fleet snapshot, booking decisions, customer orders and the
+strategy comparison, told which vessel/row is on screen.
+
 ---
 
 ## 5. The 3D world
