@@ -306,6 +306,10 @@ body::before {
   box-shadow: 0 1px 0 rgba(255,255,255,.7);
 }
 .lhead span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 8.6px; font-weight: 700;
   letter-spacing: .24em;
@@ -351,6 +355,9 @@ body::before {
 /* BOOKING — serif id, issued caption underneath */
 .c-id b {
   display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: Georgia, "Times New Roman", serif;
   font-variant-numeric: tabular-nums;
   font-size: 14.0px; font-weight: 700;
@@ -359,6 +366,9 @@ body::before {
 }
 .c-id i {
   display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   margin-top: 3px;
   font-style: normal;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -371,6 +381,9 @@ body::before {
 .c-route {
   display: flex; align-items: center;
   gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 10.5px; font-weight: 700;
   letter-spacing: .12em;
@@ -379,20 +392,25 @@ body::before {
 .c-route svg { flex: none; display: block; }
 
 /* CONSIGNMENT — TEU figure + cargo icon chips */
-.c-cons { display: flex; align-items: center; gap: 7px; }
+.c-cons { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .c-cons .teu {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: Georgia, "Times New Roman", serif;
   font-variant-numeric: tabular-nums;
   font-size: 14.0px; font-weight: 700;
   color: var(--ink);
 }
 .c-cons .tu {
+  flex: none;
+  white-space: nowrap;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 8.4px; font-weight: 700;
   letter-spacing: .16em;
   color: #a49e8d;
 }
-.chips { display: flex; gap: 3px; }
+.chips { display: flex; gap: 3px; flex: none; }
 .cg {
   width: 15px; height: 15px; flex: none;
   display: flex; align-items: center; justify-content: center;
@@ -620,6 +638,7 @@ body::before {
   display: flex; align-items: baseline;
   border-bottom: .5px solid rgba(28,24,16,.08);
   padding-bottom: 4px;
+  min-width: 0;
 }
 .lrows .r span {
   width: 74px; flex: none;
@@ -629,6 +648,11 @@ body::before {
   color: #a19d90;
 }
 .lrows .r b {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 11.6px; font-weight: 600;
   letter-spacing: .08em;
@@ -963,6 +987,7 @@ body::before {
   display: flex; align-items: baseline;
   border-bottom: .5px solid rgba(28,24,16,.08);
   padding: 4px 0 3px;
+  min-width: 0;
 }
 .d-rows .r:last-child { border-bottom: none; }
 .d-rows .r span {
@@ -975,6 +1000,11 @@ body::before {
 }
 .d-rows .r span svg { width: 8px; height: 8px; color: #b2ab98; }
 .d-rows .r b {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: Georgia, "Times New Roman", serif;
   font-variant-numeric: tabular-nums;
   font-size: 12.9px; font-weight: 700;
