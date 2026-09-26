@@ -10,7 +10,8 @@ day-by-day and streams events as they happen.
 # frontend dev origin is pre-allowed: http://localhost:3000
 ```
 
-Base URL below is `http://localhost:8399`. All responses are JSON. Errors are
+Base URL below is `http://localhost:8399` when running uvicorn directly; under
+`docker compose` the same API is at `http://localhost:8080/api`. All responses are JSON. Errors are
 standard FastAPI `{"detail": "..."}` with HTTP status codes — nothing silently
 degrades; a missing forecaster artifact, missing checkpoint, or bad scenario
 name returns an explicit error.

@@ -14,6 +14,8 @@ from data import calibration as C
 from .episodes import (BACKEND, REPO_ROOT, EpisodeConflict, EpisodeManager,
                        list_policies)
 from . import orders as order_store
+from . import quotes
+from .stowage_view import stowage_view
 
 GENERATED = BACKEND / "data" / "generated"
 SCENARIO_DIR = GENERATED / "scenarios"
@@ -200,44 +202,122 @@ def episode_deal(ep_id: str, deal_id: str, request: Request):
 # portal per customer company, one ledger on the operator side.
 # ---------------------------------------------------------------------------
 
-def _sim_day(request: Request) -> float:
-    """Current sim clock for req_dep_day validation — the latest running
-    episode's day, else 0 (no episode running)."""
-    day = 0.0
-    try:
-        for ep in _mgr(request).list():
-            d = ep.descriptor()
-            if d.get("status") == "running":
-                day = max(day, d.get("day") or 0.0)
-    except Exception:
-        pass
-    return day
+def _live(request: Request):
+    return _mgr(request).live()
+
+
+def _require_live(request: Request):
+    mgr = _mgr(request)
+    ep = mgr.live()
+    if ep is None or ep.sim is None:
+        raise HTTPException(503, mgr.live_error
+                            or "the live simulation is starting — try again shortly")
+    return ep
 
 
 @router.get("/orders")
-def list_orders():
-    return order_store.list_orders()
+def list_orders(request: Request):
+    return order_store.list_orders(quotes.live_info(_live(request)))
 
 
 @router.get("/orders/{order_id}")
-def get_order(order_id: str):
-    o = order_store.get_order(order_id)
+def get_order(order_id: str, request: Request):
+    o = order_store.get_order(order_id, quotes.live_info(_live(request)))
     if o is None:
         raise HTTPException(404, f"order '{order_id}' not found")
-    return o
+    return {**o, "offers": order_store.get_offers(order_id)}
 
 
 @router.post("/orders", status_code=201)
 def create_order(body: order_store.OrderIn, request: Request):
+    """Price a customer request against the live simulation: returns the
+    order, its offer menu and the policy's recommendation."""
     try:
-        return order_store.create_order(body, sim_day=_sim_day(request))
+        order = order_store.validate(body)
     except ValueError as e:
         raise HTTPException(422, str(e))
+    ep = _require_live(request)
+    order["id"] = order_store.next_id()
+    return quotes.quote(ep, order)
+
+
+@router.post("/orders/{order_id}/accept")
+def accept_offer(order_id: str, body: order_store.AcceptIn, request: Request):
+    try:
+        return quotes.accept(_live(request), order_id, body.offer_id)
+    except quotes.QuoteError as e:
+        raise HTTPException(e.status, e.detail)
+
+
+@router.post("/orders/{order_id}/decline")
+def decline_offers(order_id: str, request: Request):
+    try:
+        return quotes.decline(_live(request), order_id)
+    except quotes.QuoteError as e:
+        raise HTTPException(e.status, e.detail)
 
 
 @router.delete("/orders", status_code=204)
 def reset_orders():
     order_store.clear_orders()
+
+
+# ---------------------------------------------------------------------------
+# The live episode — what both sites show
+# ---------------------------------------------------------------------------
+
+@router.get("/live")
+def live_snapshot(request: Request):
+    ep = _require_live(request)
+    with ep.sim_lock:
+        snap = _mgr(request).snapshot(ep.id)
+    return {**snap, "live": True, "speed_days_per_sec": ep.speed_days_per_sec,
+            "n_events": len(ep.events), "last_seq": ep.events[-1]["seq"] if ep.events else 0}
+
+
+@router.get("/live/events")
+def live_events(request: Request, after_seq: int = 0, limit: int = 200,
+                types: str | None = None):
+    """Events after `after_seq` (poll with the returned next_seq). `types`
+    filters by comma-separated type, e.g. booking.decision,order.accepted."""
+    ep = _require_live(request)
+    want = set(types.split(",")) if types else None
+    out = [e for e in ep.events[:] if e["seq"] > after_seq
+           and (want is None or e["type"] in want)]
+    limit = max(1, min(limit, 1000))
+    out = out[-limit:]
+    nxt = ep.events[-1]["seq"] if ep.events else after_seq
+    return {"episode_id": ep.id, "events": out, "next_seq": nxt}
+
+
+@router.get("/live/policy")
+def live_policy(request: Request, limit: int = 20):
+    """Recent live decisions as the policy network saw them: obs, mask,
+    probabilities, value, hidden activations, attributions, outcome."""
+    ep = _require_live(request)
+    trace = list(ep.trace)[-max(1, min(limit, 60)):]
+    return {"episode_id": ep.id, "policy": ep.policy, "day": ep.day,
+            "decisions": trace}
+
+
+@router.get("/live/policy/network")
+def live_policy_network(request: Request):
+    ep = _require_live(request)
+    model = ep._ctx.get("model")
+    if model is None:
+        raise HTTPException(404, f"live policy '{ep.policy}' is not a neural network")
+    from .policy_view import network
+    return network(model)
+
+
+@router.get("/live/vessels/{vessel_id}/stowage")
+def live_stowage(vessel_id: str, request: Request):
+    ep = _require_live(request)
+    with ep.sim_lock:
+        v = ep.sim.vessels.get(vessel_id)
+        if v is None:
+            raise HTTPException(404, f"unknown vessel '{vessel_id}'")
+        return stowage_view(ep.sim, v)
 
 
 @router.get("/compare/{name}")
