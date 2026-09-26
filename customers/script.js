@@ -898,7 +898,7 @@ addBtn.addEventListener('click', addType);
 addType();                                           // TYPE 1 — orange
 
 /* footer buttons — CONTINUE opens column 2 side-by-side; BACK slides column 2 back;
-   CANCEL collapses the view (tap badge to reopen) */
+   CANCEL abandons the request and returns to the fleet dashboard */
 deckEl.addEventListener('click', e => {
   const b = e.target.closest('.btn');
   if (!b || b.disabled) return;
@@ -907,11 +907,7 @@ deckEl.addEventListener('click', e => {
   } else if (b.hasAttribute('data-back')) {
     setStep(1);
   } else if (b.hasAttribute('data-cancel')) {
-    if (step === 2) {
-      setStep(1);
-    } else {
-      setSplit(false);
-    }
+    location.href = DASHBOARD_URL;
   } else if (b.hasAttribute('data-submit')) {
     b.textContent = 'PRICING…';
     b.disabled = true;
