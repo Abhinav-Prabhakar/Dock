@@ -75,6 +75,7 @@ customers/
                         credential wall, manifest overlay, maplibre chart,
                         SVG fallback chart, selection sync
     world.geo.json      Natural Earth 110m land (inline chart style)
+    desk.js / desk.css  the Booking Desk — LLM assistant (see below)
   intake-a/  intake-b/  intake-c/  intake-d/
                         exploratory booking-intake UI variants (same API
                         contract, four different interaction concepts)
@@ -153,6 +154,29 @@ banner says so and nothing stale is shown. `normalize()` maps an API row to
 the display shape (`cargo_type` → `types[]`, requested window → `window`,
 `created` s → ms). `QUOTED` orders get a **Review quote** button that
 reopens the rate-quotation slip.
+
+### Booking Desk (`dashboard/desk.js`, `desk.css`)
+
+A deliberately quiet side feature: a small mono `BOOKING DESK` tag in the
+bottom-right corner unfolds into a pinned `.paper` slip (brass pin, Georgia
+title, letterpress rules). The customer's messages are sage-inked cards;
+the desk's replies are typed straight onto the slip; whatever the agent
+actually did (quote / booked / declined) is shown as terracotta or sage
+rubber stamps under the reply, and order ids are links that focus the order
+on the chart (`window.DockDashboard.focus`). Palette discipline holds: no
+colours beyond the dashboard tokens.
+
+Replies stream (`POST /api/chat/customer/stream`, server-sent events): a
+mono status line (`PRICING AGAINST THE LIVE FLEET…`) while tools run, the
+stamps as soon as the action happens, then the text as it's written.
+It talks to `POST /api/chat/customer` (`backend/server/assistant.py`): the
+server runs the LLM with tools over the same order functions this page
+uses — list/get orders, price a request, accept or decline an offer, fleet
+positions. The key stays on the server. A booking can never happen in the
+same turn it was quoted (enforced in code), so nothing books without the
+customer's reply. The conversation lives in `sessionStorage['ml.desk']`
+so it survives the reload that refreshes the register after a booking.
+`GET /api/chat/status` → `enabled: false` shows the desk as offline.
 
 ### The chart
 

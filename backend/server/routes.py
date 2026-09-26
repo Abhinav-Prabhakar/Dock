@@ -15,7 +15,7 @@ from data import calibration as C
 from .episodes import (BACKEND, REPO_ROOT, EpisodeConflict, EpisodeManager,
                        list_policies)
 from . import orders as order_store
-from . import quotes
+from . import assistant, quotes
 from .stowage_view import stowage_view
 
 GENERATED = BACKEND / "data" / "generated"
@@ -341,3 +341,67 @@ def compare(name: str):
     if not p.exists():
         raise HTTPException(404, f"public/demo/{name}.json not found")
     return _json_file(p)
+
+
+# ---------------------------------------------------------------------------
+# LLM chat assistants (server/assistant.py) — the key stays server-side
+# ---------------------------------------------------------------------------
+
+class ChatIn(BaseModel):
+    messages: list[dict]
+    context: dict | None = None
+
+
+@router.get("/chat/status")
+def chat_status():
+    cfg = assistant.LLMConfig.from_env()
+    return {"enabled": cfg.enabled, "model": cfg.model if cfg.enabled else None}
+
+
+@router.post("/chat/{audience}/stream")
+def chat_stream(audience: str, body: ChatIn, request: Request):
+    """Same as POST /chat/{audience}, as server-sent events: `delta`
+    (reply text as it's written), `reset`, `status` (tool running),
+    `action` (quoted / booked / declined), then `done` with the final
+    {reply, actions, orders_changed} — or `error` with {status, detail}."""
+    import queue
+    import threading
+
+    from fastapi.responses import StreamingResponse
+
+    q: queue.Queue = queue.Queue()
+    mgr = _mgr(request)
+
+    def work():
+        try:
+            out = assistant.run(audience, mgr, body.messages, body.context,
+                                emit=lambda ev, data: q.put((ev, data)))
+            q.put(("done", out))
+        except assistant.AssistantError as e:
+            q.put(("error", {"status": e.status, "detail": e.detail}))
+        except Exception as e:                       # never leave the stream hanging
+            q.put(("error", {"status": 500, "detail": f"{type(e).__name__}: {e}"}))
+        q.put(None)
+
+    threading.Thread(target=work, name="chat-stream", daemon=True).start()
+
+    def events():
+        while (item := q.get()) is not None:
+            ev, data = item
+            yield f"event: {ev}\ndata: {json.dumps(data, default=str)}\n\n"
+
+    # X-Accel-Buffering: nginx must pass each event through immediately
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@router.post("/chat/{audience}")
+def chat(audience: str, body: ChatIn, request: Request):
+    """One user message -> the assistant's reply. `audience` is `customer`
+    (booking agent: can quote/accept/decline) or `operator` (read-only
+    copilot). The browser sends its visible conversation; tool results
+    never leave the server."""
+    try:
+        return assistant.run(audience, _mgr(request), body.messages, body.context)
+    except assistant.AssistantError as e:
+        raise HTTPException(e.status, e.detail)

@@ -21,6 +21,7 @@ import { API } from './api.js';
 import { live, describeEvent, trackCustomer } from './live.js';
 import { layoutFromStowage } from './stowage/fromLive.js';
 import { StrategyDialog } from './strategies.js';
+import { Copilot } from './copilot.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -317,6 +318,8 @@ async function build() {
     onColorMode: setColorMode,
     onExit: () => switchScreen('vessel'),
   });
+  // operations copilot: a small expandable LLM chat on the stowage screen
+  new Copilot(stowage.ui, () => ({ vessel_id: VESSEL_ID, vessel_name: VESSELS[VESSEL_ID]?.name, row: stowage.row }));
   pages.stats = new StatsPage($('stats'));
   pages.model = new ModelPage($('model'));
   setupUI();

@@ -36,6 +36,43 @@
     return body;
   }
 
+  /* POST + text/event-stream: calls onEvent(event, data) for every event and
+     resolves with the `done` payload (rejects on `error` / network failure).
+     EventSource can't POST, so the stream is read by hand. */
+  async function stream(path, data, onEvent) {
+    let r;
+    try {
+      r = await fetch(BASE + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) });
+    } catch (e) {
+      throw Object.assign(new Error('Cannot reach the Dock booking service.'), { status: 0 });
+    }
+    if (!r.ok || !r.body) {
+      let d = null; try { d = (await r.json()).detail; } catch (e) {}
+      throw Object.assign(new Error(typeof d === 'string' ? d : `Request failed (HTTP ${r.status})`), { status: r.status });
+    }
+    const rd = r.body.getReader(), dec = new TextDecoder();
+    let buf = '', done = null;
+    for (;;) {
+      const { value, done: end } = await rd.read();
+      if (end) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const block = buf.slice(0, i); buf = buf.slice(i + 2);
+        let ev = 'message', payload = null;
+        block.split('\n').forEach(l => {
+          if (l.startsWith('event: ')) ev = l.slice(7);
+          else if (l.startsWith('data: ')) payload = JSON.parse(l.slice(6));
+        });
+        if (ev === 'error') throw Object.assign(new Error(payload.detail), { status: payload.status });
+        if (ev === 'done') done = payload;
+        else onEvent(ev, payload);
+      }
+    }
+    if (!done) throw Object.assign(new Error('The reply was cut off.'), { status: 0 });
+    return done;
+  }
+
   const post = (path, data) =>
     call(path, { method: 'POST', body: data === undefined ? undefined : JSON.stringify(data) });
 
@@ -51,6 +88,12 @@
     accept:  (orderId, offerId) => post(`/orders/${encodeURIComponent(orderId)}/accept`, { offer_id: offerId }),
     decline: orderId => post(`/orders/${encodeURIComponent(orderId)}/decline`),
     live:    () => call('/live'),
+    /* the booking-desk assistant (server-side LLM agent with order tools):
+       { messages: [{role, content}] } -> { reply, actions[], orders_changed } */
+    chat:       (audience, body) => post(`/chat/${encodeURIComponent(audience)}`, body),
+    chatStatus: () => call('/chat/status'),
+    /* streamed variant: onEvent('delta'|'reset'|'status'|'action', data) */
+    chatStream: (audience, body, onEvent) => stream(`/chat/${encodeURIComponent(audience)}/stream`, body, onEvent),
     /* the service network: ports + servable lanes, straight from the
        backend calibration (/ports, /routes) -> { ports[], servable{} } */
     network: async () => {

@@ -1405,3 +1405,13 @@ async function reviewQuote(id) {
   }
   location.reload();
 }
+
+/* Hook for the booking desk (desk.js): focus an order the assistant
+   mentions, if this page already has it. false -> caller reloads. */
+window.DockDashboard = {
+  focus(id) {
+    if (!orders.some(o => o.id === id)) return false;
+    select(id);
+    return true;
+  },
+};
