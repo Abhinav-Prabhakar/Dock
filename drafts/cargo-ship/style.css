@@ -157,35 +157,51 @@ button.ph-toggle:focus-visible { outline: 1px solid rgba(124,196,255,0.6); outli
 button:disabled, select:disabled { opacity: 0.45; cursor: not-allowed; }
 button:disabled:hover { background: rgba(255, 255, 255, 0.07); border-color: var(--line); }
 
-/* ---------- bookings: KPIs, a filter, and a timeline feed */
-
-.bookings-panel.flash > .ph-toggle { background-color: rgba(124,196,255,0.28); }
+/* ---------- bookings: KPIs, a filter, and a timeline feed — same paper
+   panel language as the stowage screen's .lpanel elements */
+.bookings-panel {
+  background: rgba(255, 252, 244, 0.78);
+  border-color: rgba(60, 46, 25, 0.13);
+  box-shadow: 0 10px 34px rgba(80, 60, 30, 0.10);
+  color: #2a241b;
+}
+.bookings-panel .ph-toggle { color: #2a241b; border-bottom-color: rgba(60, 46, 25, 0.14); }
+.bookings-panel .ph-toggle:hover { background: rgba(60, 46, 25, 0.05); }
+.bookings-panel .ph-toggle:focus-visible { outline-color: rgba(58, 90, 68, 0.55); }
+.bookings-panel .ph-sum, .bookings-panel .chev { color: rgba(42, 36, 27, 0.55); }
+.bookings-panel .ph-new { color: #fffcf3; background: #3a5a44; box-shadow: none; }
+.bookings-panel.flash > .ph-toggle { background-color: rgba(58, 90, 68, 0.16); }
+.bookings-panel .hint.unavailable { color: #b35b12; }
 .bk-body { display: flex; flex-direction: column; min-height: 0; padding-bottom: 10px; }
 .bk-kpis { margin-bottom: 10px; }
-.bk-kpis span { font-size: 15px; }
-.bk-filter { margin-bottom: 8px; }
-.bk-filter button { font-size: 10.5px; padding: 5px 2px; }
-.bk-feed { list-style: none; margin: 0 -8px 0 0; padding: 2px 8px 2px 0; min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; position: relative; }
+.bk-kpis span { font-size: 15px; color: #2a241b; }
+.bk-kpis div { background: rgba(60, 46, 25, 0.06); }
+.bk-kpis label { color: rgba(42, 36, 27, 0.5); }
+.bk-filter { margin-bottom: 8px; background: rgba(60, 46, 25, 0.06); border-color: rgba(60, 46, 25, 0.1); }
+.bk-filter button { font-size: 10.5px; padding: 5px 2px; color: rgba(42, 36, 27, 0.55); }
+.bk-filter button:hover { background: rgba(60, 46, 25, 0.06); }
+.bk-filter button.active { background: #fff; color: #2a241b; box-shadow: 0 1px 5px rgba(70, 55, 30, 0.16); }
+.bk-feed { list-style: none; margin: 0 -8px 0 0; padding: 2px 8px 2px 0; min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(60, 46, 25, 0.22) transparent; position: relative; }
 /* the spine: one hairline through every row's status dot */
-.bk-feed::before { content: ''; position: absolute; left: 4.5px; top: 10px; bottom: 10px; width: 1px; background: linear-gradient(var(--line), rgba(255,255,255,0.04)); }
-.bk-empty { font-size: 11px; color: var(--muted); padding: 10px 0 6px 18px; }
-.bk { --tone: rgba(230,238,245,0.45); position: relative; display: grid; grid-template-columns: 10px 1fr auto; column-gap: 10px; align-items: start; padding: 7px 0 7px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.bk-feed::before { content: ''; position: absolute; left: 4.5px; top: 10px; bottom: 10px; width: 1px; background: linear-gradient(rgba(60, 46, 25, 0.18), rgba(60, 46, 25, 0.04)); }
+.bk-empty { font-size: 11px; color: rgba(42, 36, 27, 0.5); padding: 10px 0 6px 18px; }
+.bk { --tone: rgba(42, 36, 27, 0.4); position: relative; display: grid; grid-template-columns: 10px 1fr auto; column-gap: 10px; align-items: start; padding: 7px 0 7px; border-bottom: 1px solid rgba(60, 46, 25, 0.09); }
 .bk:last-child { border-bottom: 0; }
-.bk.tone-booked { --tone: #5fe39a; }
-.bk.tone-rejected { --tone: #ff6b6b; }
-.bk.tone-declined { --tone: #ffc35a; }
-.bk.tone-order { --tone: var(--accent); }
-.bk-dot { width: 7px; height: 7px; margin: 4px 0 0 1.5px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 2px rgba(12,18,26,0.9); position: relative; z-index: 1; }
-.bk.customer .bk-dot { box-shadow: 0 0 0 2px rgba(12,18,26,0.9), 0 0 8px var(--tone); }
+.bk.tone-booked { --tone: #3f9a5f; }
+.bk.tone-rejected { --tone: #c8452f; }
+.bk.tone-declined { --tone: #d69a1c; }
+.bk.tone-order { --tone: #1566b5; }
+.bk-dot { width: 7px; height: 7px; margin: 4px 0 0 1.5px; border-radius: 50%; background: var(--tone); box-shadow: 0 0 0 2px rgba(255, 252, 244, 0.95); position: relative; z-index: 1; }
+.bk.customer .bk-dot { box-shadow: 0 0 0 2px rgba(255, 252, 244, 0.95), 0 0 8px var(--tone); }
 .bk-main { min-width: 0; }
-.bk-route { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--text); white-space: nowrap; overflow: hidden; }
-.bk-route svg { flex: none; color: var(--muted); }
+.bk-route { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: #2a241b; white-space: nowrap; overflow: hidden; }
+.bk-route svg { flex: none; color: rgba(42, 36, 27, 0.45); }
 .bk-route .bk-title { overflow: hidden; text-overflow: ellipsis; }
-.bk-meta { margin-top: 2px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bk-ref { color: var(--accent); font-weight: 600; letter-spacing: 0.02em; }
+.bk-meta { margin-top: 2px; font-size: 10.5px; color: rgba(42, 36, 27, 0.55); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-ref { color: #1566b5; font-weight: 600; letter-spacing: 0.02em; }
 .bk-side { text-align: right; white-space: nowrap; }
-.bk-price { display: block; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
-.bk-price small { font-size: 9px; font-weight: 500; color: var(--muted); margin-left: 1px; }
+.bk-price { display: block; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #2a241b; }
+.bk-price small { font-size: 9px; font-weight: 500; color: rgba(42, 36, 27, 0.5); margin-left: 1px; }
 .bk-out { display: block; margin-top: 2px; font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tone); }
 .bk.new { animation: bkIn 0.45s cubic-bezier(.2,.8,.2,1); }
 @keyframes bkIn { from { opacity: 0; transform: translateY(-6px); } }
