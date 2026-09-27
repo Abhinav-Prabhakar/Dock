@@ -1046,19 +1046,14 @@ header {
 .ct-cargo {
   flex: none;
   width: 20px; height: 20px;
-  margin-right: 10px;
+  margin: 0 14px 0 10px;
   padding: 0;
   display: flex; align-items: center; justify-content: center;
   border: none; border-radius: 50%;
   cursor: pointer;
   color: #8a8577;                              /* grey dot — dry */
   background: rgba(138,133,119,.10);
-  box-shadow: inset 0 0 0 .7px rgba(28,22,14,.25);
-  transition: color .2s ease, background .2s ease,
-              box-shadow .2s ease, transform .15s ease;
-}
-.ct-cargo:hover {
-  box-shadow: inset 0 0 0 .9px rgba(28,22,14,.45);
+  transition: color .2s ease, background .2s ease, transform .15s ease;
 }
 .ct-cargo:active { transform: scale(.9); }
 .ct-cargo:focus-visible {
