@@ -2,22 +2,30 @@
 // a cast shadow per stack, hatch covers, lashing bridges, superstructure, the quay with its crane rails,
 // bollards and moorings, and the STS crane's boom, trolley and spreader. Bow to the right, port (quay) up.
 // The view works in world coords (x, -z) so makeView(), pan/zoom and follow are shared with the profile.
-import { SHIP, CONTAINER_WIDTH } from '../config.js';
+import { SHIP, CONTAINER_WIDTH, onShipChange } from '../config.js';
 import { Y_CARGO, halfBreadth, stemX } from '../ship.js';
 import { boxColor } from '../colors.js';
 import { HALF_OFFSET, fmt } from '../cargo.js';
 import { CRANE } from './plan.js';
 import { INK, roundRect } from './profile.js';
 
-const { L, B, D } = SHIP;
-const W = CONTAINER_WIDTH, RP = SHIP.rowPitch;
+const W = CONTAINER_WIDTH;
+// Quay geometry (z < 0 = port side). The crane portal straddles the two rails; trucks run in the lane.
+export let QUAY;
+export let BOOM;
+let L, B, D, RP;
+function syncShip() {
+  ({ L, B, D } = SHIP);
+  RP = SHIP.rowPitch;
+  QUAY = { edge: -(B / 2 + 7), railSea: -(B / 2 + 10), railLand: -(B / 2 + 40), lane: -(B / 2 + 25), back: -(B / 2 + 52) };
+  BOOM = { back: -(B / 2 + 58), out: B / 2 + 16 };
+}
+syncShip();
+onShipChange(syncShip);
+
 const ink = (a) => `rgba(${INK},${a})`;
 const lerp = (a, b, t) => a + (b - a) * t;
 const hash = (i) => { const s = Math.sin(i * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s); };
-
-// Quay geometry (z < 0 = port side). The crane portal straddles the two rails; trucks run in the lane.
-export const QUAY = { edge: -(B / 2 + 7), railSea: -(B / 2 + 10), railLand: -(B / 2 + 40), lane: -(B / 2 + 25), back: -(B / 2 + 52) };
-const BOOM = { back: -(B / 2 + 58), out: B / 2 + 16 };
 const SHADOW = { x: 0.2, z: 0.32 };            // shadow throw per metre of stack height (sun aft-to-port, high)
 
 const shade = (hex, k) => {

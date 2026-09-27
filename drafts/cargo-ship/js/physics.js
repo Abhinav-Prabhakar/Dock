@@ -20,15 +20,30 @@ class Oscillator {
 export class ShipMotion {
   constructor(waves) {
     this.waves = waves;
-    const kP = Math.sqrt(SHIP.L / 366);
-    this.heave = new Oscillator(9.5 * kP, 0.28);
-    this.pitch = new Oscillator(8.5 * kP, 0.3);
+    this.heave = new Oscillator(9.5, 0.28);
+    this.pitch = new Oscillator(8.5, 0.3);
     this.roll = new Oscillator(23, 0.06);
     this.yaw = new Oscillator(60, 0.5);
     this.speed = 0;               // m/s through the water
     this.targetKnots = 12;
     this.distance = 0;            // along-track distance travelled (m)
     this.time = 0;
+    this.state = { heave: 0, pitch: 0, roll: 0, yaw: 0, speed: 0 };
+    this.static = { sinkage: 0, pitch: 0, roll: 0 };
+    this.staticTarget = { sinkage: 0, pitch: 0, roll: 0 };
+    this.setHull();
+  }
+
+  // (Re)derives everything that depends on the active hull: the natural
+  // heave/pitch periods (they scale with sqrt(L), tuned on the 366 m
+  // reference hull) and the waterplane sample points used for wave forcing.
+  // Called once at construction and again by main.js's switchVessel on a
+  // runtime vessel switch — speed/time/distance/state carry over unchanged
+  // so the sea and wake stay continuous through the switch.
+  setHull() {
+    const kP = Math.sqrt(SHIP.L / 366);
+    this.heave.w = (2 * Math.PI) / (9.5 * kP);
+    this.pitch.w = (2 * Math.PI) / (8.5 * kP);
     // waterplane sample points, weighted by local breadth
     this.samples = [];
     const nx = 13, nz = 5;
@@ -42,9 +57,6 @@ export class ShipMotion {
     }
     const sw = this.samples.reduce((s, p) => s + p.w, 0);
     this.xc = this.samples.reduce((s, p) => s + p.x * p.w, 0) / sw;
-    this.state = { heave: 0, pitch: 0, roll: 0, yaw: 0, speed: 0 };
-    this.static = { sinkage: 0, pitch: 0, roll: 0 };
-    this.staticTarget = { sinkage: 0, pitch: 0, roll: 0 };
   }
 
   // Loading condition from the metrics engine: equilibrium sinkage, trim, list and roll period.

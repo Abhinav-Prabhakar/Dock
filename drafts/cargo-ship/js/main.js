@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { SHIP, LIVERIES, ENV, VESSELS, VESSEL_ID } from './config.js';
+import { SHIP, LIVERIES, ENV, VESSELS, VESSEL_ID, setVessel } from './config.js';
 import { WaveField } from './waves.js';
 import { SkySystem } from './sky.js';
 import { Ocean } from './ocean.js';
@@ -40,13 +40,15 @@ $('viewport').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.5, 60000);
-// framed for the 366 m reference hull and scaled to the active hull's length
-const DEFAULT_TARGET = new THREE.Vector3(18, 20, 0).multiplyScalar(SHIP.L / 366);
-const DEFAULT_CAM = new THREE.Vector3(395, 78, -395).multiplyScalar(SHIP.L / 366); // front-left (port bow) quarter
-camera.position.copy(DEFAULT_CAM);
+// framed for the 366 m reference hull and scaled to the *active* hull's
+// length — functions (not consts) so a runtime vessel switch reframes to the
+// new vessel's own size (see switchVessel()).
+const defaultTarget = () => new THREE.Vector3(18, 20, 0).multiplyScalar(SHIP.L / 366);
+const defaultCam = () => new THREE.Vector3(395, 78, -395).multiplyScalar(SHIP.L / 366); // front-left (port bow) quarter
+camera.position.copy(defaultCam());
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.copy(DEFAULT_TARGET);
+controls.target.copy(defaultTarget());
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
 controls.minDistance = 35;
@@ -69,7 +71,7 @@ let metricsTimer = 0;
 
 /* ------------------------------------------------------------------ live data */
 
-const currentVessel = VESSEL_ID;  // fixed per page load — see the vessel-select handler
+let currentVessel = VESSEL_ID;  // changed at runtime by switchVessel() — no page reload
 let stowageKey = null;
 // What-if planning on the 3D model: the stowage buttons discharge / clear the
 // real live cargo locally (never sent to the simulator) so the loading
@@ -173,6 +175,8 @@ function flashBookings() {
   p.classList.remove('flash');
   void p.offsetWidth;
   p.classList.add('flash');
+  clearTimeout(flashBookings._t);
+  flashBookings._t = setTimeout(() => p.classList.remove('flash'), 900);
 }
 
 // Rail panels: the whole header toggles; both start collapsed on every load.
@@ -331,11 +335,35 @@ function recomputeMetrics() {
   motion.setStatic(staticAttitude(metrics));
 }
 
+// cargo.onChange() listeners live on the Cargo instance itself, so every
+// Cargo ever built (the initial one, and each vessel's on first switch to it
+// — see vesselCache in switchVessel()) needs this wired once, not just
+// whichever cargo happens to be current when setupUI() runs.
+function wireCargoChangeHandler(c) {
+  c.onChange((s, info) => {
+    if (info?.colorOnly) return;
+    clearTimeout(metricsTimer);
+    metricsTimer = setTimeout(recomputeMetrics, 120);
+  });
+}
+
+// One { ship, cargo } per vessel ever visited this page load, so switching
+// back to a vessel already seen (see switchVessel()) reuses its hull and
+// cargo instead of rebuilding — the old group is only detached from the
+// scene, never disposed.
+const vesselCache = new Map();
+
+function syncBaySelect() {
+  const bs = $('bay-select');
+  bs.innerHTML = cargo.bayInfo().map((b) => `<option value="${b.bay}">Bay ${String(b.bay).padStart(2, '0')}  (20': ${b.bays20.map((n) => String(n).padStart(2, '0')).join('/')}) · ${b.rows.length} rows · ${String(b.maxDeckTier)}</option>`).join('');
+}
+
 async function build() {
   await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
   ship = new Ship(SHIP.livery, LIVERIES);
   scene.add(ship.group);
   cargo = new Cargo(ship);
+  vesselCache.set(currentVessel, { ship, cargo });
   // Cargo starts empty — it's populated from the live stowage endpoint below
   // (refreshStowage), never seeded or randomly generated.
   ocean = new Ocean({ waves, hullProfile: hullWaterlineProfile(), ship });
@@ -368,7 +396,12 @@ async function build() {
   requestAnimationFrame(() => $('loader').classList.add('done'));
   if (params.get('screen') === 'stowage') setTimeout(() => switchScreen('stowage').then(() => params.has('play') && stowage.action('play')), 400);
   if (params.get('screen') in pages) setTimeout(() => switchScreen(params.get('screen')), 400);
-  window.dock = { THREE, scene, camera, controls, renderer, ship, cargo, ocean, sky, motion, waves, stowage, pages, setTimeOfDay, goDay, goNight, switchScreen, get metrics() { return metrics; } };
+  window.dock = {
+    THREE, scene, camera, controls, renderer, ocean, sky, motion, waves, stowage, pages,
+    setTimeOfDay, goDay, goNight, switchScreen, switchVessel,
+    get ship() { return ship; }, get cargo() { return cargo; }, get metrics() { return metrics; },
+    lastSwitchMs: null,
+  };
   loop();
 
   wireLive();
@@ -380,6 +413,77 @@ async function build() {
   // unexpected shape) becoming an unhandled promise rejection on a timer
   // nothing else awaits.
   setInterval(() => { refreshStowage().catch((e) => setCargoUnavailable(e.message)); }, 30000);
+}
+
+// Runtime vessel switch: no page reload, no loader — the 3D canvas fades out
+// briefly, the whole scene's hull-derived state (config.js's SHIP/HYDRO, and
+// every module that syncs off them) is swapped to the new vessel, then the
+// canvas fades back in and the camera reframes to the new hull's own size.
+async function switchVessel(id) {
+  if (id === currentVessel || busy || screen !== 'vessel') return;
+  if (!(id in VESSELS)) return; // no simulated hull for this id — select shows it disabled
+  busy = true;
+  const sel = $('vessel-select'), prev = $('vessel-prev'), next = $('vessel-next');
+  sel.disabled = prev.disabled = next.disabled = true;
+
+  const canvas = renderer.domElement;
+  canvas.style.transition = 'opacity 180ms ease';
+  canvas.style.opacity = '0';
+  await new Promise((r) => setTimeout(r, 180));
+
+  const t0 = performance.now(); // wall time of the switch itself, excluding the fades
+  try {
+
+    setVessel(id); // config.js: SHIP/HYDRO refilled in place, every hull-derived module resyncs
+    currentVessel = id;
+
+    let entry = vesselCache.get(id);
+    if (!entry) {
+      const newShip = new Ship(SHIP.livery, LIVERIES);
+      const newCargo = new Cargo(newShip);
+      wireCargoChangeHandler(newCargo);
+      entry = { ship: newShip, cargo: newCargo };
+      vesselCache.set(id, entry);
+    }
+    scene.remove(ship.group); // kept cached, not disposed — see vesselCache
+    ship = entry.ship;
+    cargo = entry.cargo;
+    scene.add(ship.group);
+
+    ocean.setHull(hullWaterlineProfile(), ship);
+    motion.setHull(); // speed/time/distance carry over unchanged — same ShipMotion instance
+
+    whatIf = null;
+    stowageKey = null;
+    recomputeMetrics();
+    stowage.setVessel(ship, cargo);
+
+    sel.value = id;
+    $('vessel-name').textContent = SHIP.name;
+    syncBaySelect();
+
+    await renderer.compileAsync(scene, camera);
+
+    window.dock.lastSwitchMs = performance.now() - t0;
+  } catch (e) {
+    // never leave the 3D view faded out or the vessel controls locked
+    console.error('vessel switch failed', e);
+    setCargoUnavailable(`Couldn't switch vessel — ${e.message}`);
+  }
+
+  const q = new URLSearchParams(location.search);
+  q.set('vessel', id);
+  q.delete('livery'); // no livery picker any more — never let a stale one linger in the URL
+  history.replaceState(null, '', `${location.pathname}?${q.toString()}${location.hash}`);
+
+  canvas.style.transition = 'opacity 250ms ease';
+  canvas.style.opacity = '1';
+  camAnim = { t: 0, fromP: camera.position.clone(), fromT: controls.target.clone() }; // reframe to the new hull's size
+
+  sel.disabled = prev.disabled = next.disabled = false;
+  busy = false;
+
+  refreshStowage({ applySpeed: true, force: true }).catch((e) => setCargoUnavailable(e.message));
 }
 
 /* ------------------------------------------------------------------ post */
@@ -463,14 +567,10 @@ function setupUI() {
   $('p-profit-delta').onclick = () => strategies.open();
 
   $('vessel-select').innerHTML = `<option value="${currentVessel}">${currentVessel}</option>`;
-  // Each vessel has its own hull, so a switch reloads the console with the
-  // new id: the hull, bay layout, hydrostatics and drawings are all computed
-  // once at module load from the active SHIP (config.js).
-  $('vessel-select').onchange = (e) => {
-    const next = new URLSearchParams(location.search);
-    next.set('vessel', e.target.value);
-    location.search = next.toString();
-  };
+  // Each vessel has its own hull (SHIP/HYDRO in config.js), so switching
+  // rebuilds/reuses that vessel's 3D ship and cargo — see switchVessel().
+  // No page reload: the URL is kept in sync with history.replaceState().
+  $('vessel-select').onchange = (e) => { switchVessel(e.target.value); };
   // The ◀ ▶ flanks cycle the same select — skipping hull-less vessels
   // (disabled options) and wrapping around at the ends.
   const stepVessel = (dir) => {
@@ -501,19 +601,14 @@ function setupUI() {
     refreshStowage({ force: true }).catch((e) => setCargoUnavailable(e.message));
   };
 
-  const bs = $('bay-select');
-  bs.innerHTML = cargo.bayInfo().map((b) => `<option value="${b.bay}">Bay ${String(b.bay).padStart(2, '0')}  (20': ${b.bays20.map((n) => String(n).padStart(2, '0')).join('/')}) · ${b.rows.length} rows · ${String(b.maxDeckTier)}</option>`).join('');
+  syncBaySelect();
 
   $('vessel-name').textContent = SHIP.name;
   // BOXES/TEU/UTIL are driven by updateStowageCard() from the live stowage
   // response (the selected vessel's real counts), not from cargo.stats()
   // (a count of what's actually drawn on this fixed model hull, which can
   // differ from the real vessel on a resample — see fromLive.js).
-  cargo.onChange((s, info) => {
-    if (info?.colorOnly) return;
-    clearTimeout(metricsTimer);
-    metricsTimer = setTimeout(recomputeMetrics, 120);
-  });
+  wireCargoChangeHandler(cargo);
 
   const cm = $('color-mode');
   cm.innerHTML = Object.entries(COLOR_MODES).map(([k, v]) => `<button data-m="${k}">${v.label}</button>`).join('');
@@ -623,7 +718,7 @@ function flatCameraArgs(layout) {
 }
 function snapCamera(args) { tweenCamera({ ...args, dur: 1e-3 }); stepCamTween(1); }
 function restoreCameraInstant() {
-  const back = savedView || { pos: DEFAULT_CAM, target: DEFAULT_TARGET };
+  const back = savedView || { pos: defaultCam(), target: defaultTarget() };
   camera.fov = 36; camera.updateProjectionMatrix();
   camera.position.copy(back.pos); controls.target.copy(back.target); camera.lookAt(back.target);
   camFlat = false;
@@ -681,7 +776,7 @@ async function switchScreen(to) {
   } else {
     await stowage.exit({ onUncover: () => { render3D = true; clock.getDelta(); setMode(null); } });
     screen = 'vessel';
-    const back = savedView || { pos: DEFAULT_CAM, target: DEFAULT_TARGET };
+    const back = savedView || { pos: defaultCam(), target: defaultTarget() };
     const off = back.pos.clone().sub(back.target);
     sph.setFromVector3(off);
     await tweenCamera({ toTarget: back.target.clone(), toTheta: sph.theta, toPhi: sph.phi, toFov: 36, toDist: sph.radius, dur: 2.3 });
@@ -752,8 +847,8 @@ function loop() {
   if (camAnim) {
     camAnim.t = Math.min(1, camAnim.t + dt / 1.6);
     const k = ease(camAnim.t);
-    camera.position.lerpVectors(camAnim.fromP, DEFAULT_CAM, k);
-    controls.target.lerpVectors(camAnim.fromT, DEFAULT_TARGET, k);
+    camera.position.lerpVectors(camAnim.fromP, defaultCam(), k);
+    controls.target.lerpVectors(camAnim.fromT, defaultTarget(), k);
     if (camAnim.t >= 1) camAnim = null;
   }
   if (camTween) stepCamTween(dt);

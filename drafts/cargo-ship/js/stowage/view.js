@@ -1,5 +1,5 @@
 // Stowage screen controller: cream technical-drawing view of one row, crane load/discharge timeline.
-import { SHIP, CONTAINER_TYPES } from '../config.js';
+import { SHIP, CONTAINER_TYPES, onShipChange } from '../config.js';
 import { Y_CARGO } from '../ship.js';
 import { COLOR_MODES, legendFor, boxColor } from '../colors.js';
 import { fmt } from '../cargo.js';
@@ -9,7 +9,11 @@ import { drawCrane } from './crane.js';
 import { planLayout, buildCells, hitPlan, drawPlan, drawPlanCrane } from './planview.js';
 import { CraneAudio } from './audio.js';
 
-const { L, T } = SHIP;
+let L, T;
+function syncShip() { ({ L, T } = SHIP); }
+syncShip();
+onShipChange(syncShip);
+
 const BG = '#f3eee2';
 const SPEEDS = [1, 2, 4, 8, 16, 32];
 const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -282,6 +286,28 @@ export class StowageView {
   refresh() {
     // cargo changed while away: rebuild everything for the current row
     const r = this.row; this.row = null; this.planCells = null; this.setRow(r ?? this.cargo.allRows()[0].row, { instant: true });
+  }
+
+  // Runtime vessel switch (main.js's switchVessel): rebind to the new
+  // ship/cargo and drop everything derived from the old hull — row
+  // selection, per-cell plan geometry, hover/highlight state, the crane
+  // timeline and any mid-discharge snapshot. The view itself stays inactive
+  // (this only runs while the vessel screen is showing), so there's nothing
+  // to redraw here — resize()/refresh() on the next enter() rebuilds the
+  // hull-length-dependent layouts (finalLayout/planLayout).
+  setVessel(ship, cargo) {
+    this.ship = ship;
+    this.cargo = cargo;
+    if (this.follow) this.setFollow(false);
+    this.playing = false;
+    this.syncButtons();
+    this.hover(null);
+    this.row = null;
+    this.prevSnap = null;
+    this.planCells = null;
+    this.rowHover = null;
+    const rows = this.cargo.allRows();
+    if (rows.length) this.setRow(rows[0].row, { instant: true });
   }
 
   updatePlaced() {

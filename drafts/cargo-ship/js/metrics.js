@@ -3,14 +3,15 @@
 //  - KB, BM (waterplane inertia), KM, KG, GM (free-surface corrected), heel from TCG, IMO roll period
 //  - still-water shear force / bending moment from station weight vs. buoyancy curves
 //  - SOLAS V/22 bridge visibility, stack weight limits, heavy-over-light, reefer plugs, IMDG proximity
-import { SHIP, HYDRO, CONTAINER_TYPES, PORTS, CATEGORIES } from './config.js';
+import { SHIP, HYDRO, CONTAINER_TYPES, PORTS, CATEGORIES, onShipChange } from './config.js';
 import { halfBreadth } from './ship.js';
 import { fmt } from './cargo.js';
 
-const { L, B, D, T } = SHIP;
 const NX = 80, NZ = 8;
-const DX = L / NX;
-const XS = Array.from({ length: NX }, (_, i) => -L / 2 + (i + 0.5) * DX);
+// Everything below derives from the active hull and is recomputed by
+// syncShip() (registered after ship.js's own, so halfBreadth() already
+// reflects the new hull when these run) whenever the vessel switches.
+let L, B, D, T, DX, XS, FULL_SECTION, DISP_SUMMER, LIGHTSHIP, ALLOW_BM, ALLOW_SF;
 const deg = (r) => (r * 180) / Math.PI;
 
 function section(x, draft) {
@@ -54,12 +55,19 @@ function solveEquilibrium(disp, lcg) {
   return { Tm, trim, ...hydro(Tm, trim, true) };
 }
 
-// Static reference values (computed once)
-const FULL_SECTION = XS.map((x) => section(x, D)[0]);
-const DISP_SUMMER = hydro(HYDRO.summerDraft, 0).V * HYDRO.rho;
-const LIGHTSHIP = HYDRO.lightship.reduce((s, g) => s + g.w, 0);
-const ALLOW_BM = (DISP_SUMMER * L) / 60;         // permissible still-water bending moment (t·m), rule-of-thumb
-const ALLOW_SF = (3.2 * ALLOW_BM) / L;           // permissible shear force (t)
+// Static reference values, recomputed for the active hull.
+function syncShip() {
+  ({ L, B, D, T } = SHIP);
+  DX = L / NX;
+  XS = Array.from({ length: NX }, (_, i) => -L / 2 + (i + 0.5) * DX);
+  FULL_SECTION = XS.map((x) => section(x, D)[0]);
+  DISP_SUMMER = hydro(HYDRO.summerDraft, 0).V * HYDRO.rho;
+  LIGHTSHIP = HYDRO.lightship.reduce((s, g) => s + g.w, 0);
+  ALLOW_BM = (DISP_SUMMER * L) / 60;         // permissible still-water bending moment (t·m), rule-of-thumb
+  ALLOW_SF = (3.2 * ALLOW_BM) / L;           // permissible shear force (t)
+}
+syncShip();
+onShipChange(syncShip);
 
 function spread(arr, w, x0, x1, shape) {
   if (x1 <= x0) return;

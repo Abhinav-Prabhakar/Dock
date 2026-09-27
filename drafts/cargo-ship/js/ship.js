@@ -5,29 +5,43 @@
 // reference hull (T 14.5 m) and scale to each vessel with the kL / kB / kD / kT ratios.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SHIP, HYDRO } from './config.js';
+import { SHIP, HYDRO, onShipChange } from './config.js';
 import {
   makeHullTexture, makeTransomTexture, makeFacadeTextures, makeBridgeWindowTexture,
   makeGlowTexture, makeFunnelTexture, rng,
 } from './textures.js';
 
-const { L, B, D, T } = SHIP;
-const HB = B / 2;
-const SS = SHIP.super;
-const kL = L / 366, kB = B / 51, kD = D / 30.2, kT = T / 14.5;
-export const Y_DECK = D - T;                  // main deck height above the waterline
-export const Y_CARGO = Y_DECK + SHIP.hatchHeight;
-export const Y_HOLD = HYDRO.tankTop - T;          // tank top (hold floor) relative to the waterline
+// Every value below derives from the active hull (SHIP/HYDRO) and is
+// recomputed by syncShip() whenever the operator switches vessels — see
+// config.js's onShipChange(). Exported ones are `let` so importers keep a
+// live binding instead of a load-time snapshot.
+export let Y_DECK;
+export let Y_CARGO;
+export let Y_HOLD;
+export let Z_TRANSOM;
+let L, B, D, T, HB, SS, kL, kB, kD, kT, X_FWD_BODY, X_AFT_BODY, BULB, STEM;
+
+function syncShip() {
+  ({ L, B, D, T } = SHIP);
+  HB = B / 2;
+  SS = SHIP.super;
+  kL = L / 366; kB = B / 51; kD = D / 30.2; kT = T / 14.5;
+  Y_DECK = D - T;                  // main deck height above the waterline
+  Y_CARGO = Y_DECK + SHIP.hatchHeight;
+  Y_HOLD = HYDRO.tankTop - T;      // tank top (hold floor) relative to the waterline
+  Z_TRANSOM = 12.2 * kD;           // transom bottom, height above keel
+  X_FWD_BODY = L / 2 - 0.3 * L;    // end of parallel midbody (fwd)
+  X_AFT_BODY = -L / 2 + 0.27 * L;  // start of parallel midbody (aft)
+  BULB = { xc: L / 2 - 12.5 * kL, len: 11.8 * kL, zc: 6.4 * kT, rz: 5.3 * kT, ry: 3.9 * kB, back: L / 2 - 36 * kL };
+  STEM = [[0, L / 2 - 17 * kL], [2.5 * kT, L / 2 - 11 * kL], [9.5 * kT, L / 2 - 8 * kL], [T, L / 2 - 5.5 * kL], [22 * kD, L / 2 - 2.3 * kL], [D + 3 * kD, L / 2 + 0.6 * kL]];
+}
+syncShip();
+onShipChange(syncShip);
 
 /* ------------------------------------------------------------------ hull form */
 
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const lerp = (a, b, t) => a + (b - a) * t;
-export const Z_TRANSOM = 12.2 * kD;                      // transom bottom, height above keel
-const X_FWD_BODY = L / 2 - 0.3 * L;           // end of parallel midbody (fwd)
-const X_AFT_BODY = -L / 2 + 0.27 * L;         // start of parallel midbody (aft)
-const BULB = { xc: L / 2 - 12.5 * kL, len: 11.8 * kL, zc: 6.4 * kT, rz: 5.3 * kT, ry: 3.9 * kB, back: L / 2 - 36 * kL };
-const STEM = [[0, L / 2 - 17 * kL], [2.5 * kT, L / 2 - 11 * kL], [9.5 * kT, L / 2 - 8 * kL], [T, L / 2 - 5.5 * kL], [22 * kD, L / 2 - 2.3 * kL], [D + 3 * kD, L / 2 + 0.6 * kL]];
 
 function interp(pts, z) {
   if (z <= pts[0][0]) return pts[0][1];

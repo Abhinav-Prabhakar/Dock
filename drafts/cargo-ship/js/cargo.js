@@ -27,6 +27,15 @@ function containerGeometry(type) {
   return g;
 }
 
+// The container atlas (corrugation, rust, logos, ISO markings) is entirely
+// vessel-independent — it doesn't depend on SHIP/HYDRO at all — so it's built
+// once, lazily, and every Cargo instance (one per vessel, cached across
+// runtime vessel switches — see main.js's switchVessel) reuses the same two
+// textures instead of repainting ~2048x2048 canvases on every switch.
+let atlas20Cache = null, atlas40Cache = null;
+function getAtlas20() { return atlas20Cache ??= makeContainerAtlas(CONTAINER_TYPES['20'].length); }
+function getAtlas40() { return atlas40Cache ??= makeContainerAtlas(CONTAINER_TYPES['40'].length); }
+
 function containerMaterial(atlas, key) {
   const m = new THREE.MeshStandardMaterial({
     map: atlas.map, normalMap: atlas.normal, normalScale: new THREE.Vector2(1, 1),
@@ -72,8 +81,8 @@ export class Cargo {
     this.highlightId = null;
     this.colorMode = 'livery';
 
-    const atlas20 = makeContainerAtlas(CONTAINER_TYPES['20'].length);
-    const atlas40 = makeContainerAtlas(CONTAINER_TYPES['40'].length);
+    const atlas20 = getAtlas20();
+    const atlas40 = getAtlas40();
     const cap40 = this.bays.reduce((s, b) => s + b.rowCount * b.tiers, 0);
     this.meshes = {};
     for (const [type, atlas, cap] of [['20', atlas20, cap40 * 2], ['40', atlas40, cap40], ['40HC', atlas40, cap40]]) {

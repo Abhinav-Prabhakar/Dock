@@ -409,6 +409,25 @@ export class Ocean {
     this.spray = new BowSpray(ship);
   }
 
+  // Runtime vessel switch (main.js's switchVessel): re-derive everything the
+  // ocean takes from the hull — the wake shader's bow/stern/half-beam and its
+  // waterline profile texture — and repoint the bow spray at the new ship.
+  // Waves, reflection, camera-following geometry etc. are all vessel-
+  // independent and untouched.
+  setHull(hullProfile, ship) {
+    const u = this.uniforms;
+    u.uBowX.value = ship.bowX;
+    u.uSternX.value = ship.sternX;
+    u.uHalfBeam.value = ship.halfBeam;
+    u.uHullX.value.set(hullProfile.xAft, hullProfile.xFore);
+    u.uHullProfile.value.dispose();
+    const profTex = new THREE.DataTexture(hullProfile.data, hullProfile.data.length, 1, THREE.RedFormat, THREE.UnsignedByteType);
+    profTex.magFilter = profTex.minFilter = THREE.LinearFilter;
+    profTex.needsUpdate = true;
+    u.uHullProfile.value = profTex;
+    this.spray.ship = ship;
+  }
+
   syncWaves() {
     this.waves.uniformA.forEach((a, i) => this.uniforms.uWaveA.value[i].fromArray(a));
     this.waves.uniformB.forEach((b, i) => this.uniforms.uWaveB.value[i].fromArray(b));

@@ -1,9 +1,13 @@
 // Bottom "Load metrics" drawer: KPI strip + charts, all drawn on DPR-aware canvases.
-import { SHIP, CATEGORIES, HYDRO } from './config.js';
+import { SHIP, CATEGORIES, HYDRO, onShipChange } from './config.js';
 import { halfBreadth, hullOutline } from './ship.js';
 import { fmt } from './cargo.js';
 
-const { L, B, D, T } = SHIP;
+let L, B, D, T;
+function syncShip() { ({ L, B, D, T } = SHIP); }
+syncShip();
+onShipChange(syncShip);
+
 const INK = 'rgba(236,243,248,0.92)', MUTED = 'rgba(230,238,245,0.55)', FAINT = 'rgba(230,238,245,0.14)';
 const OK = '#5fe39a', WARN = '#ffc35a', CRIT = '#ff6b6b', ACCENT = '#7cc4ff';
 const levelColor = (l) => (l === 'crit' ? CRIT : l === 'warn' ? WARN : OK);

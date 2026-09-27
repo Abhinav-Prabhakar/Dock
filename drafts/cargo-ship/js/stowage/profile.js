@@ -1,13 +1,19 @@
 // Side-elevation renderer (starboard view, bow to the right) of the vessel as a semi-transparent
 // "technical drawing", with the stow of the selected row and a ghost of the rows behind it.
-import { SHIP, HYDRO } from '../config.js';
+import { SHIP, HYDRO, onShipChange } from '../config.js';
 import { Y_DECK, Y_CARGO, Y_HOLD, hullOutline, halfBreadth, aftX, stemX } from '../ship.js';
 import { boxColor } from '../colors.js';
 import { HALF_OFFSET, fmt } from '../cargo.js';
 
-const { L, T } = SHIP;
-const SS = SHIP.super;
-const kF = SS.funnelR / 7.2;  // funnel drawing authored on the reference hull's 7.2 m funnel
+let L, T, SS, kF;
+function syncShip() {
+  ({ L, T } = SHIP);
+  SS = SHIP.super;
+  kF = SS.funnelR / 7.2;  // funnel drawing authored on the reference hull's 7.2 m funnel
+}
+syncShip();
+onShipChange(syncShip);
+
 export const INK = '43,36,25';
 const ink = (a) => `rgba(${INK},${a})`;
 

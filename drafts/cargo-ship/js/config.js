@@ -159,19 +159,57 @@ export const VESSELS = {
 };
 export const DEFAULT_VESSEL = 'VES1';
 
-// The active vessel is fixed for the page's lifetime (every hull-derived
-// module computes its geometry once at import), chosen by ?vessel=VESn.
-// Switching vessels reloads the console with the new id — see main.js.
-const requested = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('vessel') : null;
-export const VESSEL_ID = requested in VESSELS ? requested : DEFAULT_VESSEL;
-const V = VESSELS[VESSEL_ID];
+// SHIP and HYDRO keep a fixed identity for the page's whole lifetime — every
+// importer holds the same object — but their *contents* can change at
+// runtime: setVessel() below clears and refills both in place when the
+// operator switches vessels (see main.js's switchVessel), and every
+// hull-derived module (ship geometry, metrics, stowage drawings…) registers
+// with onShipChange() to recompute its own module-scope values when that
+// happens. No page reload.
+export const SHIP = {};
+export const HYDRO = {};
 
-export const SHIP = {
-  ...V,
-  bayPitch: 13.9,        // 40' slot + lashing bridge
-  rowPitch: 2.463,       // container width + cell gap
-  hatchHeight: 2.35,     // coaming + hatch cover above main deck
-};
+function fillVessel(id) {
+  const V = VESSELS[id];
+  for (const k of Object.keys(SHIP)) delete SHIP[k];
+  Object.assign(SHIP, V, {
+    bayPitch: 13.9,        // 40' slot + lashing bridge
+    rowPitch: 2.463,       // container width + cell gap
+    hatchHeight: 2.35,     // coaming + hatch cover above main deck
+  });
+  for (const k of Object.keys(HYDRO)) delete HYDRO[k];
+  Object.assign(HYDRO, {
+    rho: 1.025,              // t/m^3 sea water
+    holdTierPitch: 2.9,      // cell-guide slot height in the holds, m
+    freeSurface: 0.3,        // free-surface GM correction, m
+    reeferKW: 6.5,           // average power draw per reefer, kW
+    deckStackLimit: 140,     // t per 40' deck stack (lashing limit)
+    holdStackLimit: 250,     // t per 40' hold stack (tank-top limit)
+    visibilityLimit: Math.min(2 * SHIP.L, 500), // SOLAS V/22 blind sector ahead of the bow, m
+  }, V.hydro);               // summerDraft, tankTop, reeferPlugs, lightship, consumables
+}
+
+const shipListeners = [];
+// Registered by every hull-derived module, at its own top level right after
+// importing the modules it depends on — so registration order follows the
+// import graph's dependency order, which is the order they must recompute in.
+export function onShipChange(fn) { shipListeners.push(fn); }
+
+// The active vessel: chosen once at load by ?vessel=VESn, changeable at
+// runtime via setVessel().
+const requested = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('vessel') : null;
+export let VESSEL_ID = requested in VESSELS ? requested : DEFAULT_VESSEL;
+fillVessel(VESSEL_ID);
+
+// Switches the active vessel in place — SHIP/HYDRO keep their identity, only
+// their contents change — then resyncs every registered module in order.
+// No-op for an id with no simulated hull (VESSELS[id] doesn't exist).
+export function setVessel(id) {
+  if (!(id in VESSELS)) return;
+  VESSEL_ID = id;
+  fillVessel(id);
+  shipListeners.forEach((fn) => fn());
+}
 
 export const CONTAINER_TYPES = {
   '20':   { length: 6.058,  height: 2.591, teu: 1, tare: 2.25, maxGross: 30.48, label: "20' GP" },
@@ -201,17 +239,9 @@ export const PORTS = [
 ];
 
 // Hydrostatic / structural constants: shared physics plus the active vessel's
-// own draught marks, weight groups and limits (VESSELS[*].hydro).
-export const HYDRO = {
-  rho: 1.025,              // t/m^3 sea water
-  holdTierPitch: 2.9,      // cell-guide slot height in the holds, m
-  freeSurface: 0.3,        // free-surface GM correction, m
-  reeferKW: 6.5,           // average power draw per reefer, kW
-  deckStackLimit: 140,     // t per 40' deck stack (lashing limit)
-  holdStackLimit: 250,     // t per 40' hold stack (tank-top limit)
-  visibilityLimit: Math.min(2 * SHIP.L, 500), // SOLAS V/22 blind sector ahead of the bow, m
-  ...V.hydro,              // summerDraft, tankTop, reeferPlugs, lightship, consumables
-};
+// own draught marks, weight groups and limits (VESSELS[*].hydro) — filled by
+// fillVessel() above, not here (HYDRO is declared near SHIP so setVessel can
+// refill both together).
 
 // Shipping-line style box colours (linear-ish sRGB hex) with relative frequency.
 export const CONTAINER_PALETTE = [
